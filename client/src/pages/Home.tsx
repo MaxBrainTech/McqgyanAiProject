@@ -98,61 +98,61 @@ export default function Home({ onStartTest }: HomeProps) {
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       {/* Hero Header */}
       <div className="bg-primary/5 border-b">
-        <div className="container mx-auto px-4 py-12 max-w-6xl">
-          <div className="text-center space-y-4">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full">
-              <GraduationCap className="w-5 h-5 text-primary" />
-              <span className="text-sm font-medium text-primary">CBSE Language Learning Platform</span>
+        <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 lg:py-16 max-w-6xl">
+          <div className="text-center space-y-3 sm:space-y-4">
+            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-primary/10 rounded-full">
+              <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+              <span className="text-base font-medium text-primary">CBSE Language Learning Platform</span>
             </div>
-            <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent px-2">
               LangBuddy AI
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto px-4">
               Master French, German, and Spanish with AI-powered adaptive testing. 
-              <span className="block mt-2 font-medium text-foreground">25 chapters per language • 4 test formats • Real-time feedback</span>
+              <span className="block mt-2 font-medium text-foreground text-base">25 chapters per language • 4 test formats • Real-time feedback</span>
             </p>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-6xl">
         {step === "language" && (
-          <div className="space-y-8">
+          <div className="space-y-6 sm:space-y-8">
             {/* Features Banner */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="p-4 text-center">
-                <div className="inline-flex p-2 bg-blue-500/10 rounded-lg mb-2">
-                  <BookOpen className="w-6 h-6 text-blue-500" />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              <Card className="p-4 sm:p-5 text-center hover-elevate">
+                <div className="inline-flex p-2 sm:p-3 bg-blue-500/10 rounded-lg mb-2">
+                  <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
                 </div>
-                <h3 className="font-semibold">CBSE Aligned</h3>
-                <p className="text-sm text-muted-foreground">Official curriculum coverage</p>
+                <h3 className="font-semibold text-base">CBSE Aligned</h3>
+                <p className="text-base text-muted-foreground mt-1">Official curriculum coverage</p>
               </Card>
-              <Card className="p-4 text-center">
-                <div className="inline-flex p-2 bg-green-500/10 rounded-lg mb-2">
-                  <Sparkles className="w-6 h-6 text-green-500" />
+              <Card className="p-4 sm:p-5 text-center hover-elevate">
+                <div className="inline-flex p-2 sm:p-3 bg-green-500/10 rounded-lg mb-2">
+                  <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
                 </div>
-                <h3 className="font-semibold">AI Powered</h3>
-                <p className="text-sm text-muted-foreground">Adaptive question generation</p>
+                <h3 className="font-semibold text-base">AI Powered</h3>
+                <p className="text-base text-muted-foreground mt-1">Adaptive question generation</p>
               </Card>
-              <Card className="p-4 text-center">
-                <div className="inline-flex p-2 bg-purple-500/10 rounded-lg mb-2">
-                  <Trophy className="w-6 h-6 text-purple-500" />
+              <Card className="p-4 sm:p-5 text-center hover-elevate">
+                <div className="inline-flex p-2 sm:p-3 bg-purple-500/10 rounded-lg mb-2">
+                  <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
                 </div>
-                <h3 className="font-semibold">Track Progress</h3>
-                <p className="text-sm text-muted-foreground">Monitor your improvement</p>
+                <h3 className="font-semibold text-base">Track Progress</h3>
+                <p className="text-base text-muted-foreground mt-1">Monitor your improvement</p>
               </Card>
             </div>
 
             {/* Language Selection */}
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">Choose Your Language</h2>
-                <Badge variant="secondary" className="text-sm">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h2 className="text-xl sm:text-2xl font-bold">Choose Your Language</h2>
+                <Badge variant="secondary" className="text-base">
                   3 Languages Available
                 </Badge>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                 <LanguageCard
                   language="French"
                   icon={BookOpen}
@@ -177,20 +177,19 @@ export default function Home({ onStartTest }: HomeProps) {
             {/* Leaderboard Section */}
             {leaderboard.length > 0 && (
               <div className="max-w-2xl mx-auto">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                   <div className="flex items-center gap-2">
                     <Trophy className="w-5 h-5 text-primary" />
-                    <h2 className="text-xl font-bold">Your Best Scores</h2>
+                    <h2 className="text-lg sm:text-xl font-bold">Your Best Scores</h2>
                   </div>
                   <Button
                     variant="outline"
-                    size="sm"
                     onClick={handleResetScores}
                     data-testid="button-reset-scores"
-                    className="gap-2"
+                    className="gap-2 h-11 text-base"
                   >
                     <RotateCcw className="w-4 h-4" />
-                    Reset Scores
+                    <span>Reset Scores</span>
                   </Button>
                 </div>
                 <LeaderboardCard entries={leaderboard} />
@@ -201,13 +200,13 @@ export default function Home({ onStartTest }: HomeProps) {
 
         {step === "class" && (
           <div className="space-y-6 max-w-3xl mx-auto">
-            <div className="flex items-center gap-4 mb-6">
-              <Button variant="outline" onClick={handleReset} data-testid="button-back">
+            <div className="flex items-center gap-3 sm:gap-4 mb-6">
+              <Button variant="outline" onClick={handleReset} data-testid="button-back" size="sm">
                 ← Back
               </Button>
               <div>
-                <h2 className="text-2xl font-bold capitalize">{selectedLanguage}</h2>
-                <p className="text-muted-foreground">Step 1 of 3</p>
+                <h2 className="text-xl sm:text-2xl font-bold capitalize">{selectedLanguage}</h2>
+                <p className="text-sm text-muted-foreground">Step 1 of 4</p>
               </div>
             </div>
 
@@ -228,15 +227,15 @@ export default function Home({ onStartTest }: HomeProps) {
 
         {step === "difficulty" && (
           <div className="space-y-6 max-w-3xl mx-auto">
-            <div className="flex items-center gap-4 mb-6">
-              <Button variant="outline" onClick={() => setStep("class")} data-testid="button-back">
+            <div className="flex items-center gap-3 sm:gap-4 mb-6">
+              <Button variant="outline" onClick={() => setStep("class")} data-testid="button-back" size="sm">
                 ← Back
               </Button>
               <div>
-                <h2 className="text-2xl font-bold capitalize">
+                <h2 className="text-lg sm:text-2xl font-bold capitalize">
                   {selectedLanguage} - Class {selectedClass}
                 </h2>
-                <p className="text-muted-foreground">Step 2 of 3</p>
+                <p className="text-sm text-muted-foreground">Step 2 of 4</p>
               </div>
             </div>
 
@@ -255,21 +254,21 @@ export default function Home({ onStartTest }: HomeProps) {
 
         {step === "testLength" && (
           <div className="space-y-6 max-w-4xl mx-auto">
-            <div className="flex items-center gap-4 mb-6">
-              <Button variant="outline" onClick={() => setStep("difficulty")} data-testid="button-back">
+            <div className="flex items-center gap-3 sm:gap-4 mb-6">
+              <Button variant="outline" onClick={() => setStep("difficulty")} data-testid="button-back" size="sm">
                 ← Back
               </Button>
               <div>
-                <h2 className="text-2xl font-bold capitalize">
+                <h2 className="text-lg sm:text-xl md:text-2xl font-bold capitalize">
                   {selectedLanguage} - Class {selectedClass} - {selectedDifficulty}
                 </h2>
-                <p className="text-muted-foreground">Step 3 of 4</p>
+                <p className="text-sm text-muted-foreground">Step 3 of 4</p>
               </div>
             </div>
 
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-6">Select Test Length</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">Select Test Length</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {[
                   { label: "Quick Test", sublabel: "10 Questions", value: 10, time: "~10 mins" },
                   { label: "Standard Test", sublabel: "20 Questions", value: 20, time: "~20 mins" },
@@ -317,15 +316,15 @@ export default function Home({ onStartTest }: HomeProps) {
 
         {step === "chapter" && (
           <div className="space-y-6 max-w-3xl mx-auto">
-            <div className="flex items-center gap-4 mb-6">
-              <Button variant="outline" onClick={() => setStep("testLength")} data-testid="button-back">
+            <div className="flex items-center gap-3 sm:gap-4 mb-6">
+              <Button variant="outline" onClick={() => setStep("testLength")} data-testid="button-back" size="sm">
                 ← Back
               </Button>
               <div>
-                <h2 className="text-2xl font-bold capitalize">
-                  {selectedLanguage} - Class {selectedClass} - {selectedDifficulty} - {selectedTestLength} Questions
+                <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold capitalize">
+                  {selectedLanguage} - Class {selectedClass} - {selectedDifficulty} - {selectedTestLength}Q
                 </h2>
-                <p className="text-muted-foreground">Step 4 of 4</p>
+                <p className="text-sm text-muted-foreground">Step 4 of 4</p>
               </div>
             </div>
 

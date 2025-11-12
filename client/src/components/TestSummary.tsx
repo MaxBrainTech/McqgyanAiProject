@@ -67,7 +67,7 @@ export default function TestSummary({
             <Card className="p-4 bg-primary/5">
               <div className="flex flex-col items-center gap-2">
                 <Target className="w-8 h-8 text-primary" />
-                <p className="text-sm text-muted-foreground">Total Score</p>
+                <p className="text-base text-muted-foreground">Total Score</p>
                 <p className="text-3xl font-bold text-primary">
                   {totalScore}/{totalQuestions * 10}
                 </p>
@@ -77,7 +77,7 @@ export default function TestSummary({
             <Card className="p-4 bg-accent/5">
               <div className="flex flex-col items-center gap-2">
                 <TrendingUp className="w-8 h-8 text-accent" />
-                <p className="text-sm text-muted-foreground">Accuracy</p>
+                <p className="text-base text-muted-foreground">Accuracy</p>
                 <p className="text-3xl font-bold text-accent">{accuracy}%</p>
               </div>
             </Card>
@@ -85,7 +85,7 @@ export default function TestSummary({
             <Card className="p-4 bg-green-50 dark:bg-green-950/20">
               <div className="flex flex-col items-center gap-2">
                 <Trophy className="w-8 h-8 text-green-600 dark:text-green-400" />
-                <p className="text-sm text-muted-foreground">Correct</p>
+                <p className="text-base text-muted-foreground">Correct</p>
                 <p className="text-3xl font-bold text-green-600 dark:text-green-400">
                   {correctAnswers}/{totalQuestions}
                 </p>
@@ -96,10 +96,10 @@ export default function TestSummary({
           <div className="bg-muted/50 p-6 rounded-xl">
             <p className="text-lg font-medium">
               {parseInt(percentage) >= 80
-                ? "Outstanding! You're really mastering this language! 🎉"
+                ? "Outstanding! You're really mastering this language!"
                 : parseInt(percentage) >= 60
-                ? "Good job! You're making great progress! 💪"
-                : "Nice try! Keep practicing and you'll improve quickly! 📚"}
+                ? "Good job! You're making great progress!"
+                : "Nice try! Keep practicing and you'll improve quickly!"}
             </p>
           </div>
 
@@ -107,7 +107,7 @@ export default function TestSummary({
             <Button
               onClick={onNewTest}
               size="lg"
-              className="flex-1"
+              className="flex-1 text-base"
               data-testid="button-new-test"
             >
               Try Another Test
@@ -116,7 +116,7 @@ export default function TestSummary({
               onClick={onHome}
               variant="outline"
               size="lg"
-              className="flex-1"
+              className="flex-1 text-base"
               data-testid="button-home"
             >
               <Home className="w-4 h-4 mr-2" />

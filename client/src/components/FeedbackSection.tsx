@@ -172,7 +172,7 @@ export default function FeedbackSection({
       transition={{ duration: 0.3 }}
     >
       <Card
-        className={`p-6 ${
+        className={`p-4 sm:p-5 md:p-6 ${
           isCorrect
             ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
             : score === 5
@@ -180,76 +180,75 @@ export default function FeedbackSection({
             : "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800"
         }`}
       >
-        <div className="space-y-4">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-3">
+        <div className="space-y-3 sm:space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3">
               {isCorrect ? (
-                <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+                <CheckCircle className="w-7 h-7 sm:w-8 sm:h-8 text-green-600 dark:text-green-400 flex-shrink-0" />
               ) : (
-                <XCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
+                <XCircle className="w-7 h-7 sm:w-8 sm:h-8 text-red-600 dark:text-red-400 flex-shrink-0" />
               )}
               <div>
-                <h3 className="text-xl font-bold">{isCorrect ? "Correct!" : score === 5 ? "Partial Credit" : "Incorrect"}</h3>
-                <p className="text-3xl font-bold text-primary">
+                <h3 className="text-lg sm:text-xl font-bold">{isCorrect ? "Correct!" : score === 5 ? "Partial Credit" : "Incorrect"}</h3>
+                <p className="text-2xl sm:text-3xl font-bold text-primary">
                   {score}/{maxScore}
                 </p>
               </div>
             </div>
-            <Badge variant={isCorrect ? "default" : "destructive"} className="text-lg px-4 py-2">
+            <Badge variant={isCorrect ? "default" : "destructive"} className="text-base sm:text-lg px-3 sm:px-4 py-1.5 sm:py-2">
               {percentage.toFixed(0)}%
             </Badge>
           </div>
 
-          <div className="bg-card p-4 rounded-lg">
+          <div className="bg-card p-3 sm:p-4 rounded-lg">
             <p className="text-base leading-relaxed font-medium">{feedback}</p>
           </div>
 
-          <div className="bg-primary/10 p-4 rounded-lg border-l-4 border-primary">
+          <div className="bg-primary/10 p-3 sm:p-4 rounded-lg border-l-4 border-primary">
             <div className="flex items-start gap-2">
-              <Lightbulb className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <div className="flex items-center justify-between gap-3 mb-1">
-                  <p className="font-semibold text-sm">Correct Answer</p>
+              <Lightbulb className="w-4 h-4 sm:w-5 sm:h-5 text-primary mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2 sm:gap-3 mb-1 flex-wrap">
+                  <p className="font-semibold text-base">Correct Answer</p>
                   <Button
-                    size="sm"
                     variant={isPlaying ? "secondary" : "outline"}
                     onClick={isPlaying ? stopSpeech : speakAnswer}
-                    className="gap-2"
+                    className="gap-2 flex-shrink-0 h-11 text-base"
                     data-testid="button-pronunciation"
                   >
                     {isPlaying ? (
                       <>
                         <VolumeX className="w-4 h-4" />
-                        Stop
+                        <span>Stop</span>
                       </>
                     ) : (
                       <>
                         <Volume2 className="w-4 h-4" />
-                        Listen
+                        <span>Listen</span>
                       </>
                     )}
                   </Button>
                 </div>
-                <p className="text-base font-medium">{correctAnswer}</p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  🎧 Click "Listen" to hear the correct pronunciation
+                <p className="text-base font-medium break-words">{correctAnswer}</p>
+                <p className="text-base text-muted-foreground mt-1.5 sm:mt-2">
+                  Click "Listen" to hear the correct pronunciation
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-card p-4 rounded-lg">
+          <div className="bg-card p-3 sm:p-4 rounded-lg">
             <div className="flex items-start gap-2">
-              <Sparkles className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-accent mt-0.5 flex-shrink-0" />
               <p className="text-base font-medium italic">{encouragement}</p>
             </div>
           </div>
 
-          <div className="flex gap-3 flex-wrap pt-2">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2">
             <Button
               onClick={onNext}
               size="lg"
-              className="flex-1 min-w-[200px]"
+              className="w-full sm:flex-1 text-base"
               data-testid="button-next-question"
             >
               Next Question
@@ -258,7 +257,7 @@ export default function FeedbackSection({
               onClick={onEndTest}
               variant="outline"
               size="lg"
-              className="flex-1 min-w-[200px]"
+              className="w-full sm:flex-1 text-base"
               data-testid="button-end-test"
             >
               End Test

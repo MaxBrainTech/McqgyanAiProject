@@ -31,7 +31,7 @@ export default function ChapterList({ chapters, onSelect }: ChapterListProps) {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-semibold">{chapter.title}</h3>
-                <p className="text-sm text-muted-foreground">{chapter.description}</p>
+                <p className="text-base text-muted-foreground">{chapter.description}</p>
               </div>
               <ChevronRight className="w-5 h-5 text-muted-foreground" />
             </div>

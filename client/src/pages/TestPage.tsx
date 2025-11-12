@@ -123,7 +123,7 @@ export default function TestPage({ config, onExit }: TestPageProps) {
   if (showSummary) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
           <TestSummary
             totalScore={totalScore}
             totalQuestions={questionNumber}
@@ -139,13 +139,13 @@ export default function TestPage({ config, onExit }: TestPageProps) {
 
   if (!sessionId || generateQuestionMutation.isPending) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
         <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-lg font-semibold text-primary">
+          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-base sm:text-lg font-semibold text-primary">
             {!sessionId ? "Preparing your test..." : "AI is generating your question..."}
           </p>
-          <p className="text-sm text-muted-foreground">This may take 5-20 seconds</p>
+          <p className="text-base text-muted-foreground">This may take 5-20 seconds</p>
         </div>
       </div>
     );
@@ -153,11 +153,11 @@ export default function TestPage({ config, onExit }: TestPageProps) {
 
   if (!currentQuestion) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
         <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-lg font-semibold text-primary">AI is generating your question...</p>
-          <p className="text-sm text-muted-foreground">This may take 5-20 seconds</p>
+          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-base sm:text-lg font-semibold text-primary">AI is generating your question...</p>
+          <p className="text-base text-muted-foreground">This may take 5-20 seconds</p>
         </div>
       </div>
     );
@@ -165,12 +165,12 @@ export default function TestPage({ config, onExit }: TestPageProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="space-y-6">
-          <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 md:py-8 max-w-4xl">
+        <div className="space-y-4 sm:space-y-6">
+          <div className="flex items-center justify-between flex-wrap gap-3 sm:gap-4">
             <div>
-              <h1 className="text-2xl font-bold capitalize">{config.language} Test</h1>
-              <p className="text-muted-foreground">
+              <h1 className="text-xl sm:text-2xl font-bold capitalize">{config.language} Test</h1>
+              <p className="text-base text-muted-foreground">
                 Class {config.class} • {config.difficulty}
               </p>
             </div>
@@ -178,6 +178,7 @@ export default function TestPage({ config, onExit }: TestPageProps) {
               variant="outline"
               onClick={onExit}
               data-testid="button-exit"
+              className="h-11 text-base"
             >
               Exit Test
             </Button>

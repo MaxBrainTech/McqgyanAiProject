@@ -30,31 +30,31 @@ export default function QuestionCard({
   };
 
   return (
-    <Card className="p-8 shadow-xl border-2">
-      <div className="space-y-6">
+    <Card className="p-4 sm:p-6 md:p-8 shadow-xl border-2">
+      <div className="space-y-4 sm:space-y-6">
         {/* Question Header */}
-        <div className="flex items-center justify-between pb-4 border-b">
+        <div className="flex items-center justify-between pb-3 sm:pb-4 border-b flex-wrap gap-2">
           <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-sm">
+            <Badge variant="secondary" className="text-base">
               Question {questionNumber} of {totalQuestions}
             </Badge>
           </div>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <HelpCircle className="w-3 h-3" />
-            <span>Read carefully</span>
+          <div className="flex items-center gap-1 text-base text-muted-foreground">
+            <HelpCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">Read carefully</span>
           </div>
         </div>
 
         {/* Question Display - Enhanced */}
-        <div className="bg-gradient-to-br from-primary/5 to-primary/10 p-6 rounded-xl border border-primary/20">
-          <div className="flex items-start gap-3">
-            <div className="mt-1">
-              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                <span className="text-primary font-bold">Q</span>
+        <div className="bg-gradient-to-br from-primary/5 to-primary/10 p-4 sm:p-5 md:p-6 rounded-xl border border-primary/20">
+          <div className="flex items-start gap-2 sm:gap-3">
+            <div className="mt-0.5 sm:mt-1">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <span className="text-primary font-bold text-base">Q</span>
               </div>
             </div>
-            <div className="flex-1">
-              <p className="text-xl md:text-2xl font-medium leading-relaxed text-foreground">
+            <div className="flex-1 min-w-0">
+              <p className="text-base sm:text-lg md:text-xl lg:text-2xl font-medium leading-relaxed text-foreground break-words">
                 {question}
               </p>
             </div>
@@ -62,20 +62,20 @@ export default function QuestionCard({
         </div>
 
         {/* Answer Input Section */}
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           <div className="flex items-center gap-2">
             <Pencil className="w-4 h-4 text-muted-foreground" />
-            <label className="text-sm font-semibold text-foreground">Your Answer:</label>
+            <label className="text-base font-semibold text-foreground">Your Answer:</label>
           </div>
           <Textarea
             placeholder="Type your answer here..."
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
-            className="min-h-32 text-lg resize-none border-2 focus:border-primary"
+            className="min-h-28 sm:min-h-32 text-base sm:text-lg resize-none border-2 focus:border-primary"
             data-testid="textarea-answer"
           />
-          <p className="text-xs text-muted-foreground">
-            💡 Tip: Make sure to check your spelling and grammar before submitting
+          <p className="text-base text-muted-foreground">
+            Tip: Check your spelling and grammar before submitting
           </p>
         </div>
 
@@ -83,14 +83,14 @@ export default function QuestionCard({
         <Button
           onClick={handleSubmit}
           disabled={!answer.trim() || isSubmitting}
-          className="w-full md:w-auto px-8 py-6 text-lg"
+          className="w-full text-base sm:text-lg"
           size="lg"
           data-testid="button-submit-answer"
         >
           {isSubmitting ? (
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-2 justify-center">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              AI is evaluating your answer...
+              <span>Evaluating...</span>
             </span>
           ) : (
             "Submit Answer"
