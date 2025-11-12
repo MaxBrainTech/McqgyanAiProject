@@ -25,14 +25,17 @@ interface AnswerEvaluationParams {
   difficulty: string;
 }
 
-export async function generateQuestion(params: QuestionGenerationParams): Promise<{
+export async function generateQuestion(params: QuestionGenerationParams & { isMcq?: boolean }): Promise<{
   question: string;
   correctAnswer: string;
   questionType: string;
+  options?: string[];
+  correctOption?: string;
+  explanation?: string;
 }> {
-  const { language, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance, previousQuestions } = params;
+  const { language, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance, previousQuestions, isMcq } = params;
   
-  console.log(`[AI] Generating question #${questionNumber} for ${language} - ${difficulty} difficulty`);
+  console.log(`[AI] Generating ${isMcq ? 'MCQ' : 'open-ended'} question #${questionNumber} for ${language} - ${difficulty} difficulty`);
   
   const adaptiveContext = previousPerformance 
     ? `\nThe student's previous performance: ${previousPerformance}. Adjust the difficulty accordingly.`
@@ -41,6 +44,10 @@ export async function generateQuestion(params: QuestionGenerationParams): Promis
   const previousQuestionsContext = previousQuestions && previousQuestions.length > 0
     ? `\n\n⚠️ CRITICAL: DO NOT REPEAT THESE QUESTIONS - Generate a completely NEW and DIFFERENT question:\n${previousQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}\n`
     : '';
+
+  if (isMcq) {
+    return generateMcqQuestion({ language, classLevel, difficulty, chapterTitle, questionNumber, adaptiveContext, previousQuestionsContext });
+  }
 
   const prompt = `You are a strict CBSE ${language} teacher for Class ${classLevel} following the official CBSE curriculum.
 
@@ -110,6 +117,110 @@ Make the question challenging but fair for Class ${classLevel} CBSE level.`;
   } catch (error: any) {
     console.error(`[AI ERROR] Failed to generate question:`, error.message || error);
     throw new Error(`Failed to generate question: ${error.message || "Unknown error"}`);
+  }
+}
+
+async function generateMcqQuestion(params: {
+  language: string;
+  classLevel: number;
+  difficulty: string;
+  chapterTitle: string;
+  questionNumber: number;
+  adaptiveContext: string;
+  previousQuestionsContext: string;
+}): Promise<{
+  question: string;
+  correctAnswer: string;
+  questionType: string;
+  options: string[];
+  correctOption: string;
+  explanation: string;
+}> {
+  const { language, classLevel, difficulty, chapterTitle, adaptiveContext, previousQuestionsContext } = params;
+
+  const prompt = `You are a strict CBSE ${language} teacher for Class ${classLevel} following the official CBSE curriculum.
+
+Generate a multiple choice question (MCQ) about "${chapterTitle}" at ${difficulty} difficulty level.${adaptiveContext}${previousQuestionsContext}
+
+CBSE MCQ Guidelines:
+- Follow NCERT textbook patterns for Class ${classLevel}
+- Use authentic, curriculum-appropriate vocabulary
+- Focus on grammar, vocabulary, comprehension, or cultural aspects
+- Create 4 distinct options (A, B, C, D) with only ONE correct answer
+- Make distractors (wrong answers) plausible but clearly incorrect
+- Options should be of similar length and complexity
+
+IMPORTANT - MCQ Format Rules:
+1. Write ALL instructions in ENGLISH (not in ${language})
+2. Question should test a specific concept clearly
+3. All 4 options must be distinct and well-formatted
+4. Provide a clear explanation of why the correct answer is right
+
+Example GOOD MCQ:
+Question: "Which article is correct in French: ___ maison (the house)?"
+Options: ["A. un", "B. une", "C. la", "D. le"]
+Correct: "C"
+Explanation: "'La' is the correct feminine definite article for 'maison', which is a feminine noun in French."
+
+Return your response in this exact JSON format:
+{
+  "question": "<the MCQ question with CLEAR ENGLISH instructions>",
+  "options": ["A. <option 1>", "B. <option 2>", "C. <option 3>", "D. <option 4>"],
+  "correctOption": "<A, B, C, or D>",
+  "correctAnswer": "<the full text of the correct answer>",
+  "explanation": "<brief explanation why this answer is correct>",
+  "questionType": "mcq"
+}
+
+Make the question challenging but fair for Class ${classLevel} CBSE level with clear, distinct options.`;
+
+  const startTime = Date.now();
+  
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      max_completion_tokens: 800,
+    });
+    
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    const content = response.choices[0]?.message?.content?.trim();
+    
+    if (!content) {
+      throw new Error("AI returned empty response");
+    }
+    
+    const result = JSON.parse(content);
+    console.log(`[AI] MCQ generated in ${elapsed}s: ${result.question.substring(0, 50)}...`);
+    
+    // Validate MCQ response
+    if (!Array.isArray(result.options) || result.options.length !== 4) {
+      console.error("[AI ERROR] MCQ must have exactly 4 options, got:", result.options?.length);
+      throw new Error("Invalid MCQ format: must have 4 options");
+    }
+    
+    if (!["A", "B", "C", "D"].includes(result.correctOption)) {
+      console.error("[AI ERROR] Invalid correctOption:", result.correctOption);
+      throw new Error("Invalid MCQ format: correctOption must be A, B, C, or D");
+    }
+    
+    if (!result.explanation || result.explanation.trim().length === 0) {
+      console.error("[AI ERROR] MCQ missing explanation");
+      result.explanation = "No explanation provided";
+    }
+    
+    return {
+      question: result.question || "Error generating question",
+      options: result.options,
+      correctOption: result.correctOption,
+      correctAnswer: result.correctAnswer || result.options[0] || "N/A",
+      explanation: result.explanation,
+      questionType: "mcq",
+    };
+  } catch (error: any) {
+    console.error(`[AI ERROR] Failed to generate MCQ:`, error.message || error);
+    throw new Error(`Failed to generate MCQ: ${error.message || "Unknown error"}`);
   }
 }
 

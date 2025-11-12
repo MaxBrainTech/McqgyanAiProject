@@ -156,6 +156,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const previousQuestions = history.map((h: any) => h.question);
       console.log(`[AI] Already asked ${previousQuestions.length} question(s) in this test`);
 
+      // Mix MCQ and open-ended questions (50/50 mix, alternating)
+      const isMcq = (session.currentQuestion % 2) === 0;
+
       const questionData = await generateQuestion({
         language: session.language,
         classLevel: session.classLevel,
@@ -165,6 +168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         questionNumber: session.currentQuestion + 1,
         previousPerformance,
         previousQuestions,
+        isMcq,
       });
 
       // Store correct answer in session for later evaluation
@@ -173,6 +177,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         question: questionData.question,
         correctAnswer: questionData.correctAnswer,
         questionType: questionData.questionType,
+        options: questionData.options,
+        correctOption: questionData.correctOption,
+        explanation: questionData.explanation,
       });
       
       await storage.updateTestSession(sessionId, {
@@ -182,6 +189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         question: questionData.question,
         questionType: questionData.questionType,
+        options: questionData.options,
         questionNumber: session.currentQuestion + 1,
         totalQuestions: session.testLength,
       });
@@ -211,14 +219,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "No question found for evaluation" });
       }
 
-      const evaluation = await evaluateAnswer({
-        question: currentQuestionData.question,
-        correctAnswer: currentQuestionData.correctAnswer,
-        studentAnswer: answer,
-        language: session.language,
-        classLevel: session.classLevel,
-        difficulty: session.difficulty,
-      });
+      let evaluation;
+      
+      // For MCQ, evaluate instantly by comparing options
+      if (currentQuestionData.questionType === "mcq") {
+        const isCorrect = answer === currentQuestionData.correctOption;
+        const score = isCorrect ? 10 : 0;
+        
+        evaluation = {
+          score,
+          feedback: isCorrect 
+            ? `Correct! ${currentQuestionData.explanation}`
+            : `Incorrect. The correct answer is ${currentQuestionData.correctOption}: ${currentQuestionData.correctAnswer}. ${currentQuestionData.explanation}`,
+          isCorrect,
+          encouragement: isCorrect 
+            ? "Excellent work! You got it right!"
+            : "Keep practicing! You'll get the next one!",
+        };
+        
+        console.log(`[MCQ] Answer: ${answer}, Correct: ${currentQuestionData.correctOption}, Score: ${score}/10`);
+      } else {
+        // For open-ended questions, use AI evaluation
+        evaluation = await evaluateAnswer({
+          question: currentQuestionData.question,
+          correctAnswer: currentQuestionData.correctAnswer,
+          studentAnswer: answer,
+          language: session.language,
+          classLevel: session.classLevel,
+          difficulty: session.difficulty,
+        });
+      }
 
       // Update the last question entry with student's answer and score
       currentQuestionData.studentAnswer = answer;
