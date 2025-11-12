@@ -43,34 +43,70 @@ export default function FeedbackSection({
 
   // Text-to-Speech functionality for pronunciation
   const speakAnswer = () => {
-    if ('speechSynthesis' in window) {
+    console.log('🔊 Attempting to speak:', correctAnswer);
+    console.log('🌍 Language:', language);
+    
+    if (!('speechSynthesis' in window)) {
+      console.error('❌ Speech synthesis not supported');
+      alert('Sorry, your browser does not support text-to-speech. Please try Chrome, Safari, or Edge.');
+      return;
+    }
+
+    try {
       // Cancel any ongoing speech
       window.speechSynthesis.cancel();
       
-      setIsPlaying(true);
-      const utterance = new SpeechSynthesisUtterance(correctAnswer);
-      
-      // Set correct language for proper pronunciation
-      utterance.lang = getLanguageCode(language);
-      utterance.rate = 0.85; // Slightly slower for better learning
-      utterance.pitch = 1.0;
-      utterance.volume = 1.0;
-      
-      utterance.onend = () => {
-        setIsPlaying(false);
-      };
-      
-      utterance.onerror = () => {
-        setIsPlaying(false);
-      };
-      
-      window.speechSynthesis.speak(utterance);
-    } else {
-      alert('Sorry, your browser does not support text-to-speech.');
+      // Small delay to ensure cancel completes
+      setTimeout(() => {
+        setIsPlaying(true);
+        const utterance = new SpeechSynthesisUtterance(correctAnswer);
+        
+        // Set correct language for proper pronunciation
+        const langCode = getLanguageCode(language);
+        console.log('🗣️ Using language code:', langCode);
+        
+        utterance.lang = langCode;
+        utterance.rate = 0.85; // Slightly slower for better learning
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+        
+        utterance.onstart = () => {
+          console.log('▶️ Speech started');
+          setIsPlaying(true);
+        };
+        
+        utterance.onend = () => {
+          console.log('⏹️ Speech ended');
+          setIsPlaying(false);
+        };
+        
+        utterance.onerror = (event) => {
+          console.error('❌ Speech error:', event);
+          setIsPlaying(false);
+          alert('Audio playback failed. Please try again.');
+        };
+        
+        console.log('🎤 Starting speech...');
+        window.speechSynthesis.speak(utterance);
+        
+        // Fallback: Check if speech started after 1 second
+        setTimeout(() => {
+          if (window.speechSynthesis.speaking) {
+            console.log('✅ Speech is playing');
+          } else {
+            console.warn('⚠️ Speech may not have started');
+          }
+        }, 1000);
+      }, 100);
+    } catch (error) {
+      console.error('❌ Exception in speakAnswer:', error);
+      setIsPlaying(false);
+      alert('Failed to play audio. Error: ' + error);
     }
   };
 
   const stopSpeech = () => {
+    console.log('⏸️ Stopping speech');
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       setIsPlaying(false);
