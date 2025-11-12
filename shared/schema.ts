@@ -24,6 +24,7 @@ export const testSessions = pgTable("test_sessions", {
   classLevel: integer("class_level").notNull(),
   difficulty: text("difficulty").notNull(),
   chapter: integer("chapter").notNull(),
+  testLength: integer("test_length").notNull().default(10),
   currentQuestion: integer("current_question").notNull().default(0),
   totalScore: integer("total_score").notNull().default(0),
   correctAnswers: integer("correct_answers").notNull().default(0),

@@ -8,7 +8,8 @@ interface FeedbackSectionProps {
   score: number;
   maxScore: number;
   feedback: string;
-  correction?: string;
+  correctAnswer: string;
+  isCorrect: boolean;
   encouragement: string;
   onNext: () => void;
   onEndTest: () => void;
@@ -18,14 +19,13 @@ export default function FeedbackSection({
   score,
   maxScore,
   feedback,
-  correction,
+  correctAnswer,
+  isCorrect,
   encouragement,
   onNext,
   onEndTest,
 }: FeedbackSectionProps) {
   const percentage = (score / maxScore) * 100;
-  const isGood = percentage >= 70;
-  const isOkay = percentage >= 40 && percentage < 70;
 
   return (
     <motion.div
@@ -35,48 +35,46 @@ export default function FeedbackSection({
     >
       <Card
         className={`p-6 ${
-          isGood
+          isCorrect
             ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
-            : isOkay
+            : score === 5
             ? "bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800"
-            : "bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800"
+            : "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800"
         }`}
       >
         <div className="space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
-              {isGood ? (
+              {isCorrect ? (
                 <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
               ) : (
-                <XCircle className="w-8 h-8 text-orange-600 dark:text-orange-400" />
+                <XCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
               )}
               <div>
-                <h3 className="text-xl font-bold">Score</h3>
+                <h3 className="text-xl font-bold">{isCorrect ? "Correct!" : score === 5 ? "Partial Credit" : "Incorrect"}</h3>
                 <p className="text-3xl font-bold text-primary">
                   {score}/{maxScore}
                 </p>
               </div>
             </div>
-            <Badge variant="secondary" className="text-lg px-4 py-2">
+            <Badge variant={isCorrect ? "default" : "destructive"} className="text-lg px-4 py-2">
               {percentage.toFixed(0)}%
             </Badge>
           </div>
 
           <div className="bg-card p-4 rounded-lg">
-            <p className="text-base leading-relaxed">{feedback}</p>
+            <p className="text-base leading-relaxed font-medium">{feedback}</p>
           </div>
 
-          {correction && (
-            <div className="bg-card p-4 rounded-lg border-l-4 border-primary">
-              <div className="flex items-start gap-2">
-                <Lightbulb className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="font-semibold text-sm mb-1">Suggestion</p>
-                  <p className="text-sm">{correction}</p>
-                </div>
+          <div className="bg-primary/10 p-4 rounded-lg border-l-4 border-primary">
+            <div className="flex items-start gap-2">
+              <Lightbulb className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-semibold text-sm mb-1">Correct Answer</p>
+                <p className="text-base font-medium">{correctAnswer}</p>
               </div>
             </div>
-          )}
+          </div>
 
           <div className="bg-card p-4 rounded-lg">
             <div className="flex items-start gap-2">

@@ -14,6 +14,7 @@ interface TestPageProps {
     class: number;
     difficulty: string;
     chapter: number;
+    testLength: number;
   };
   onExit: () => void;
 }
@@ -27,9 +28,8 @@ export default function TestPage({ config, onExit }: TestPageProps) {
   const [totalScore, setTotalScore] = useState(0);
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [showSummary, setShowSummary] = useState(false);
+  const [totalQuestions, setTotalQuestions] = useState(10);
   const { toast } = useToast();
-
-  const totalQuestions = 10;
 
   // Start test session
   useEffect(() => {
@@ -58,6 +58,7 @@ export default function TestPage({ config, onExit }: TestPageProps) {
     onSuccess: (data) => {
       setCurrentQuestion(data.question);
       setQuestionNumber(data.questionNumber);
+      setTotalQuestions(data.totalQuestions);
     },
     onError: () => {
       toast({
@@ -79,7 +80,6 @@ export default function TestPage({ config, onExit }: TestPageProps) {
   const evaluateAnswerMutation = useMutation({
     mutationFn: async (answer: string) => {
       const response = await apiRequest("POST", `/api/test/${sessionId}/evaluate`, {
-        question: currentQuestion,
         answer,
       });
       return await response.json();
@@ -203,7 +203,8 @@ export default function TestPage({ config, onExit }: TestPageProps) {
                 score={feedbackData.score}
                 maxScore={10}
                 feedback={feedbackData.feedback}
-                correction={feedbackData.correction}
+                correctAnswer={feedbackData.correctAnswer}
+                isCorrect={feedbackData.isCorrect}
                 encouragement={feedbackData.encouragement}
                 onNext={handleNext}
                 onEndTest={handleEndTest}

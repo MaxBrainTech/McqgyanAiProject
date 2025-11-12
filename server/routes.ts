@@ -39,13 +39,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Start a new test session
   app.post("/api/test/start", async (req, res) => {
     try {
-      const { language, class: classLevel, difficulty, chapter } = req.body;
+      const { language, class: classLevel, difficulty, chapter, testLength } = req.body;
       
       const session = await storage.createTestSession({
         language,
         classLevel,
         difficulty,
         chapter,
+        testLength: testLength || 10,
         currentQuestion: 0,
         totalScore: 0,
         correctAnswers: 0,
@@ -77,11 +78,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Determine adaptive context based on previous performance
-      const conversationHistory = JSON.parse(session.conversationHistory || "[]");
+      const history = JSON.parse(session.conversationHistory || "[]");
       let previousPerformance = "";
       
-      if (conversationHistory.length > 0) {
-        const recentScores = conversationHistory.slice(-3).map((h: any) => h.score);
+      if (history.length > 0) {
+        const recentScores = history.slice(-3).map((h: any) => h.score);
         const avgScore = recentScores.reduce((a: number, b: number) => a + b, 0) / recentScores.length;
         
         if (avgScore >= 8) {
@@ -91,7 +92,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const question = await generateQuestion({
+      const questionData = await generateQuestion({
         language: session.language,
         classLevel: session.classLevel,
         difficulty: session.difficulty,
@@ -101,10 +102,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         previousPerformance,
       });
 
-      res.json({ 
-        question,
+      // Store correct answer in session for later evaluation
+      history.push({
         questionNumber: session.currentQuestion + 1,
-        totalQuestions: 10,
+        question: questionData.question,
+        correctAnswer: questionData.correctAnswer,
+        questionType: questionData.questionType,
+      });
+      
+      await storage.updateTestSession(sessionId, {
+        conversationHistory: JSON.stringify(history),
+      });
+
+      res.json({ 
+        question: questionData.question,
+        questionType: questionData.questionType,
+        questionNumber: session.currentQuestion + 1,
+        totalQuestions: session.testLength,
       });
     } catch (error) {
       console.error("Error generating question:", error);
@@ -116,7 +130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/test/:sessionId/evaluate", async (req, res) => {
     try {
       const { sessionId } = req.params;
-      const { question, answer } = req.body;
+      const { answer } = req.body;
       
       const session = await storage.getTestSession(sessionId);
       
@@ -124,24 +138,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Session not found" });
       }
 
+      // Get the current question data from history
+      const conversationHistory = JSON.parse(session.conversationHistory || "[]");
+      const currentQuestionData = conversationHistory[conversationHistory.length - 1];
+      
+      if (!currentQuestionData) {
+        return res.status(400).json({ error: "No question found for evaluation" });
+      }
+
       const evaluation = await evaluateAnswer({
-        question,
+        question: currentQuestionData.question,
+        correctAnswer: currentQuestionData.correctAnswer,
         studentAnswer: answer,
         language: session.language,
         classLevel: session.classLevel,
         difficulty: session.difficulty,
       });
 
-      // Update session
-      const conversationHistory = JSON.parse(session.conversationHistory || "[]");
-      conversationHistory.push({
-        question,
-        answer,
-        score: evaluation.score,
-      });
+      // Update the last question entry with student's answer and score
+      currentQuestionData.studentAnswer = answer;
+      currentQuestionData.score = evaluation.score;
+      currentQuestionData.isCorrect = evaluation.isCorrect;
 
       const newTotalScore = session.totalScore + evaluation.score;
-      const newCorrectAnswers = session.correctAnswers + (evaluation.score >= 7 ? 1 : 0);
+      const newCorrectAnswers = session.correctAnswers + (evaluation.isCorrect ? 1 : 0);
       const newCurrentQuestion = session.currentQuestion + 1;
 
       await storage.updateTestSession(sessionId, {
@@ -153,6 +173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({
         ...evaluation,
+        correctAnswer: currentQuestionData.correctAnswer,
         currentQuestion: newCurrentQuestion,
         totalScore: newTotalScore,
         correctAnswers: newCorrectAnswers,

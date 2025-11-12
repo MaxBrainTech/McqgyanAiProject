@@ -24,7 +24,11 @@ interface AnswerEvaluationParams {
   difficulty: string;
 }
 
-export async function generateQuestion(params: QuestionGenerationParams): Promise<string> {
+export async function generateQuestion(params: QuestionGenerationParams): Promise<{
+  question: string;
+  correctAnswer: string;
+  questionType: string;
+}> {
   const { language, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance } = params;
   
   console.log(`[AI] Generating question #${questionNumber} for ${language} - ${difficulty} difficulty`);
@@ -33,79 +37,97 @@ export async function generateQuestion(params: QuestionGenerationParams): Promis
     ? `\nThe student's previous performance: ${previousPerformance}. Adjust the difficulty accordingly.`
     : '';
 
-  const prompt = `You are a friendly language teacher for CBSE Class ${classLevel} students learning ${language}.
+  const prompt = `You are a strict CBSE ${language} teacher for Class ${classLevel} following the official CBSE curriculum.
 
 Generate question #${questionNumber} about "${chapterTitle}" at ${difficulty} difficulty level.${adaptiveContext}
 
-Requirements:
-- Ask the question in ${language} or ask for translation to ${language}
-- Make it appropriate for Class ${classLevel} level
-- Keep it concise and clear
-- Make it engaging for school students
-- Focus on practical usage
+CBSE Curriculum Guidelines:
+- Follow NCERT textbook patterns for Class ${classLevel}
+- Use authentic, curriculum-appropriate vocabulary
+- Focus on grammar, vocabulary, sentence formation, or cultural aspects as per CBSE syllabus
+- Question types: translation, fill in the blank, sentence formation, or grammar-based
 
-Return ONLY the question text, nothing else.`;
+Return your response in this exact JSON format:
+{
+  "question": "<the question in clear language>",
+  "correctAnswer": "<the complete correct answer>",
+  "questionType": "translation|grammar|vocabulary|sentence"
+}
+
+Make the question challenging but fair for Class ${classLevel} CBSE level.`;
 
   const startTime = Date.now();
   
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o", // Using gpt-4o which is well-tested with AI Integrations
+      model: "gpt-4o",
       messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
       max_completion_tokens: 500,
     });
     
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-    const question = response.choices[0]?.message?.content?.trim();
+    const content = response.choices[0]?.message?.content?.trim();
     
-    if (!question) {
+    if (!content) {
       throw new Error("AI returned empty response");
     }
     
-    console.log(`[AI] Question generated in ${elapsed}s: ${question.substring(0, 50)}...`);
-    return question;
+    const result = JSON.parse(content);
+    console.log(`[AI] Question generated in ${elapsed}s: ${result.question.substring(0, 50)}...`);
+    
+    return {
+      question: result.question || "Error generating question",
+      correctAnswer: result.correctAnswer || "N/A",
+      questionType: result.questionType || "general",
+    };
   } catch (error: any) {
     console.error(`[AI ERROR] Failed to generate question:`, error.message || error);
-    console.error(`[AI ERROR] Full error:`, error);
     throw new Error(`Failed to generate question: ${error.message || "Unknown error"}`);
   }
 }
 
-export async function evaluateAnswer(params: AnswerEvaluationParams): Promise<{
+export async function evaluateAnswer(params: AnswerEvaluationParams & { correctAnswer: string }): Promise<{
   score: number;
   feedback: string;
-  correction?: string;
+  isCorrect: boolean;
   encouragement: string;
 }> {
-  const { question, studentAnswer, language, classLevel, difficulty } = params;
+  const { question, studentAnswer, correctAnswer, language, classLevel, difficulty } = params;
 
   console.log(`[AI] Evaluating answer: "${studentAnswer.substring(0, 30)}..."`);
 
-  const prompt = `You are a warm, encouraging ${language} teacher for CBSE Class ${classLevel} students.
+  const prompt = `You are a strict but fair CBSE ${language} teacher for Class ${classLevel}.
 
-Question asked: ${question}
-Student's answer: ${studentAnswer}
-Difficulty level: ${difficulty}
+Question: ${question}
+Correct Answer: ${correctAnswer}
+Student's Answer: ${studentAnswer}
+Difficulty: ${difficulty}
 
-Evaluate the answer and provide:
-1. A score from 0-10 (be fair but encouraging)
-2. Clear, simple feedback in English
-3. A correction or suggestion if needed (keep it simple)
-4. An encouraging message (be warm and supportive, like "Great job!", "You're improving!", etc.)
+Evaluate strictly based on CBSE marking scheme:
+- Award 0 marks if completely wrong
+- Award 5 marks if partially correct (minor mistakes)
+- Award 10 marks only if fully correct
 
-Return your response in this exact JSON format:
+Provide:
+1. Score (0, 5, or 10 only - be strict!)
+2. Clear feedback explaining what was right/wrong
+3. Whether the answer is correct (true/false)
+4. Encouraging message
+
+Return in this exact JSON format:
 {
-  "score": <number 0-10>,
-  "feedback": "<your feedback>",
-  "correction": "<optional suggestion>",
-  "encouragement": "<encouraging message>"
+  "score": <0, 5, or 10>,
+  "feedback": "<detailed feedback>",
+  "isCorrect": <true or false>,
+  "encouragement": "<supportive message>"
 }`;
 
   const startTime = Date.now();
   
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o", // Using gpt-4o which is well-tested with AI Integrations
+      model: "gpt-4o",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       max_completion_tokens: 1000,
@@ -114,23 +136,15 @@ Return your response in this exact JSON format:
     const content = response.choices[0]?.message?.content || "{}";
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     
-    try {
-      const result = JSON.parse(content);
-      console.log(`[AI] Answer evaluated in ${elapsed}s - Score: ${result.score}/10`);
-      return {
-        score: result.score || 5,
-        feedback: result.feedback || "Good effort!",
-        correction: result.correction,
-        encouragement: result.encouragement || "Keep practicing!",
-      };
-    } catch (parseError) {
-      console.error("[AI] Failed to parse evaluation response:", parseError);
-      return {
-        score: 5,
-        feedback: "Good effort! Keep practicing.",
-        encouragement: "You're doing great!",
-      };
-    }
+    const result = JSON.parse(content);
+    console.log(`[AI] Answer evaluated in ${elapsed}s - Score: ${result.score}/10 - Correct: ${result.isCorrect}`);
+    
+    return {
+      score: result.score || 0,
+      feedback: result.feedback || "Please try again.",
+      isCorrect: result.isCorrect || false,
+      encouragement: result.encouragement || "Keep practicing!",
+    };
   } catch (error: any) {
     console.error(`[AI ERROR] Failed to evaluate answer:`, error.message || error);
     throw new Error(`Failed to evaluate answer: ${error.message || "Unknown error"}`);

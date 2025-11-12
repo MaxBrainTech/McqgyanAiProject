@@ -12,14 +12,16 @@ interface HomeProps {
     class: number;
     difficulty: string;
     chapter: number;
+    testLength: number;
   }) => void;
 }
 
 export default function Home({ onStartTest }: HomeProps) {
-  const [step, setStep] = useState<"language" | "class" | "difficulty" | "chapter">("language");
+  const [step, setStep] = useState<"language" | "class" | "difficulty" | "testLength" | "chapter">("language");
   const [selectedLanguage, setSelectedLanguage] = useState<string>("");
   const [selectedClass, setSelectedClass] = useState<number>(0);
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("");
+  const [selectedTestLength, setSelectedTestLength] = useState<number>(0);
   const [chapters, setChapters] = useState<Array<{ id: number; title: string; description: string }>>([]);
 
   // Load chapters when language is selected
@@ -54,6 +56,11 @@ export default function Home({ onStartTest }: HomeProps) {
 
   const handleDifficultySelect = (difficulty: string | number) => {
     setSelectedDifficulty(difficulty as string);
+    setStep("testLength");
+  };
+
+  const handleTestLengthSelect = (length: string | number) => {
+    setSelectedTestLength(length as number);
     setStep("chapter");
   };
 
@@ -62,6 +69,7 @@ export default function Home({ onStartTest }: HomeProps) {
       language: selectedLanguage,
       class: selectedClass,
       difficulty: selectedDifficulty,
+      testLength: selectedTestLength,
       chapter: chapterId,
     });
   };
@@ -173,7 +181,7 @@ export default function Home({ onStartTest }: HomeProps) {
           </div>
         )}
 
-        {step === "chapter" && (
+        {step === "testLength" && (
           <div className="space-y-6 max-w-3xl mx-auto">
             <div className="flex items-center gap-4 mb-6">
               <Button variant="outline" onClick={() => setStep("difficulty")} data-testid="button-back">
@@ -183,7 +191,35 @@ export default function Home({ onStartTest }: HomeProps) {
                 <h2 className="text-2xl font-bold capitalize">
                   {selectedLanguage} - Class {selectedClass} - {selectedDifficulty}
                 </h2>
-                <p className="text-muted-foreground">Step 3 of 3</p>
+                <p className="text-muted-foreground">Step 3 of 4</p>
+              </div>
+            </div>
+
+            <SelectionGrid
+              title="Select Test Length"
+              items={[
+                { label: "Quick (10 Questions)", value: 10 },
+                { label: "Standard (20 Questions)", value: 20 },
+                { label: "Extended (30 Questions)", value: 30 },
+                { label: "Full Test (50 Questions)", value: 50 },
+              ]}
+              selected={selectedTestLength}
+              onSelect={handleTestLengthSelect}
+            />
+          </div>
+        )}
+
+        {step === "chapter" && (
+          <div className="space-y-6 max-w-3xl mx-auto">
+            <div className="flex items-center gap-4 mb-6">
+              <Button variant="outline" onClick={() => setStep("testLength")} data-testid="button-back">
+                ← Back
+              </Button>
+              <div>
+                <h2 className="text-2xl font-bold capitalize">
+                  {selectedLanguage} - Class {selectedClass} - {selectedDifficulty} - {selectedTestLength} Questions
+                </h2>
+                <p className="text-muted-foreground">Step 4 of 4</p>
               </div>
             </div>
 

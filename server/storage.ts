@@ -46,6 +46,7 @@ export class MemStorage implements IStorage {
       classLevel: insertSession.classLevel,
       difficulty: insertSession.difficulty,
       chapter: insertSession.chapter,
+      testLength: insertSession.testLength ?? 10,
       currentQuestion: insertSession.currentQuestion ?? 0,
       totalScore: insertSession.totalScore ?? 0,
       correctAnswers: insertSession.correctAnswers ?? 0,
