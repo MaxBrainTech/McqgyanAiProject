@@ -152,6 +152,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Get all previously asked questions to avoid duplicates
+      const previousQuestions = history.map((h: any) => h.question);
+      console.log(`[AI] Already asked ${previousQuestions.length} question(s) in this test`);
+
       const questionData = await generateQuestion({
         language: session.language,
         classLevel: session.classLevel,
@@ -160,6 +164,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         chapterTitle: chapter.title,
         questionNumber: session.currentQuestion + 1,
         previousPerformance,
+        previousQuestions,
       });
 
       // Store correct answer in session for later evaluation

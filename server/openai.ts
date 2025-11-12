@@ -14,6 +14,7 @@ interface QuestionGenerationParams {
   chapterTitle: string;
   questionNumber: number;
   previousPerformance?: string;
+  previousQuestions?: string[];
 }
 
 interface AnswerEvaluationParams {
@@ -29,7 +30,7 @@ export async function generateQuestion(params: QuestionGenerationParams): Promis
   correctAnswer: string;
   questionType: string;
 }> {
-  const { language, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance } = params;
+  const { language, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance, previousQuestions } = params;
   
   console.log(`[AI] Generating question #${questionNumber} for ${language} - ${difficulty} difficulty`);
   
@@ -37,9 +38,13 @@ export async function generateQuestion(params: QuestionGenerationParams): Promis
     ? `\nThe student's previous performance: ${previousPerformance}. Adjust the difficulty accordingly.`
     : '';
 
+  const previousQuestionsContext = previousQuestions && previousQuestions.length > 0
+    ? `\n\n⚠️ CRITICAL: DO NOT REPEAT THESE QUESTIONS - Generate a completely NEW and DIFFERENT question:\n${previousQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}\n`
+    : '';
+
   const prompt = `You are a strict CBSE ${language} teacher for Class ${classLevel} following the official CBSE curriculum.
 
-Generate question #${questionNumber} about "${chapterTitle}" at ${difficulty} difficulty level.${adaptiveContext}
+Generate question #${questionNumber} about "${chapterTitle}" at ${difficulty} difficulty level.${adaptiveContext}${previousQuestionsContext}
 
 CBSE Curriculum Guidelines:
 - Follow NCERT textbook patterns for Class ${classLevel}
