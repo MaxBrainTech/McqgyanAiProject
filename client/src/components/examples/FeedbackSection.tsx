@@ -10,6 +10,7 @@ export default function FeedbackSectionExample() {
         correctAnswer="Bonjour"
         isCorrect={true}
         encouragement="You're making excellent progress! Keep practicing and you'll master French in no time!"
+        language="french"
         onNext={() => console.log('Next clicked')}
         onEndTest={() => console.log('End test clicked')}
       />

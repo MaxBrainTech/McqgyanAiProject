@@ -1,8 +1,9 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, XCircle, Lightbulb, Sparkles } from "lucide-react";
+import { CheckCircle, XCircle, Lightbulb, Sparkles, Volume2, VolumeX } from "lucide-react";
 import { motion } from "framer-motion";
+import { useState } from "react";
 
 interface FeedbackSectionProps {
   score: number;
@@ -11,6 +12,7 @@ interface FeedbackSectionProps {
   correctAnswer: string;
   isCorrect: boolean;
   encouragement: string;
+  language?: string;
   onNext: () => void;
   onEndTest: () => void;
 }
@@ -22,10 +24,58 @@ export default function FeedbackSection({
   correctAnswer,
   isCorrect,
   encouragement,
+  language = 'french',
   onNext,
   onEndTest,
 }: FeedbackSectionProps) {
   const percentage = (score / maxScore) * 100;
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  // Map language to proper language code for text-to-speech
+  const getLanguageCode = (lang: string) => {
+    const languageMap: Record<string, string> = {
+      'french': 'fr-FR',
+      'german': 'de-DE',
+      'spanish': 'es-ES',
+    };
+    return languageMap[lang.toLowerCase()] || 'en-US';
+  };
+
+  // Text-to-Speech functionality for pronunciation
+  const speakAnswer = () => {
+    if ('speechSynthesis' in window) {
+      // Cancel any ongoing speech
+      window.speechSynthesis.cancel();
+      
+      setIsPlaying(true);
+      const utterance = new SpeechSynthesisUtterance(correctAnswer);
+      
+      // Set correct language for proper pronunciation
+      utterance.lang = getLanguageCode(language);
+      utterance.rate = 0.85; // Slightly slower for better learning
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+      
+      utterance.onend = () => {
+        setIsPlaying(false);
+      };
+      
+      utterance.onerror = () => {
+        setIsPlaying(false);
+      };
+      
+      window.speechSynthesis.speak(utterance);
+    } else {
+      alert('Sorry, your browser does not support text-to-speech.');
+    }
+  };
+
+  const stopSpeech = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      setIsPlaying(false);
+    }
+  };
 
   return (
     <motion.div
@@ -69,9 +119,33 @@ export default function FeedbackSection({
           <div className="bg-primary/10 p-4 rounded-lg border-l-4 border-primary">
             <div className="flex items-start gap-2">
               <Lightbulb className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-semibold text-sm mb-1">Correct Answer</p>
+              <div className="flex-1">
+                <div className="flex items-center justify-between gap-3 mb-1">
+                  <p className="font-semibold text-sm">Correct Answer</p>
+                  <Button
+                    size="sm"
+                    variant={isPlaying ? "secondary" : "outline"}
+                    onClick={isPlaying ? stopSpeech : speakAnswer}
+                    className="gap-2"
+                    data-testid="button-pronunciation"
+                  >
+                    {isPlaying ? (
+                      <>
+                        <VolumeX className="w-4 h-4" />
+                        Stop
+                      </>
+                    ) : (
+                      <>
+                        <Volume2 className="w-4 h-4" />
+                        Listen
+                      </>
+                    )}
+                  </Button>
+                </div>
                 <p className="text-base font-medium">{correctAnswer}</p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  🎧 Click "Listen" to hear the correct pronunciation
+                </p>
               </div>
             </div>
           </div>

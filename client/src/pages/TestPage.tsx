@@ -206,6 +206,7 @@ export default function TestPage({ config, onExit }: TestPageProps) {
                 correctAnswer={feedbackData.correctAnswer}
                 isCorrect={feedbackData.isCorrect}
                 encouragement={feedbackData.encouragement}
+                language={config.language}
                 onNext={handleNext}
                 onEndTest={handleEndTest}
               />
