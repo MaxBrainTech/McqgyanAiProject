@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
-import { Languages, BookOpen, Sparkles } from "lucide-react";
+import { Languages, BookOpen, Sparkles, Trophy, RotateCcw, GraduationCap } from "lucide-react";
 import LanguageCard from "@/components/LanguageCard";
 import SelectionGrid from "@/components/SelectionGrid";
 import ChapterList from "@/components/ChapterList";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import LeaderboardCard from "@/components/LeaderboardCard";
+import { useToast } from "@/hooks/use-toast";
 
 interface HomeProps {
   onStartTest: (config: {
@@ -37,6 +39,7 @@ export default function Home({ onStartTest }: HomeProps) {
 
   // Load leaderboard from local storage
   const [leaderboard, setLeaderboard] = useState<Array<any>>([]);
+  const { toast } = useToast();
   
   useEffect(() => {
     const savedScores = localStorage.getItem("langbuddy_scores");
@@ -44,6 +47,15 @@ export default function Home({ onStartTest }: HomeProps) {
       setLeaderboard(JSON.parse(savedScores));
     }
   }, []);
+
+  const handleResetScores = () => {
+    localStorage.removeItem("langbuddy_scores");
+    setLeaderboard([]);
+    toast({
+      title: "Scores Reset",
+      description: "All your test scores have been cleared successfully!",
+    });
+  };
 
   const handleLanguageSelect = (language: string) => {
     setSelectedLanguage(language);
@@ -83,45 +95,104 @@ export default function Home({ onStartTest }: HomeProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+      {/* Hero Header */}
+      <div className="bg-primary/5 border-b">
+        <div className="container mx-auto px-4 py-12 max-w-6xl">
+          <div className="text-center space-y-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full">
+              <GraduationCap className="w-5 h-5 text-primary" />
+              <span className="text-sm font-medium text-primary">CBSE Language Learning Platform</span>
+            </div>
+            <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              LangBuddy AI
+            </h1>
+            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
+              Master French, German, and Spanish with AI-powered adaptive testing. 
+              <span className="block mt-2 font-medium text-foreground">25 chapters per language • 4 test formats • Real-time feedback</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {step === "language" && (
           <div className="space-y-8">
-            <div className="text-center space-y-4">
-              <div className="inline-flex p-3 bg-primary/10 rounded-2xl">
-                <Sparkles className="w-12 h-12 text-primary" />
+            {/* Features Banner */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="p-4 text-center">
+                <div className="inline-flex p-2 bg-blue-500/10 rounded-lg mb-2">
+                  <BookOpen className="w-6 h-6 text-blue-500" />
+                </div>
+                <h3 className="font-semibold">CBSE Aligned</h3>
+                <p className="text-sm text-muted-foreground">Official curriculum coverage</p>
+              </Card>
+              <Card className="p-4 text-center">
+                <div className="inline-flex p-2 bg-green-500/10 rounded-lg mb-2">
+                  <Sparkles className="w-6 h-6 text-green-500" />
+                </div>
+                <h3 className="font-semibold">AI Powered</h3>
+                <p className="text-sm text-muted-foreground">Adaptive question generation</p>
+              </Card>
+              <Card className="p-4 text-center">
+                <div className="inline-flex p-2 bg-purple-500/10 rounded-lg mb-2">
+                  <Trophy className="w-6 h-6 text-purple-500" />
+                </div>
+                <h3 className="font-semibold">Track Progress</h3>
+                <p className="text-sm text-muted-foreground">Monitor your improvement</p>
+              </Card>
+            </div>
+
+            {/* Language Selection */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">Choose Your Language</h2>
+                <Badge variant="secondary" className="text-sm">
+                  3 Languages Available
+                </Badge>
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold">
-                Welcome to <span className="text-primary">LangBuddy</span>!
-              </h1>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Practice French, German, and Spanish with AI-powered questions. Choose a language to begin your learning journey!
-              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <LanguageCard
+                  language="French"
+                  icon={BookOpen}
+                  color="bg-pink-50 dark:bg-pink-950/20 text-pink-600 dark:text-pink-400"
+                  onClick={() => handleLanguageSelect("french")}
+                />
+                <LanguageCard
+                  language="German"
+                  icon={Languages}
+                  color="bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400"
+                  onClick={() => handleLanguageSelect("german")}
+                />
+                <LanguageCard
+                  language="Spanish"
+                  icon={Sparkles}
+                  color="bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400"
+                  onClick={() => handleLanguageSelect("spanish")}
+                />
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <LanguageCard
-                language="French"
-                icon={BookOpen}
-                color="bg-pink-50 dark:bg-pink-950/20 text-pink-600 dark:text-pink-400"
-                onClick={() => handleLanguageSelect("french")}
-              />
-              <LanguageCard
-                language="German"
-                icon={Languages}
-                color="bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400"
-                onClick={() => handleLanguageSelect("german")}
-              />
-              <LanguageCard
-                language="Spanish"
-                icon={Sparkles}
-                color="bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400"
-                onClick={() => handleLanguageSelect("spanish")}
-              />
-            </div>
-
+            {/* Leaderboard Section */}
             {leaderboard.length > 0 && (
               <div className="max-w-2xl mx-auto">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="w-5 h-5 text-primary" />
+                    <h2 className="text-xl font-bold">Your Best Scores</h2>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleResetScores}
+                    data-testid="button-reset-scores"
+                    className="gap-2"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Reset Scores
+                  </Button>
+                </div>
                 <LeaderboardCard entries={leaderboard} />
               </div>
             )}

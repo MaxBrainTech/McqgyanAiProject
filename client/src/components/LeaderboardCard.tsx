@@ -23,10 +23,6 @@ export default function LeaderboardCard({ entries }: LeaderboardCardProps) {
 
   return (
     <Card className="p-6">
-      <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-        <Trophy className="w-6 h-6 text-primary" />
-        Your Best Scores
-      </h2>
       {entries.length === 0 ? (
         <p className="text-muted-foreground text-center py-8">
           No scores yet. Start a test to see your results here!
@@ -36,12 +32,12 @@ export default function LeaderboardCard({ entries }: LeaderboardCardProps) {
           {entries.map((entry, index) => {
             const percentage = ((entry.score / entry.totalQuestions) * 100).toFixed(0);
             return (
-              <Card key={index} className="p-4" data-testid={`row-score-${index}`}>
+              <Card key={index} className="p-4 hover-elevate" data-testid={`row-score-${index}`}>
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 flex-1">
                     <div className="w-8 flex justify-center">{getIcon(index)}</div>
                     <div className="flex-1">
-                      <h3 className="font-semibold">{entry.language}</h3>
+                      <h3 className="font-semibold capitalize">{entry.language}</h3>
                       <p className="text-sm text-muted-foreground">{entry.date}</p>
                     </div>
                   </div>
