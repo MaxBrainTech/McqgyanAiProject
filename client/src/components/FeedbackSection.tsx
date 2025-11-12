@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, Lightbulb, Sparkles, Volume2, VolumeX } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface FeedbackSectionProps {
   score: number;
@@ -30,6 +30,33 @@ export default function FeedbackSection({
 }: FeedbackSectionProps) {
   const percentage = (score / maxScore) * 100;
   const [isPlaying, setIsPlaying] = useState(false);
+  const [voicesLoaded, setVoicesLoaded] = useState(false);
+
+  // Load voices on component mount (needed for some browsers)
+  useEffect(() => {
+    const loadVoices = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        setVoicesLoaded(true);
+        console.log('✅ Voices loaded:', voices.length);
+      }
+    };
+
+    // Load voices immediately
+    loadVoices();
+
+    // Some browsers load voices asynchronously
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+
+    return () => {
+      // Cleanup
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.onvoiceschanged = null;
+      }
+    };
+  }, []);
 
   // Map language to proper language code for text-to-speech
   const getLanguageCode = (lang: string) => {
@@ -43,6 +70,7 @@ export default function FeedbackSection({
 
   // Text-to-Speech functionality for pronunciation
   const speakAnswer = () => {
+    console.log('=== AUDIO BUTTON CLICKED ===');
     console.log('🔊 Attempting to speak:', correctAnswer);
     console.log('🌍 Language:', language);
     
@@ -51,6 +79,11 @@ export default function FeedbackSection({
       alert('Sorry, your browser does not support text-to-speech. Please try Chrome, Safari, or Edge.');
       return;
     }
+
+    // Log available voices
+    const voices = window.speechSynthesis.getVoices();
+    console.log('📢 Available voices:', voices.length);
+    console.log('📢 Voices:', voices.map(v => `${v.name} (${v.lang})`).join(', '));
 
     try {
       // Cancel any ongoing speech
@@ -70,6 +103,16 @@ export default function FeedbackSection({
         utterance.pitch = 1.0;
         utterance.volume = 1.0;
         
+        // Try to find a matching voice for better quality
+        const voices = window.speechSynthesis.getVoices();
+        const matchingVoice = voices.find(voice => voice.lang.startsWith(langCode.split('-')[0]));
+        if (matchingVoice) {
+          utterance.voice = matchingVoice;
+          console.log('🎙️ Using voice:', matchingVoice.name);
+        } else {
+          console.log('⚠️ No matching voice found, using default');
+        }
+        
         utterance.onstart = () => {
           console.log('▶️ Speech started');
           setIsPlaying(true);
@@ -82,8 +125,13 @@ export default function FeedbackSection({
         
         utterance.onerror = (event) => {
           console.error('❌ Speech error:', event);
+          console.error('Error details:', {
+            error: event.error,
+            elapsedTime: event.elapsedTime,
+            charIndex: event.charIndex
+          });
           setIsPlaying(false);
-          alert('Audio playback failed. Please try again.');
+          alert(`Audio playback failed: ${event.error}. Try refreshing the page or using Chrome/Safari.`);
         };
         
         console.log('🎤 Starting speech...');
@@ -94,7 +142,11 @@ export default function FeedbackSection({
           if (window.speechSynthesis.speaking) {
             console.log('✅ Speech is playing');
           } else {
-            console.warn('⚠️ Speech may not have started');
+            console.warn('⚠️ Speech may not have started - trying to trigger again');
+            // Try to resume if paused
+            if (window.speechSynthesis.paused) {
+              window.speechSynthesis.resume();
+            }
           }
         }, 1000);
       }, 100);
