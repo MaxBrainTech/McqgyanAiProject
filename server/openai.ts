@@ -47,17 +47,28 @@ Requirements:
 Return ONLY the question text, nothing else.`;
 
   const startTime = Date.now();
-  const response = await openai.chat.completions.create({
-    model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
-    messages: [{ role: "user", content: prompt }],
-    max_completion_tokens: 500,
-  });
   
-  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-  const question = response.choices[0]?.message?.content?.trim() || "Error generating question";
-  console.log(`[AI] Question generated in ${elapsed}s: ${question.substring(0, 50)}...`);
-
-  return question;
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o", // Using gpt-4o which is well-tested with AI Integrations
+      messages: [{ role: "user", content: prompt }],
+      max_completion_tokens: 500,
+    });
+    
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    const question = response.choices[0]?.message?.content?.trim();
+    
+    if (!question) {
+      throw new Error("AI returned empty response");
+    }
+    
+    console.log(`[AI] Question generated in ${elapsed}s: ${question.substring(0, 50)}...`);
+    return question;
+  } catch (error: any) {
+    console.error(`[AI ERROR] Failed to generate question:`, error.message || error);
+    console.error(`[AI ERROR] Full error:`, error);
+    throw new Error(`Failed to generate question: ${error.message || "Unknown error"}`);
+  }
 }
 
 export async function evaluateAnswer(params: AnswerEvaluationParams): Promise<{
@@ -91,31 +102,37 @@ Return your response in this exact JSON format:
 }`;
 
   const startTime = Date.now();
-  const response = await openai.chat.completions.create({
-    model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
-    messages: [{ role: "user", content: prompt }],
-    response_format: { type: "json_object" },
-    max_completion_tokens: 1000,
-  });
-
-  const content = response.choices[0]?.message?.content || "{}";
-  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
   
   try {
-    const result = JSON.parse(content);
-    console.log(`[AI] Answer evaluated in ${elapsed}s - Score: ${result.score}/10`);
-    return {
-      score: result.score || 5,
-      feedback: result.feedback || "Good effort!",
-      correction: result.correction,
-      encouragement: result.encouragement || "Keep practicing!",
-    };
-  } catch (error) {
-    console.error("[AI] Failed to parse evaluation response:", error);
-    return {
-      score: 5,
-      feedback: "Good effort! Keep practicing.",
-      encouragement: "You're doing great!",
-    };
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o", // Using gpt-4o which is well-tested with AI Integrations
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      max_completion_tokens: 1000,
+    });
+
+    const content = response.choices[0]?.message?.content || "{}";
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    
+    try {
+      const result = JSON.parse(content);
+      console.log(`[AI] Answer evaluated in ${elapsed}s - Score: ${result.score}/10`);
+      return {
+        score: result.score || 5,
+        feedback: result.feedback || "Good effort!",
+        correction: result.correction,
+        encouragement: result.encouragement || "Keep practicing!",
+      };
+    } catch (parseError) {
+      console.error("[AI] Failed to parse evaluation response:", parseError);
+      return {
+        score: 5,
+        feedback: "Good effort! Keep practicing.",
+        encouragement: "You're doing great!",
+      };
+    }
+  } catch (error: any) {
+    console.error(`[AI ERROR] Failed to evaluate answer:`, error.message || error);
+    throw new Error(`Failed to evaluate answer: ${error.message || "Unknown error"}`);
   }
 }
