@@ -2,13 +2,17 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import { HelpCircle, Pencil } from "lucide-react";
+import { HelpCircle, Pencil, CheckCircle } from "lucide-react";
 
 interface QuestionCardProps {
   questionNumber: number;
   totalQuestions: number;
   question: string;
+  questionType?: string;
+  options?: string[];
   onSubmit: (answer: string) => void;
   isSubmitting?: boolean;
 }
@@ -17,15 +21,22 @@ export default function QuestionCard({
   questionNumber,
   totalQuestions,
   question,
+  questionType = "open-ended",
+  options = [],
   onSubmit,
   isSubmitting = false,
 }: QuestionCardProps) {
   const [answer, setAnswer] = useState("");
+  const [selectedOption, setSelectedOption] = useState("");
+  
+  const isMcq = questionType === "mcq";
 
   const handleSubmit = () => {
-    if (answer.trim()) {
-      onSubmit(answer);
+    const finalAnswer = isMcq ? selectedOption : answer;
+    if (finalAnswer.trim()) {
+      onSubmit(finalAnswer);
       setAnswer("");
+      setSelectedOption("");
     }
   };
 
@@ -38,6 +49,12 @@ export default function QuestionCard({
             <Badge variant="secondary" className="text-base">
               Question {questionNumber} of {totalQuestions}
             </Badge>
+            {isMcq && (
+              <Badge variant="outline" className="text-base">
+                <CheckCircle className="w-3 h-3 mr-1" />
+                Multiple Choice
+              </Badge>
+            )}
           </div>
           <div className="flex items-center gap-1 text-base text-muted-foreground">
             <HelpCircle className="w-4 h-4" />
@@ -62,27 +79,62 @@ export default function QuestionCard({
         </div>
 
         {/* Answer Input Section */}
-        <div className="space-y-2 sm:space-y-3">
-          <div className="flex items-center gap-2">
-            <Pencil className="w-4 h-4 text-muted-foreground" />
-            <label className="text-base font-semibold text-foreground">Your Answer:</label>
+        {isMcq ? (
+          <div className="space-y-3 sm:space-y-4">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-muted-foreground" />
+              <label className="text-base font-semibold text-foreground">Select your answer:</label>
+            </div>
+            <RadioGroup value={selectedOption} onValueChange={setSelectedOption}>
+              <div className="space-y-3">
+                {options.map((option) => {
+                  const optionKey = option.charAt(0);
+                  return (
+                    <div
+                      key={optionKey}
+                      className="flex items-center space-x-3 p-3 sm:p-4 rounded-lg border-2 hover-elevate active-elevate-2 cursor-pointer"
+                      onClick={() => setSelectedOption(optionKey)}
+                      data-testid={`option-${optionKey.toLowerCase()}`}
+                    >
+                      <RadioGroupItem value={optionKey} id={optionKey} className="h-5 w-5" />
+                      <Label
+                        htmlFor={optionKey}
+                        className="flex-1 text-base sm:text-lg cursor-pointer"
+                      >
+                        {option}
+                      </Label>
+                    </div>
+                  );
+                })}
+              </div>
+            </RadioGroup>
+            <p className="text-base text-muted-foreground">
+              Tip: Select the best answer from the options above
+            </p>
           </div>
-          <Textarea
-            placeholder="Type your answer here..."
-            value={answer}
-            onChange={(e) => setAnswer(e.target.value)}
-            className="min-h-28 sm:min-h-32 text-base sm:text-lg resize-none border-2 focus:border-primary"
-            data-testid="textarea-answer"
-          />
-          <p className="text-base text-muted-foreground">
-            Tip: Check your spelling and grammar before submitting
-          </p>
-        </div>
+        ) : (
+          <div className="space-y-2 sm:space-y-3">
+            <div className="flex items-center gap-2">
+              <Pencil className="w-4 h-4 text-muted-foreground" />
+              <label className="text-base font-semibold text-foreground">Your Answer:</label>
+            </div>
+            <Textarea
+              placeholder="Type your answer here..."
+              value={answer}
+              onChange={(e) => setAnswer(e.target.value)}
+              className="min-h-28 sm:min-h-32 text-base sm:text-lg resize-none border-2 focus:border-primary"
+              data-testid="textarea-answer"
+            />
+            <p className="text-base text-muted-foreground">
+              Tip: Check your spelling and grammar before submitting
+            </p>
+          </div>
+        )}
 
         {/* Submit Button */}
         <Button
           onClick={handleSubmit}
-          disabled={!answer.trim() || isSubmitting}
+          disabled={(isMcq ? !selectedOption : !answer.trim()) || isSubmitting}
           className="w-full text-base sm:text-lg"
           size="lg"
           data-testid="button-submit-answer"

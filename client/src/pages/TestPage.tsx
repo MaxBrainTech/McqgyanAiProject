@@ -22,6 +22,8 @@ interface TestPageProps {
 export default function TestPage({ config, onExit }: TestPageProps) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState("");
+  const [questionType, setQuestionType] = useState("");
+  const [questionOptions, setQuestionOptions] = useState<string[]>([]);
   const [questionNumber, setQuestionNumber] = useState(0);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackData, setFeedbackData] = useState<any>(null);
@@ -57,6 +59,8 @@ export default function TestPage({ config, onExit }: TestPageProps) {
     },
     onSuccess: (data) => {
       setCurrentQuestion(data.question);
+      setQuestionType(data.questionType || "open-ended");
+      setQuestionOptions(data.options || []);
       setQuestionNumber(data.questionNumber);
       setTotalQuestions(data.totalQuestions);
     },
@@ -195,6 +199,8 @@ export default function TestPage({ config, onExit }: TestPageProps) {
               questionNumber={questionNumber}
               totalQuestions={totalQuestions}
               question={currentQuestion}
+              questionType={questionType}
+              options={questionOptions}
               onSubmit={handleSubmitAnswer}
               isSubmitting={evaluateAnswerMutation.isPending}
             />
