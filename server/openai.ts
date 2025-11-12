@@ -47,9 +47,30 @@ CBSE Curriculum Guidelines:
 - Focus on grammar, vocabulary, sentence formation, or cultural aspects as per CBSE syllabus
 - Question types: translation, fill in the blank, sentence formation, or grammar-based
 
+IMPORTANT - Question Format Rules:
+1. Write ALL instructions in ENGLISH (not in ${language})
+2. Be crystal clear about what the student should do
+3. Use this format for translation questions:
+   - "Translate the following English sentence into ${language}:"
+   - "Translate the following ${language} sentence into English:"
+4. Use this format for other questions:
+   - "Fill in the blank with the correct ${language} word:"
+   - "Complete the sentence in ${language}:"
+   - "Choose the correct form of the verb in ${language}:"
+5. Make it obvious what language the student should answer in
+
+Example GOOD questions:
+- "Translate the following English sentence into French: 'I am going to school.'"
+- "Fill in the blank with the correct German article: ___ Haus (the house)"
+- "Complete this Spanish sentence: 'Mi nombre ___' (My name is)"
+
+Example BAD questions (NEVER do this):
+- "Übersetzen Sie ins Deutsche: 'Hello'" (confusing - mixes German instruction with English)
+- "Traduisez: 'Good morning'" (unclear what language to translate to)
+
 Return your response in this exact JSON format:
 {
-  "question": "<the question in clear language>",
+  "question": "<the question with CLEAR ENGLISH instructions>",
   "correctAnswer": "<the complete correct answer>",
   "questionType": "translation|grammar|vocabulary|sentence"
 }
