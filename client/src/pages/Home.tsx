@@ -4,6 +4,7 @@ import LanguageCard from "@/components/LanguageCard";
 import SelectionGrid from "@/components/SelectionGrid";
 import ChapterList from "@/components/ChapterList";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import LeaderboardCard from "@/components/LeaderboardCard";
 
 interface HomeProps {
@@ -182,7 +183,7 @@ export default function Home({ onStartTest }: HomeProps) {
         )}
 
         {step === "testLength" && (
-          <div className="space-y-6 max-w-3xl mx-auto">
+          <div className="space-y-6 max-w-4xl mx-auto">
             <div className="flex items-center gap-4 mb-6">
               <Button variant="outline" onClick={() => setStep("difficulty")} data-testid="button-back">
                 ← Back
@@ -195,17 +196,51 @@ export default function Home({ onStartTest }: HomeProps) {
               </div>
             </div>
 
-            <SelectionGrid
-              title="Select Test Length"
-              items={[
-                { label: "Quick (10 Questions)", value: 10 },
-                { label: "Standard (20 Questions)", value: 20 },
-                { label: "Extended (30 Questions)", value: 30 },
-                { label: "Full Test (50 Questions)", value: 50 },
-              ]}
-              selected={selectedTestLength}
-              onSelect={handleTestLengthSelect}
-            />
+            <Card className="p-6">
+              <h2 className="text-xl font-semibold mb-6">Select Test Length</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  { label: "Quick Test", sublabel: "10 Questions", value: 10, time: "~10 mins" },
+                  { label: "Standard Test", sublabel: "20 Questions", value: 20, time: "~20 mins" },
+                  { label: "Extended Test", sublabel: "30 Questions", value: 30, time: "~30 mins" },
+                  { label: "Full Test", sublabel: "50 Questions", value: 50, time: "~50 mins" },
+                ].map((item) => (
+                  <Card
+                    key={item.value}
+                    className={`p-4 cursor-pointer hover-elevate active-elevate-2 ${
+                      selectedTestLength === item.value
+                        ? "border-primary bg-primary/5"
+                        : "border-border"
+                    }`}
+                    onClick={() => handleTestLengthSelect(item.value)}
+                    data-testid={`card-test-length-${item.value}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-semibold text-lg">{item.label}</h3>
+                        <p className="text-muted-foreground">{item.sublabel}</p>
+                        <p className="text-sm text-muted-foreground mt-1">{item.time}</p>
+                      </div>
+                      {selectedTestLength === item.value && (
+                        <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                          <svg
+                            className="w-4 h-4 text-primary-foreground"
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path d="M5 13l4 4L19 7"></path>
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </Card>
           </div>
         )}
 
