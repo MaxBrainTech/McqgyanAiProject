@@ -58,7 +58,14 @@ export default function QuestionCard({
           size="lg"
           data-testid="button-submit-answer"
         >
-          {isSubmitting ? "Submitting..." : "Submit Answer"}
+          {isSubmitting ? (
+            <span className="flex items-center gap-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              AI is evaluating... (5-20 seconds)
+            </span>
+          ) : (
+            "Submit Answer"
+          )}
         </Button>
       </div>
     </Card>

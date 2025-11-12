@@ -27,6 +27,8 @@ interface AnswerEvaluationParams {
 export async function generateQuestion(params: QuestionGenerationParams): Promise<string> {
   const { language, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance } = params;
   
+  console.log(`[AI] Generating question #${questionNumber} for ${language} - ${difficulty} difficulty`);
+  
   const adaptiveContext = previousPerformance 
     ? `\nThe student's previous performance: ${previousPerformance}. Adjust the difficulty accordingly.`
     : '';
@@ -44,13 +46,18 @@ Requirements:
 
 Return ONLY the question text, nothing else.`;
 
+  const startTime = Date.now();
   const response = await openai.chat.completions.create({
     model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
     messages: [{ role: "user", content: prompt }],
     max_completion_tokens: 500,
   });
+  
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  const question = response.choices[0]?.message?.content?.trim() || "Error generating question";
+  console.log(`[AI] Question generated in ${elapsed}s: ${question.substring(0, 50)}...`);
 
-  return response.choices[0]?.message?.content?.trim() || "Error generating question";
+  return question;
 }
 
 export async function evaluateAnswer(params: AnswerEvaluationParams): Promise<{
@@ -60,6 +67,8 @@ export async function evaluateAnswer(params: AnswerEvaluationParams): Promise<{
   encouragement: string;
 }> {
   const { question, studentAnswer, language, classLevel, difficulty } = params;
+
+  console.log(`[AI] Evaluating answer: "${studentAnswer.substring(0, 30)}..."`);
 
   const prompt = `You are a warm, encouraging ${language} teacher for CBSE Class ${classLevel} students.
 
@@ -81,6 +90,7 @@ Return your response in this exact JSON format:
   "encouragement": "<encouraging message>"
 }`;
 
+  const startTime = Date.now();
   const response = await openai.chat.completions.create({
     model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
     messages: [{ role: "user", content: prompt }],
@@ -89,9 +99,11 @@ Return your response in this exact JSON format:
   });
 
   const content = response.choices[0]?.message?.content || "{}";
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
   
   try {
     const result = JSON.parse(content);
+    console.log(`[AI] Answer evaluated in ${elapsed}s - Score: ${result.score}/10`);
     return {
       score: result.score || 5,
       feedback: result.feedback || "Good effort!",
@@ -99,6 +111,7 @@ Return your response in this exact JSON format:
       encouragement: result.encouragement || "Keep practicing!",
     };
   } catch (error) {
+    console.error("[AI] Failed to parse evaluation response:", error);
     return {
       score: 5,
       feedback: "Good effort! Keep practicing.",

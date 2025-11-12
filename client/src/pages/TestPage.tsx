@@ -137,12 +137,27 @@ export default function TestPage({ config, onExit }: TestPageProps) {
     );
   }
 
-  if (!sessionId || !currentQuestion) {
+  if (!sessionId || generateQuestionMutation.isPending) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">Preparing your test...</p>
+          <p className="text-lg font-semibold text-primary">
+            {!sessionId ? "Preparing your test..." : "AI is generating your question..."}
+          </p>
+          <p className="text-sm text-muted-foreground">This may take 5-20 seconds</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentQuestion) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-lg font-semibold text-primary">AI is generating your question...</p>
+          <p className="text-sm text-muted-foreground">This may take 5-20 seconds</p>
         </div>
       </div>
     );
