@@ -1,36 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Languages, BookOpen, Sparkles } from "lucide-react";
 import LanguageCard from "@/components/LanguageCard";
 import SelectionGrid from "@/components/SelectionGrid";
 import ChapterList from "@/components/ChapterList";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import LeaderboardCard from "@/components/LeaderboardCard";
-
-//todo: remove mock functionality
-const CHAPTERS: Record<string, any[]> = {
-  french: [
-    { id: 1, title: "Les Salutations", description: "Greetings and introductions" },
-    { id: 2, title: "Les Nombres", description: "Numbers 1-100" },
-    { id: 3, title: "La Famille", description: "Family members" },
-    { id: 4, title: "Les Couleurs", description: "Colors and adjectives" },
-    { id: 5, title: "La Nourriture", description: "Food and dining" },
-  ],
-  german: [
-    { id: 1, title: "Begrüßungen", description: "Greetings and farewells" },
-    { id: 2, title: "Zahlen", description: "Numbers 1-100" },
-    { id: 3, title: "Familie", description: "Family relationships" },
-    { id: 4, title: "Farben", description: "Colors and descriptions" },
-    { id: 5, title: "Essen", description: "Food and meals" },
-  ],
-  spanish: [
-    { id: 1, title: "Saludos", description: "Greetings and introductions" },
-    { id: 2, title: "Números", description: "Numbers 1-100" },
-    { id: 3, title: "La Familia", description: "Family members" },
-    { id: 4, title: "Colores", description: "Colors and adjectives" },
-    { id: 5, title: "Comida", description: "Food and eating" },
-  ],
-};
 
 interface HomeProps {
   onStartTest: (config: {
@@ -46,12 +20,27 @@ export default function Home({ onStartTest }: HomeProps) {
   const [selectedLanguage, setSelectedLanguage] = useState<string>("");
   const [selectedClass, setSelectedClass] = useState<number>(0);
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("");
+  const [chapters, setChapters] = useState<Array<{ id: number; title: string; description: string }>>([]);
 
-  //todo: remove mock functionality
-  const mockLeaderboard = [
-    { language: "French", score: 9, totalQuestions: 10, date: "2 hours ago" },
-    { language: "Spanish", score: 8, totalQuestions: 10, date: "Yesterday" },
-  ];
+  // Load chapters when language is selected
+  useEffect(() => {
+    if (selectedLanguage && step === "chapter") {
+      fetch(`/api/chapters/${selectedLanguage}`)
+        .then(res => res.json())
+        .then(data => setChapters(data))
+        .catch(err => console.error("Error loading chapters:", err));
+    }
+  }, [selectedLanguage, step]);
+
+  // Load leaderboard from local storage
+  const [leaderboard, setLeaderboard] = useState<Array<any>>([]);
+  
+  useEffect(() => {
+    const savedScores = localStorage.getItem("langbuddy_scores");
+    if (savedScores) {
+      setLeaderboard(JSON.parse(savedScores));
+    }
+  }, []);
 
   const handleLanguageSelect = (language: string) => {
     setSelectedLanguage(language);
@@ -122,9 +111,9 @@ export default function Home({ onStartTest }: HomeProps) {
               />
             </div>
 
-            {mockLeaderboard.length > 0 && (
+            {leaderboard.length > 0 && (
               <div className="max-w-2xl mx-auto">
-                <LeaderboardCard entries={mockLeaderboard} />
+                <LeaderboardCard entries={leaderboard} />
               </div>
             )}
           </div>
@@ -199,7 +188,7 @@ export default function Home({ onStartTest }: HomeProps) {
             </div>
 
             <ChapterList
-              chapters={CHAPTERS[selectedLanguage] || []}
+              chapters={chapters}
               onSelect={handleChapterSelect}
             />
           </div>

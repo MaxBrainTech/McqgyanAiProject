@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Trophy, Target, TrendingUp, Home } from "lucide-react";
 import { motion } from "framer-motion";
+import { useEffect } from "react";
 
 interface TestSummaryProps {
   totalScore: number;
@@ -20,8 +21,27 @@ export default function TestSummary({
   onNewTest,
   onHome,
 }: TestSummaryProps) {
-  const percentage = ((totalScore / (totalQuestions * 10)) * 100).toFixed(0);
-  const accuracy = ((correctAnswers / totalQuestions) * 100).toFixed(0);
+  const percentage = totalQuestions > 0 ? ((totalScore / (totalQuestions * 10)) * 100).toFixed(0) : "0";
+  const accuracy = totalQuestions > 0 ? ((correctAnswers / totalQuestions) * 100).toFixed(0) : "0";
+
+  // Save to leaderboard
+  useEffect(() => {
+    const savedScores = localStorage.getItem("langbuddy_scores");
+    const scores = savedScores ? JSON.parse(savedScores) : [];
+    
+    const newEntry = {
+      language: language.charAt(0).toUpperCase() + language.slice(1),
+      score: totalScore,
+      totalQuestions,
+      date: new Date().toLocaleString(),
+    };
+    
+    scores.unshift(newEntry);
+    scores.sort((a: any, b: any) => b.score - a.score);
+    const topScores = scores.slice(0, 5);
+    
+    localStorage.setItem("langbuddy_scores", JSON.stringify(topScores));
+  }, [totalScore, totalQuestions, language]);
 
   return (
     <motion.div
@@ -75,9 +95,9 @@ export default function TestSummary({
 
           <div className="bg-muted/50 p-6 rounded-xl">
             <p className="text-lg font-medium">
-              {percentage >= "80"
+              {parseInt(percentage) >= 80
                 ? "Outstanding! You're really mastering this language! 🎉"
-                : percentage >= "60"
+                : parseInt(percentage) >= 60
                 ? "Good job! You're making great progress! 💪"
                 : "Nice try! Keep practicing and you'll improve quickly! 📚"}
             </p>

@@ -1,23 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import QuestionCard from "@/components/QuestionCard";
 import FeedbackSection from "@/components/FeedbackSection";
 import ProgressBar from "@/components/ProgressBar";
 import TestSummary from "@/components/TestSummary";
 import { Button } from "@/components/ui/button";
-
-//todo: remove mock functionality - replace with actual API calls
-const MOCK_QUESTIONS = [
-  "Comment dit-on 'Hello' en français?",
-  "Traduisez: 'My name is...'",
-  "Quel est le pluriel de 'chat'?",
-  "Comment dit-on 'Thank you' en français?",
-  "Traduisez: 'I am a student'",
-  "Quel est le féminin de 'acteur'?",
-  "Comment dit-on 'Goodbye' en français?",
-  "Traduisez: 'How are you?'",
-  "Quel nombre suit 'dix-neuf'?",
-  "Comment dit-on 'Please' en français?",
-];
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 interface TestPageProps {
   config: {
@@ -30,36 +19,94 @@ interface TestPageProps {
 }
 
 export default function TestPage({ config, onExit }: TestPageProps) {
-  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [currentQuestion, setCurrentQuestion] = useState("");
+  const [questionNumber, setQuestionNumber] = useState(0);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackData, setFeedbackData] = useState<any>(null);
   const [totalScore, setTotalScore] = useState(0);
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [showSummary, setShowSummary] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   const totalQuestions = 10;
 
-  //todo: remove mock functionality - replace with actual AI evaluation
-  const handleSubmitAnswer = async (answer: string) => {
-    setIsSubmitting(true);
-    console.log("Answer submitted:", answer);
-    
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    // Mock scoring
-    const score = Math.floor(Math.random() * 5) + 6; // 6-10 points
-    setTotalScore(totalScore + score);
-    if (score >= 7) setCorrectAnswers(correctAnswers + 1);
-    
-    setIsSubmitting(false);
-    setShowFeedback(true);
+  // Start test session
+  useEffect(() => {
+    const startSession = async () => {
+      try {
+        const response = await apiRequest("POST", "/api/test/start", config);
+        const data = await response.json();
+        setSessionId(data.id);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to start test. Please try again.",
+          variant: "destructive",
+        });
+      }
+    };
+    startSession();
+  }, [config, toast]);
+
+  // Generate question mutation
+  const generateQuestionMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", `/api/test/${sessionId}/question`);
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      setCurrentQuestion(data.question);
+      setQuestionNumber(data.questionNumber);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to generate question. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Load first question when session is ready
+  useEffect(() => {
+    if (sessionId && !currentQuestion && !showSummary) {
+      generateQuestionMutation.mutate();
+    }
+  }, [sessionId]);
+
+  // Evaluate answer mutation
+  const evaluateAnswerMutation = useMutation({
+    mutationFn: async (answer: string) => {
+      const response = await apiRequest("POST", `/api/test/${sessionId}/evaluate`, {
+        question: currentQuestion,
+        answer,
+      });
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      setFeedbackData(data);
+      setTotalScore(data.totalScore);
+      setCorrectAnswers(data.correctAnswers);
+      setShowFeedback(true);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to evaluate answer. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmitAnswer = (answer: string) => {
+    evaluateAnswerMutation.mutate(answer);
   };
 
   const handleNext = () => {
     setShowFeedback(false);
-    if (currentQuestion + 1 < totalQuestions) {
-      setCurrentQuestion(currentQuestion + 1);
+    if (questionNumber < totalQuestions) {
+      generateQuestionMutation.mutate();
     } else {
       setShowSummary(true);
     }
@@ -70,11 +117,6 @@ export default function TestPage({ config, onExit }: TestPageProps) {
   };
 
   const handleNewTest = () => {
-    setCurrentQuestion(0);
-    setShowFeedback(false);
-    setTotalScore(0);
-    setCorrectAnswers(0);
-    setShowSummary(false);
     onExit();
   };
 
@@ -84,12 +126,23 @@ export default function TestPage({ config, onExit }: TestPageProps) {
         <div className="container mx-auto px-4 py-8">
           <TestSummary
             totalScore={totalScore}
-            totalQuestions={totalQuestions}
+            totalQuestions={questionNumber}
             correctAnswers={correctAnswers}
             language={config.language}
             onNewTest={handleNewTest}
             onHome={onExit}
           />
+        </div>
+      </div>
+    );
+  }
+
+  if (!sessionId || !currentQuestion) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Preparing your test...</p>
         </div>
       </div>
     );
@@ -116,29 +169,31 @@ export default function TestPage({ config, onExit }: TestPageProps) {
           </div>
 
           <ProgressBar
-            current={currentQuestion + 1}
+            current={questionNumber}
             total={totalQuestions}
             score={totalScore}
           />
 
           {!showFeedback ? (
             <QuestionCard
-              questionNumber={currentQuestion + 1}
+              questionNumber={questionNumber}
               totalQuestions={totalQuestions}
-              question={MOCK_QUESTIONS[currentQuestion]}
+              question={currentQuestion}
               onSubmit={handleSubmitAnswer}
-              isSubmitting={isSubmitting}
+              isSubmitting={evaluateAnswerMutation.isPending}
             />
           ) : (
-            <FeedbackSection
-              score={8}
-              maxScore={10}
-              feedback="Great job! Your answer demonstrates good understanding of the concept. You're on the right track!"
-              correction="For a more advanced answer, try including more context or examples."
-              encouragement="You're doing amazing! Keep up the fantastic work! 🌟"
-              onNext={handleNext}
-              onEndTest={handleEndTest}
-            />
+            feedbackData && (
+              <FeedbackSection
+                score={feedbackData.score}
+                maxScore={10}
+                feedback={feedbackData.feedback}
+                correction={feedbackData.correction}
+                encouragement={feedbackData.encouragement}
+                onNext={handleNext}
+                onEndTest={handleEndTest}
+              />
+            )
           )}
         </div>
       </div>
