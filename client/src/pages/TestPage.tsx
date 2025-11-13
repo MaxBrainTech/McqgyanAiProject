@@ -202,6 +202,7 @@ export default function TestPage({ config, onExit }: TestPageProps) {
               question={currentQuestion}
               questionType={questionType}
               options={questionOptions}
+              language={config.language}
               onSubmit={handleSubmitAnswer}
               isSubmitting={evaluateAnswerMutation.isPending}
             />

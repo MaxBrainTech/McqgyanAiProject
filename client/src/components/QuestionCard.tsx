@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import { HelpCircle, Pencil, CheckCircle } from "lucide-react";
+import { HelpCircle, Pencil, CheckCircle, Languages } from "lucide-react";
+import { transliterate, isTransliterationAvailable, getTransliterationLabel } from "@/lib/transliterate";
 
 interface QuestionCardProps {
   questionNumber: number;
@@ -13,6 +14,7 @@ interface QuestionCardProps {
   question: string;
   questionType?: string;
   options?: string[];
+  language?: string;
   onSubmit: (answer: string) => void;
   isSubmitting?: boolean;
 }
@@ -23,13 +25,17 @@ export default function QuestionCard({
   question,
   questionType = "open-ended",
   options = [],
+  language = "English",
   onSubmit,
   isSubmitting = false,
 }: QuestionCardProps) {
   const [answer, setAnswer] = useState("");
   const [selectedOption, setSelectedOption] = useState("");
+  const [transliterationEnabled, setTransliterationEnabled] = useState(false);
+  const [englishInput, setEnglishInput] = useState("");
   
   const isMcq = questionType === "mcq";
+  const showTransliteration = !isMcq && isTransliterationAvailable(language);
 
   const handleSubmit = () => {
     const finalAnswer = isMcq ? selectedOption : answer;
@@ -37,7 +43,31 @@ export default function QuestionCard({
       onSubmit(finalAnswer);
       setAnswer("");
       setSelectedOption("");
+      setEnglishInput("");
     }
+  };
+
+  const handleAnswerChange = (value: string) => {
+    if (transliterationEnabled) {
+      setEnglishInput(value);
+      const transliterated = transliterate(value, language);
+      setAnswer(transliterated);
+    } else {
+      setAnswer(value);
+      setEnglishInput("");
+    }
+  };
+
+  const toggleTransliteration = () => {
+    if (!transliterationEnabled) {
+      // Switching to transliteration mode
+      setEnglishInput("");
+      setAnswer("");
+    } else {
+      // Switching to normal mode
+      setEnglishInput("");
+    }
+    setTransliterationEnabled(!transliterationEnabled);
   };
 
   return (
@@ -114,19 +144,48 @@ export default function QuestionCard({
           </div>
         ) : (
           <div className="space-y-2 sm:space-y-3">
-            <div className="flex items-center gap-2">
-              <Pencil className="w-4 h-4 text-muted-foreground" />
-              <label className="text-base font-semibold text-foreground">Your Answer:</label>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <Pencil className="w-4 h-4 text-muted-foreground" />
+                <label className="text-base font-semibold text-foreground">Your Answer:</label>
+              </div>
+              {showTransliteration && (
+                <Button
+                  type="button"
+                  variant={transliterationEnabled ? "default" : "outline"}
+                  size="sm"
+                  onClick={toggleTransliteration}
+                  className="gap-2"
+                  data-testid="button-toggle-transliteration"
+                >
+                  <Languages className="w-4 h-4" />
+                  <span className="hidden sm:inline">{getTransliterationLabel(language)}</span>
+                  <span className="sm:hidden">Type in English</span>
+                </Button>
+              )}
             </div>
+            {transliterationEnabled && (
+              <div className="bg-primary/5 p-3 rounded-lg border border-primary/20">
+                <p className="text-sm text-muted-foreground mb-2">
+                  <Languages className="w-3 h-3 inline mr-1" />
+                  Type in English below, and it will convert to {language} script automatically
+                </p>
+                <div className="text-lg font-medium text-foreground">
+                  {answer || <span className="text-muted-foreground/50">Your {language} text will appear here...</span>}
+                </div>
+              </div>
+            )}
             <Textarea
-              placeholder="Type your answer here..."
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
+              placeholder={transliterationEnabled ? "Type in English... (e.g., namaste, kaise ho)" : "Type your answer here..."}
+              value={transliterationEnabled ? englishInput : answer}
+              onChange={(e) => handleAnswerChange(e.target.value)}
               className="min-h-28 sm:min-h-32 text-base sm:text-lg resize-none border-2 focus:border-primary"
               data-testid="textarea-answer"
             />
             <p className="text-base text-muted-foreground">
-              Tip: Check your spelling and grammar before submitting
+              {transliterationEnabled 
+                ? "Tip: Type phonetically in English (e.g., 'namaste' → 'नमस्ते')"
+                : "Tip: Check your spelling and grammar before submitting"}
             </p>
           </div>
         )}
