@@ -23,6 +23,7 @@ export const testSessions = pgTable("test_sessions", {
   language: text("language").notNull(),
   classLevel: integer("class_level").notNull(),
   difficulty: text("difficulty").notNull(),
+  testType: text("test_type").notNull().default("mixed"),
   chapter: integer("chapter").notNull(),
   testLength: integer("test_length").notNull().default(10),
   currentQuestion: integer("current_question").notNull().default(0),
