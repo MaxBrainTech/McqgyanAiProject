@@ -103,21 +103,34 @@ export default function Home({ onStartTest }: HomeProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Decorative background shapes */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2"></div>
+        <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-secondary/5 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2"></div>
+      </div>
+
       {/* Hero Header */}
-      <div className="bg-primary/5 border-b">
+      <div className="relative border-b bg-white/40 dark:bg-black/20 backdrop-blur-sm">
         <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 lg:py-16 max-w-6xl">
           <div className="text-center space-y-3 sm:space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-primary/10 rounded-full">
+            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full border border-primary/20">
               <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-              <span className="text-base font-medium text-primary">CBSE Language Learning Platform</span>
+              <span className="text-base font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">CBSE Language Learning Platform</span>
             </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent px-2">
-              LangBuddy AI
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold">
+              <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+                LangBuddy AI
+              </span>
             </h1>
-            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto px-4">
-              Master French, German, and Spanish with AI-powered adaptive testing. 
-              <span className="block mt-2 font-medium text-foreground text-base">25 chapters per language • 4 test formats • Real-time feedback</span>
+            <p className="text-base sm:text-lg md:text-xl text-foreground/80 max-w-3xl mx-auto px-4">
+              Master French, German, and Spanish with AI-powered adaptive testing
+              <span className="block mt-3 font-semibold text-foreground text-base flex flex-wrap items-center justify-center gap-3">
+                <Badge variant="secondary" className="text-base">25 chapters/language</Badge>
+                <Badge variant="secondary" className="text-base">4 test formats</Badge>
+                <Badge variant="secondary" className="text-base">Real-time AI feedback</Badge>
+              </span>
             </p>
           </div>
         </div>
