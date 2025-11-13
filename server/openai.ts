@@ -49,6 +49,60 @@ export async function generateQuestion(params: QuestionGenerationParams & { isMc
     return generateMcqQuestion({ language, classLevel, difficulty, chapterTitle, questionNumber, adaptiveContext, previousQuestionsContext });
   }
 
+  const isIndianLanguage = ['hindi', 'marathi', 'kannada'].includes(language.toLowerCase());
+  const languageLower = language.toLowerCase();
+  
+  // Determine script type and examples based on language
+  const scriptInfo = languageLower === 'kannada' 
+    ? {
+        scriptName: 'Kannada script',
+        exampleTranslation: "ನನ್ನ ತಾಯಿ ರುಚಿಕರವಾದ ಆಹಾರವನ್ನು ಬೇಯಿಸುತ್ತಾರೆ।",
+        exampleFillBlank: "ಅವನು ___ ಹೋಗುತ್ತಾನೆ।",
+        exampleFillBlankAnswer: "ಶಾಲೆಗೆ",
+        exampleWord: "ಪುಸ್ತಕ",
+        exampleSentence: "ನಾನು ಒಂದು ಪುಸ್ತಕವನ್ನು ಓದುತ್ತಿದ್ದೇನೆ।"
+      }
+    : {
+        scriptName: 'Devanagari script',
+        exampleTranslation: "मेरी माँ स्वादिष्ट खाना बनाती है।",
+        exampleFillBlank: "वह ___ जाता है।",
+        exampleFillBlankAnswer: "स्कूल",
+        exampleWord: "किताब",
+        exampleSentence: "मैं एक किताब पढ़ रहा हूँ।"
+      };
+  
+  const indianLanguageGuidelines = isIndianLanguage ? `
+
+📝 CRITICAL - ${language} Language Quality Requirements:
+1. COMPLETE SENTENCES: Always provide FULL, grammatically correct sentences in ${scriptInfo.scriptName}
+2. PROPER SCRIPT: Use ${scriptInfo.scriptName} - NO romanization or mixed scripts
+3. NO PLACEHOLDERS: Never use "...", "___", or incomplete phrases in the ${language} text itself
+4. CONTEXT: Provide enough context so students understand exactly what is being asked
+5. CLARITY: Questions must be self-contained and unambiguous
+
+Example EXCELLENT ${language} questions:
+- "Translate the following English sentence into ${language}: 'My mother cooks delicious food.'"
+  Correct Answer: "${scriptInfo.exampleTranslation}" (FULL sentence in ${scriptInfo.scriptName})
+
+- "Fill in the blank with the correct ${language} word. Sentence: '${scriptInfo.exampleFillBlank}' (He goes to school.) What word means 'school'?"
+  Correct Answer: "${scriptInfo.exampleFillBlankAnswer}" (complete word provided)
+
+- "Write the ${language} word for 'book' and use it in a complete sentence."
+  Correct Answer: "${scriptInfo.exampleWord} - ${scriptInfo.exampleSentence}" (word + complete sentence)
+
+Example BAD ${language} questions (NEVER DO THIS):
+- "Translate: 'Hello'" (too short, no context)
+- "Fill in the blank without English hint" (unclear what to fill)
+- "Write the word for..." (incomplete, no clear instruction)
+
+VALIDATION CHECKLIST before responding:
+✓ English instructions are complete and crystal clear
+✓ Any ${language} text uses proper ${scriptInfo.scriptName}
+✓ ${language} content is COMPLETE (no fragments or placeholders)
+✓ The correct answer is a FULL, proper ${language} phrase/sentence
+✓ A CBSE Class ${classLevel} student can understand and answer this question
+` : '';
+
   const prompt = `You are a strict CBSE ${language} teacher for Class ${classLevel} following the official CBSE curriculum.
 
 Generate question #${questionNumber} about "${chapterTitle}" at ${difficulty} difficulty level.${adaptiveContext}${previousQuestionsContext}
@@ -70,6 +124,7 @@ IMPORTANT - Question Format Rules:
    - "Complete the sentence in ${language}:"
    - "Choose the correct form of the verb in ${language}:"
 5. Make it obvious what language the student should answer in
+6. Provide COMPLETE content - no fragments, no "...", no placeholders${indianLanguageGuidelines}
 
 Example GOOD questions:
 - "Translate the following English sentence into French: 'I am going to school.'"
@@ -82,12 +137,13 @@ Example BAD questions (NEVER do this):
 
 Return your response in this exact JSON format:
 {
-  "question": "<the question with CLEAR ENGLISH instructions>",
-  "correctAnswer": "<the complete correct answer>",
-  "questionType": "translation|grammar|vocabulary|sentence"
+  "question": "<the question with CLEAR ENGLISH instructions and COMPLETE ${language} content>",
+  "correctAnswer": "<the COMPLETE and FULL correct answer - in ${language} if translating TO ${language}, in English if translating FROM ${language}>",
+  "questionType": "translation|grammar|vocabulary|sentence",
+  "answerLanguage": "<'${language}' or 'english' - indicates which language the answer should be in>"
 }
 
-Make the question challenging but fair for Class ${classLevel} CBSE level.`;
+Make the question challenging but fair for Class ${classLevel} CBSE level. Ensure all ${language} text is COMPLETE and PROPERLY FORMATTED.`;
 
   const startTime = Date.now();
   
@@ -108,6 +164,40 @@ Make the question challenging but fair for Class ${classLevel} CBSE level.`;
     
     const result = JSON.parse(content);
     console.log(`[AI] Question generated in ${elapsed}s: ${result.question.substring(0, 50)}...`);
+    
+    // Validate question completeness for Indian languages
+    if (isIndianLanguage) {
+      if (!result.question || result.question.length < 20) {
+        throw new Error("Generated question is too short or incomplete");
+      }
+      if (!result.correctAnswer || result.correctAnswer.length < 2) {
+        throw new Error("Generated answer is incomplete or missing");
+      }
+      // Check for placeholder patterns that suggest incomplete content
+      const hasPlaceholders = /\.{3,}|___+|incomplete|TODO/i.test(result.question + result.correctAnswer);
+      if (hasPlaceholders) {
+        throw new Error("Generated question contains placeholders or incomplete content");
+      }
+      
+      // Validate correct script usage (only if answer should be in the native language)
+      const answerLanguage = (result.answerLanguage || '').trim().toLowerCase();
+      const shouldBeNativeLanguage = answerLanguage !== 'english';
+      
+      if (shouldBeNativeLanguage) {
+        const devanagariRegex = /[\u0900-\u097F]/;  // Devanagari Unicode range
+        const kannadaRegex = /[\u0C80-\u0CFF]/;     // Kannada Unicode range
+        
+        if (languageLower === 'kannada') {
+          if (!kannadaRegex.test(result.correctAnswer)) {
+            throw new Error("Answer must contain Kannada script characters, not romanized text");
+          }
+        } else if (languageLower === 'hindi' || languageLower === 'marathi') {
+          if (!devanagariRegex.test(result.correctAnswer)) {
+            throw new Error("Answer must contain Devanagari script characters, not romanized text");
+          }
+        }
+      }
+    }
     
     return {
       question: result.question || "Error generating question",
@@ -138,6 +228,49 @@ async function generateMcqQuestion(params: {
 }> {
   const { language, classLevel, difficulty, chapterTitle, adaptiveContext, previousQuestionsContext } = params;
 
+  const isIndianLanguage = ['hindi', 'marathi', 'kannada'].includes(language.toLowerCase());
+  const languageLower = language.toLowerCase();
+  
+  // Determine script type and MCQ examples based on language
+  const mcqScriptInfo = languageLower === 'kannada'
+    ? {
+        scriptName: 'Kannada script',
+        exampleOptions1: ["A. ನೀರು", "B. ಹಾಲು", "C. ರೊಟ್ಟಿ", "D. ಚಹಾ"],
+        exampleAnswer1: "ನೀರು",
+        exampleExplanation1: "ನೀರು means water in Kannada. ಹಾಲು means milk, ರೊಟ್ಟಿ means bread, and ಚಹಾ means tea.",
+        exampleOptions2: ["A. ಶುಭ ರಾತ್ರಿ", "B. ನಮಸ್ಕಾರ", "C. ಶುಭೋದಯ", "D. ಧನ್ಯವಾದ"],
+        exampleExplanation2: "ಶುಭೋದಯ means Good morning in Kannada."
+      }
+    : {
+        scriptName: 'Devanagari script',
+        exampleOptions1: ["A. पानी", "B. दूध", "C. रोटी", "D. चाय"],
+        exampleAnswer1: "पानी",
+        exampleExplanation1: "पानी means water. दूध means milk, रोटी means bread, and चाय means tea.",
+        exampleOptions2: ["A. शुभ रात्रि", "B. नमस्ते", "C. सुप्रभात", "D. धन्यवाद"],
+        exampleExplanation2: "सुप्रभात means Good morning."
+      };
+  
+  const indianLanguageMcqGuidelines = isIndianLanguage ? `
+
+📝 CRITICAL - ${language} MCQ Quality Requirements:
+1. COMPLETE OPTIONS: All 4 options must be COMPLETE, grammatically correct ${language} words/phrases in ${mcqScriptInfo.scriptName}
+2. PROPER SCRIPT: Use ${mcqScriptInfo.scriptName} - NO romanization in options
+3. CLEAR CONTEXT: Provide full context in English so students understand what is being tested
+4. NO PLACEHOLDERS: Options must be real, complete ${language} content (not "...", "option 1", etc.)
+
+Example EXCELLENT ${language} MCQ:
+Question: "What is the correct ${language} word for 'water'?"
+Options: ${JSON.stringify(mcqScriptInfo.exampleOptions1)}
+Correct: "A"
+Explanation: "${mcqScriptInfo.exampleExplanation1}"
+
+Example EXCELLENT translation MCQ:
+Question: "How do you say 'Good morning' in ${language}?"
+Options: ${JSON.stringify(mcqScriptInfo.exampleOptions2)}
+Correct: "C"
+Explanation: "${mcqScriptInfo.exampleExplanation2}"
+` : '';
+
   const prompt = `You are a strict CBSE ${language} teacher for Class ${classLevel} following the official CBSE curriculum.
 
 Generate a multiple choice question (MCQ) about "${chapterTitle}" at ${difficulty} difficulty level.${adaptiveContext}${previousQuestionsContext}
@@ -153,8 +286,8 @@ CBSE MCQ Guidelines:
 IMPORTANT - MCQ Format Rules:
 1. Write ALL instructions in ENGLISH (not in ${language})
 2. Question should test a specific concept clearly
-3. All 4 options must be distinct and well-formatted
-4. Provide a clear explanation of why the correct answer is right
+3. All 4 options must be COMPLETE, distinct, and well-formatted in proper script
+4. Provide a clear explanation of why the correct answer is right${indianLanguageMcqGuidelines}
 
 Example GOOD MCQ:
 Question: "Which article is correct in French: ___ maison (the house)?"
@@ -165,14 +298,14 @@ Explanation: "'La' is the correct feminine definite article for 'maison', which 
 Return your response in this exact JSON format:
 {
   "question": "<the MCQ question with CLEAR ENGLISH instructions>",
-  "options": ["A. <option 1>", "B. <option 2>", "C. <option 3>", "D. <option 4>"],
+  "options": ["A. <complete option 1>", "B. <complete option 2>", "C. <complete option 3>", "D. <complete option 4>"],
   "correctOption": "<A, B, C, or D>",
   "correctAnswer": "<the full text of the correct answer>",
   "explanation": "<brief explanation why this answer is correct>",
   "questionType": "mcq"
 }
 
-Make the question challenging but fair for Class ${classLevel} CBSE level with clear, distinct options.`;
+Make the question challenging but fair for Class ${classLevel} CBSE level with clear, COMPLETE, distinct options in proper script.`;
 
   const startTime = Date.now();
   
@@ -208,6 +341,40 @@ Make the question challenging but fair for Class ${classLevel} CBSE level with c
     if (!result.explanation || result.explanation.trim().length === 0) {
       console.error("[AI ERROR] MCQ missing explanation");
       result.explanation = "No explanation provided";
+    }
+    
+    // Additional validation for Indian languages
+    if (isIndianLanguage) {
+      // Check that all options have meaningful content (not just "A. ", "B. ", etc.)
+      const hasIncompleteOptions = result.options.some((opt: string) => {
+        const content = opt.replace(/^[A-D]\.\s*/, '').trim();
+        return content.length < 2; // Option content too short
+      });
+      
+      if (hasIncompleteOptions) {
+        throw new Error("MCQ options are incomplete or missing content");
+      }
+      
+      // Check question completeness
+      if (!result.question || result.question.length < 20) {
+        throw new Error("MCQ question is too short or incomplete");
+      }
+      
+      // Validate correct script usage in options
+      const devanagariRegex = /[\u0900-\u097F]/;  // Devanagari Unicode range
+      const kannadaRegex = /[\u0C80-\u0CFF]/;     // Kannada Unicode range
+      
+      // Check if at least one option contains the correct script
+      const optionsText = result.options.join(' ');
+      if (languageLower === 'kannada') {
+        if (!kannadaRegex.test(optionsText)) {
+          throw new Error("MCQ options must contain Kannada script characters");
+        }
+      } else if (languageLower === 'hindi' || languageLower === 'marathi') {
+        if (!devanagariRegex.test(optionsText)) {
+          throw new Error("MCQ options must contain Devanagari script characters");
+        }
+      }
     }
     
     return {

@@ -2,7 +2,7 @@
 
 ## Overview
 
-LangBuddy is a smart mock test application designed for CBSE school students (Class 6-10) learning foreign languages (French, German, and Spanish). The platform provides AI-generated interactive questions that adapt to student performance, offering instant feedback and personalized learning experiences. The app features a playful, gamified interface inspired by Duolingo's design philosophy, making language learning engaging and effective for young students.
+LangBuddy is a smart mock test application designed for CBSE school students (Class 6-10) learning languages (French, German, Spanish, Hindi, Marathi, and Kannada). The platform provides AI-generated interactive questions that adapt to student performance, offering instant feedback and personalized learning experiences. The app features a vibrant, gamified interface with gradient backgrounds and glassmorphism effects, making language learning engaging and effective for young students.
 
 ## User Preferences
 
@@ -65,13 +65,18 @@ Preferred communication style: Simple, everyday language.
 - Conversation history stored within session for adaptive difficulty
 
 **AI Integration:**
-- OpenAI API integration via Replit AI Integrations service
-- Prompt engineering for question generation based on:
+- OpenAI API integration via Replit AI Integrations service (GPT-4o model)
+- Advanced prompt engineering for question generation based on:
   - CBSE curriculum guidelines
   - Student class level (6-10)
   - Difficulty level (Easy/Medium/Hard)
   - Chapter/topic selection
   - Previous performance for adaptive learning
+- Language-specific quality controls for Indian languages (Hindi, Marathi, Kannada):
+  - Enforces complete sentences in proper Devanagari/Kannada script
+  - Validates question completeness before displaying to students
+  - Provides detailed examples and formatting rules
+  - Rejects incomplete or placeholder content
 - Answer evaluation with detailed feedback in simple English
 - Encouraging personality designed for young learners
 
