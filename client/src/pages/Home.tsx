@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Languages, BookOpen, Sparkles, Trophy, RotateCcw, GraduationCap } from "lucide-react";
+import { Languages, BookOpen, Sparkles, Trophy, RotateCcw, GraduationCap, Book, Library, ScrollText } from "lucide-react";
 import LanguageCard from "@/components/LanguageCard";
 import SelectionGrid from "@/components/SelectionGrid";
 import ChapterList from "@/components/ChapterList";
@@ -125,10 +125,10 @@ export default function Home({ onStartTest }: HomeProps) {
               </span>
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-foreground/80 max-w-3xl mx-auto px-4">
-              Master French, German, and Spanish with AI-powered adaptive testing
+              Master French, German, Spanish, Hindi, Marathi, and Kannada with AI-powered adaptive testing
               <span className="block mt-3 font-semibold text-foreground text-base flex flex-wrap items-center justify-center gap-3">
-                <Badge variant="secondary" className="text-base">25 chapters/language</Badge>
-                <Badge variant="secondary" className="text-base">4 test formats</Badge>
+                <Badge variant="secondary" className="text-base">6 Languages</Badge>
+                <Badge variant="secondary" className="text-base">25 chapters each</Badge>
                 <Badge variant="secondary" className="text-base">Real-time AI feedback</Badge>
               </span>
             </p>
@@ -169,11 +169,11 @@ export default function Home({ onStartTest }: HomeProps) {
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <h2 className="text-xl sm:text-2xl font-bold">Choose Your Language</h2>
                 <Badge variant="secondary" className="text-base">
-                  3 Languages Available
+                  6 Languages Available
                 </Badge>
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 <LanguageCard
                   language="French"
                   icon={BookOpen}
@@ -191,6 +191,24 @@ export default function Home({ onStartTest }: HomeProps) {
                   icon={Sparkles}
                   color="bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400"
                   onClick={() => handleLanguageSelect("spanish")}
+                />
+                <LanguageCard
+                  language="Hindi"
+                  icon={Book}
+                  color="bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400"
+                  onClick={() => handleLanguageSelect("hindi")}
+                />
+                <LanguageCard
+                  language="Marathi"
+                  icon={Library}
+                  color="bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400"
+                  onClick={() => handleLanguageSelect("marathi")}
+                />
+                <LanguageCard
+                  language="Kannada"
+                  icon={ScrollText}
+                  color="bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400"
+                  onClick={() => handleLanguageSelect("kannada")}
                 />
               </div>
             </div>
