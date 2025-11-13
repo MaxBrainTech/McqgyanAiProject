@@ -30,7 +30,7 @@ export default function LeaderboardCard({ entries }: LeaderboardCardProps) {
       ) : (
         <div className="space-y-3">
           {entries.map((entry, index) => {
-            const percentage = ((entry.score / entry.totalQuestions) * 100).toFixed(0);
+            const percentage = ((entry.score / (entry.totalQuestions * 10)) * 100).toFixed(0);
             return (
               <Card key={index} className="p-4 hover-elevate" data-testid={`row-score-${index}`}>
                 <div className="flex items-center justify-between gap-4">
@@ -43,7 +43,7 @@ export default function LeaderboardCard({ entries }: LeaderboardCardProps) {
                   </div>
                   <div className="text-right">
                     <p className="text-lg font-bold text-primary">
-                      {entry.score}/{entry.totalQuestions}
+                      {entry.score}/{entry.totalQuestions * 10}
                     </p>
                     <Badge variant="secondary">{percentage}%</Badge>
                   </div>
