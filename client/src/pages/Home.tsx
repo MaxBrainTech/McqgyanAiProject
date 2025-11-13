@@ -14,16 +14,18 @@ interface HomeProps {
     language: string;
     class: number;
     difficulty: string;
+    testType: string;
     chapter: number;
     testLength: number;
   }) => void;
 }
 
 export default function Home({ onStartTest }: HomeProps) {
-  const [step, setStep] = useState<"language" | "class" | "difficulty" | "testLength" | "chapter">("language");
+  const [step, setStep] = useState<"language" | "class" | "difficulty" | "testType" | "testLength" | "chapter">("language");
   const [selectedLanguage, setSelectedLanguage] = useState<string>("");
   const [selectedClass, setSelectedClass] = useState<number>(0);
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("");
+  const [selectedTestType, setSelectedTestType] = useState<string>("");
   const [selectedTestLength, setSelectedTestLength] = useState<number>(0);
   const [chapters, setChapters] = useState<Array<{ id: number; title: string; description: string }>>([]);
 
@@ -69,6 +71,11 @@ export default function Home({ onStartTest }: HomeProps) {
 
   const handleDifficultySelect = (difficulty: string | number) => {
     setSelectedDifficulty(difficulty as string);
+    setStep("testType");
+  };
+
+  const handleTestTypeSelect = (testType: string) => {
+    setSelectedTestType(testType);
     setStep("testLength");
   };
 
@@ -82,6 +89,7 @@ export default function Home({ onStartTest }: HomeProps) {
       language: selectedLanguage,
       class: selectedClass,
       difficulty: selectedDifficulty,
+      testType: selectedTestType,
       testLength: selectedTestLength,
       chapter: chapterId,
     });
@@ -235,7 +243,7 @@ export default function Home({ onStartTest }: HomeProps) {
                 <h2 className="text-lg sm:text-2xl font-bold capitalize">
                   {selectedLanguage} - Class {selectedClass}
                 </h2>
-                <p className="text-sm text-muted-foreground">Step 2 of 4</p>
+                <p className="text-sm text-muted-foreground">Step 2 of 5</p>
               </div>
             </div>
 
@@ -252,17 +260,114 @@ export default function Home({ onStartTest }: HomeProps) {
           </div>
         )}
 
-        {step === "testLength" && (
-          <div className="space-y-6 max-w-4xl mx-auto">
+        {step === "testType" && (
+          <div className="space-y-6 max-w-3xl mx-auto">
             <div className="flex items-center gap-3 sm:gap-4 mb-6">
               <Button variant="outline" onClick={() => setStep("difficulty")} data-testid="button-back" size="sm">
                 ← Back
               </Button>
               <div>
-                <h2 className="text-lg sm:text-xl md:text-2xl font-bold capitalize">
+                <h2 className="text-lg sm:text-2xl font-bold capitalize">
                   {selectedLanguage} - Class {selectedClass} - {selectedDifficulty}
                 </h2>
-                <p className="text-sm text-muted-foreground">Step 3 of 4</p>
+                <p className="text-sm text-muted-foreground">Step 3 of 5</p>
+              </div>
+            </div>
+
+            <Card className="p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">Select Test Type</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Card
+                  className={`p-5 sm:p-6 cursor-pointer hover-elevate active-elevate-2 ${
+                    selectedTestType === "mixed"
+                      ? "border-primary bg-primary/5"
+                      : "border-border"
+                  }`}
+                  onClick={() => handleTestTypeSelect("mixed")}
+                  data-testid="card-test-type-mixed"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="inline-flex p-2 sm:p-3 bg-blue-500/10 rounded-lg">
+                        <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
+                      </div>
+                      {selectedTestType === "mixed" && (
+                        <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                          <svg
+                            className="w-4 h-4 text-primary-foreground"
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path d="M5 13l4 4L19 7"></path>
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg mb-1">Mixed Test</h3>
+                      <p className="text-base text-muted-foreground">MCQ + Open-ended Questions</p>
+                      <p className="text-sm text-muted-foreground mt-2">50% multiple choice, 50% written answers for comprehensive practice</p>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card
+                  className={`p-5 sm:p-6 cursor-pointer hover-elevate active-elevate-2 ${
+                    selectedTestType === "mcq-only"
+                      ? "border-primary bg-primary/5"
+                      : "border-border"
+                  }`}
+                  onClick={() => handleTestTypeSelect("mcq-only")}
+                  data-testid="card-test-type-mcq"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="inline-flex p-2 sm:p-3 bg-green-500/10 rounded-lg">
+                        <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
+                      </div>
+                      {selectedTestType === "mcq-only" && (
+                        <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                          <svg
+                            className="w-4 h-4 text-primary-foreground"
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path d="M5 13l4 4L19 7"></path>
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg mb-1">MCQ Only Test</h3>
+                      <p className="text-base text-muted-foreground">Multiple Choice Questions Only</p>
+                      <p className="text-sm text-muted-foreground mt-2">Fast-paced test with instant feedback on all questions</p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {step === "testLength" && (
+          <div className="space-y-6 max-w-4xl mx-auto">
+            <div className="flex items-center gap-3 sm:gap-4 mb-6">
+              <Button variant="outline" onClick={() => setStep("testType")} data-testid="button-back" size="sm">
+                ← Back
+              </Button>
+              <div>
+                <h2 className="text-lg sm:text-xl md:text-2xl font-bold capitalize">
+                  {selectedLanguage} - Class {selectedClass} - {selectedDifficulty} - {selectedTestType === "mcq-only" ? "MCQ Only" : "Mixed"}
+                </h2>
+                <p className="text-sm text-muted-foreground">Step 4 of 5</p>
               </div>
             </div>
 
@@ -322,9 +427,9 @@ export default function Home({ onStartTest }: HomeProps) {
               </Button>
               <div>
                 <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold capitalize">
-                  {selectedLanguage} - Class {selectedClass} - {selectedDifficulty} - {selectedTestLength}Q
+                  {selectedLanguage} - Class {selectedClass} - {selectedDifficulty} - {selectedTestType === "mcq-only" ? "MCQ" : "Mixed"} - {selectedTestLength}Q
                 </h2>
-                <p className="text-sm text-muted-foreground">Step 4 of 4</p>
+                <p className="text-sm text-muted-foreground">Step 5 of 5</p>
               </div>
             </div>
 

@@ -99,7 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Start a new test session
   app.post("/api/test/start", async (req, res) => {
     try {
-      const { language, class: classLevel, difficulty, chapter, testLength } = req.body;
+      const { language, class: classLevel, difficulty, chapter, testLength, testType } = req.body;
       
       const session = await storage.createTestSession({
         language,
@@ -110,7 +110,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentQuestion: 0,
         totalScore: 0,
         correctAnswers: 0,
-        conversationHistory: "[]",
+        conversationHistory: JSON.stringify([{ testType: testType || "mixed" }]),
       });
 
       res.json(session);
@@ -152,12 +152,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Get all previously asked questions to avoid duplicates
-      const previousQuestions = history.map((h: any) => h.question);
+      // Get test type from history (stored in first element)
+      const testType = history[0]?.testType || "mixed";
+      
+      // Get all previously asked questions to avoid duplicates (skip first element which is metadata)
+      const previousQuestions = history.slice(1).map((h: any) => h.question).filter(Boolean);
       console.log(`[AI] Already asked ${previousQuestions.length} question(s) in this test`);
 
-      // Mix MCQ and open-ended questions (50/50 mix, alternating)
-      const isMcq = (session.currentQuestion % 2) === 0;
+      // Determine if this should be MCQ based on test type
+      let isMcq = false;
+      if (testType === "mcq-only") {
+        isMcq = true; // Always MCQ for MCQ-only tests
+      } else {
+        isMcq = (session.currentQuestion % 2) === 0; // Alternate for mixed tests
+      }
 
       const questionData = await generateQuestion({
         language: session.language,
@@ -211,9 +219,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Session not found" });
       }
 
-      // Get the current question data from history
+      // Get the current question data from history (skip first element which is metadata)
       const conversationHistory = JSON.parse(session.conversationHistory || "[]");
-      const currentQuestionData = conversationHistory[conversationHistory.length - 1];
+      const questions = conversationHistory.slice(1);
+      const currentQuestionData = questions[questions.length - 1];
       
       if (!currentQuestionData) {
         return res.status(400).json({ error: "No question found for evaluation" });

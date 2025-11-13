@@ -13,6 +13,7 @@ interface TestPageProps {
     language: string;
     class: number;
     difficulty: string;
+    testType: string;
     chapter: number;
     testLength: number;
   };
