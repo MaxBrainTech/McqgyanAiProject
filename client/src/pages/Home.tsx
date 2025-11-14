@@ -145,7 +145,7 @@ export default function Home({ onStartTest }: HomeProps) {
                 <div className="inline-flex p-2 sm:p-3 bg-blue-500/10 rounded-lg mb-2">
                   <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
                 </div>
-                <h3 className="font-semibold text-base">CBSE Aligned</h3>
+                <h3 className="font-semibold text-base">Aligned</h3>
                 <p className="text-base text-muted-foreground mt-1">Official curriculum coverage</p>
               </Card>
               <Card className="p-4 sm:p-5 text-center hover-elevate">
