@@ -22,7 +22,7 @@ export default function Header() {
             <Languages className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
           <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            LangBuddy
+            MCQGyaan AI
           </h1>
         </div>
         <Button

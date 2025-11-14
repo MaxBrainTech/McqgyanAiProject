@@ -1,8 +1,8 @@
-# LangBuddy - AI-Powered Language Learning Platform
+# MCQGyaan AI - AI-Powered Language Learning Platform
 
 ## Overview
 
-LangBuddy is a smart mock test application designed for CBSE school students (Class 6-10) learning languages (French, German, Spanish, Hindi, Marathi, and Kannada). The platform provides AI-generated interactive questions that adapt to student performance, offering instant feedback and personalized learning experiences. The app features a vibrant, gamified interface with gradient backgrounds and glassmorphism effects, making language learning engaging and effective for young students.
+MCQGyaan AI is a smart mock test application designed for CBSE school students (Class 6-10) learning languages (French, German, Spanish, Hindi, Marathi, and Kannada). The platform provides AI-generated interactive questions that adapt to student performance, offering instant feedback and personalized learning experiences. The app features a vibrant, gamified interface with gradient backgrounds and glassmorphism effects, making language learning engaging and effective for young students.
 
 ## User Preferences
 

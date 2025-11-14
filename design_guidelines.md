@@ -1,4 +1,4 @@
-# LangBuddy Design Guidelines
+# MCQGyaan AI Design Guidelines
 
 ## Design Approach
 
@@ -57,7 +57,7 @@
 ## Component Library
 
 ### Navigation & Branding
-**Top Bar**: Fixed header with "LangBuddy" logo (playful font treatment), minimal navigation, session progress indicator in top-right corner. Background: white with subtle shadow-md.
+**Top Bar**: Fixed header with "MCQGyaan AI" logo (playful font treatment), minimal navigation, session progress indicator in top-right corner. Background: white with subtle shadow-md.
 
 ### Home Screen
 **Language Selection Cards**: Three large, tappable cards in a grid (grid-cols-1 md:grid-cols-3), each with:
