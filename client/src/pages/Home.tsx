@@ -117,7 +117,7 @@ export default function Home({ onStartTest }: HomeProps) {
           <div className="text-center space-y-3 sm:space-y-4">
             <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full border border-primary/20">
               <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-              <span className="text-base font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">CBSE Language Learning Platform</span>
+              <span className="text-base font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Language Learning Platform</span>
             </div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold">
               <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
