@@ -42,7 +42,9 @@ export class MemStorage implements IStorage {
   async createTestSession(insertSession: InsertTestSession): Promise<TestSession> {
     const id = randomUUID();
     const session: TestSession = {
-      language: insertSession.language,
+      mode: insertSession.mode ?? "language",
+      language: insertSession.language ?? null,
+      scienceCategory: insertSession.scienceCategory ?? null,
       classLevel: insertSession.classLevel,
       difficulty: insertSession.difficulty,
       testType: insertSession.testType ?? "mixed",
