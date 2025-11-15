@@ -10,7 +10,9 @@ import { apiRequest } from "@/lib/queryClient";
 
 interface TestPageProps {
   config: {
-    language: string;
+    mode?: string;
+    language?: string;
+    scienceCategory?: string;
     class: number;
     difficulty: string;
     testType: string;
@@ -126,6 +128,7 @@ export default function TestPage({ config, onExit }: TestPageProps) {
   };
 
   if (showSummary) {
+    const subject = config.mode === "science" ? config.scienceCategory : config.language;
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
@@ -133,7 +136,7 @@ export default function TestPage({ config, onExit }: TestPageProps) {
             totalScore={totalScore}
             totalQuestions={questionNumber}
             correctAnswers={correctAnswers}
-            language={config.language}
+            subject={subject || "quiz"}
             onNewTest={handleNewTest}
             onHome={onExit}
           />
@@ -174,7 +177,9 @@ export default function TestPage({ config, onExit }: TestPageProps) {
         <div className="space-y-4 sm:space-y-6">
           <div className="flex items-center justify-between flex-wrap gap-3 sm:gap-4">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold capitalize">{config.language} Test</h1>
+              <h1 className="text-xl sm:text-2xl font-bold capitalize">
+                {config.mode === "science" ? config.scienceCategory : config.language} Test
+              </h1>
               <p className="text-base text-muted-foreground">
                 Class {config.class} • {config.difficulty}
               </p>
@@ -202,7 +207,7 @@ export default function TestPage({ config, onExit }: TestPageProps) {
               question={currentQuestion}
               questionType={questionType}
               options={questionOptions}
-              language={config.language}
+              language={config.language || ""}
               onSubmit={handleSubmitAnswer}
               isSubmitting={evaluateAnswerMutation.isPending}
             />
@@ -215,7 +220,7 @@ export default function TestPage({ config, onExit }: TestPageProps) {
                 correctAnswer={feedbackData.correctAnswer}
                 isCorrect={feedbackData.isCorrect}
                 encouragement={feedbackData.encouragement}
-                language={config.language}
+                language={config.language || ""}
                 onNext={handleNext}
                 onEndTest={handleEndTest}
               />

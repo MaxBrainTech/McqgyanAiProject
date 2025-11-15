@@ -8,7 +8,7 @@ interface TestSummaryProps {
   totalScore: number;
   totalQuestions: number;
   correctAnswers: number;
-  language: string;
+  subject: string; // Can be language or science category
   onNewTest: () => void;
   onHome: () => void;
 }
@@ -17,7 +17,7 @@ export default function TestSummary({
   totalScore,
   totalQuestions,
   correctAnswers,
-  language,
+  subject,
   onNewTest,
   onHome,
 }: TestSummaryProps) {
@@ -30,7 +30,7 @@ export default function TestSummary({
     const scores = savedScores ? JSON.parse(savedScores) : [];
     
     const newEntry = {
-      language: language.charAt(0).toUpperCase() + language.slice(1),
+      language: subject ? subject.charAt(0).toUpperCase() + subject.slice(1) : "Unknown",
       score: totalScore,
       totalQuestions,
       date: new Date().toLocaleString(),
@@ -41,7 +41,7 @@ export default function TestSummary({
     const topScores = scores.slice(0, 5);
     
     localStorage.setItem("langbuddy_scores", JSON.stringify(topScores));
-  }, [totalScore, totalQuestions, language]);
+  }, [totalScore, totalQuestions, subject]);
 
   return (
     <motion.div
@@ -59,7 +59,7 @@ export default function TestSummary({
           <div>
             <h1 className="text-3xl font-bold mb-2">Test Complete!</h1>
             <p className="text-lg text-muted-foreground">
-              Great work on your {language} test
+              Great work on your {subject || "quiz"} test
             </p>
           </div>
 
