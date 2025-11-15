@@ -7,7 +7,9 @@ const openai = new OpenAI({
 });
 
 interface QuestionGenerationParams {
-  language: string;
+  mode?: string;
+  language?: string;
+  scienceCategory?: string;
   classLevel: number;
   difficulty: string;
   chapter: number;
@@ -33,7 +35,12 @@ export async function generateQuestion(params: QuestionGenerationParams & { isMc
   correctOption?: string;
   explanation?: string;
 }> {
-  const { language, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance, previousQuestions, isMcq } = params;
+  const { mode, language, scienceCategory, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance, previousQuestions, isMcq } = params;
+  
+  // For science mode, use different generation logic
+  if (mode === 'science') {
+    return generateScienceQuestion({ scienceCategory, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance, previousQuestions, isMcq });
+  }
   
   console.log(`[AI] Generating ${isMcq ? 'MCQ' : 'open-ended'} question #${questionNumber} for ${language} - ${difficulty} difficulty`);
   
@@ -388,6 +395,143 @@ Make the question challenging but fair for Class ${classLevel} CBSE level with c
   } catch (error: any) {
     console.error(`[AI ERROR] Failed to generate MCQ:`, error.message || error);
     throw new Error(`Failed to generate MCQ: ${error.message || "Unknown error"}`);
+  }
+}
+
+async function generateScienceQuestion(params: {
+  scienceCategory?: string;
+  classLevel: number;
+  difficulty: string;
+  chapterTitle: string;
+  questionNumber: number;
+  previousPerformance?: string;
+  previousQuestions?: string[];
+  isMcq?: boolean;
+}): Promise<{
+  question: string;
+  correctAnswer: string;
+  questionType: string;
+  options: string[];
+  correctOption: string;
+  explanation: string;
+}> {
+  const { scienceCategory, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance, previousQuestions, isMcq } = params;
+  
+  console.log(`[AI] Generating science MCQ #${questionNumber} for ${scienceCategory} - ${difficulty} difficulty`);
+  
+  const adaptiveContext = previousPerformance 
+    ? `\nStudent's previous performance: ${previousPerformance}. Adjust the difficulty accordingly.`
+    : '';
+
+  const previousQuestionsContext = previousQuestions && previousQuestions.length > 0
+    ? `\n\n⚠️ CRITICAL: DO NOT REPEAT THESE QUESTIONS - Generate a completely NEW and DIFFERENT question:\n${previousQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}\n`
+    : '';
+
+  const categoryContext = {
+    physics: "Focus on concepts like motion, force, energy, pressure, simple machines, and gravity. Use real-world examples and CBSE-appropriate calculations.",
+    chemistry: "Focus on matter, elements, compounds, atoms, acids-bases, chemical reactions, and metals. Use NCERT terminology and examples.",
+    biology: "Focus on cells, tissues, life processes, classification, human body systems, reproduction, and heredity. Use CBSE diagram-based questions where appropriate.",
+    general: "Focus on natural resources, environment, light, sound, heat, and electricity. Use practical applications and everyday examples."
+  };
+
+  const categoryGuidelines = categoryContext[scienceCategory?.toLowerCase() as keyof typeof categoryContext] || "";
+
+  const prompt = `You are a strict CBSE General Science teacher for Class ${classLevel} following the official NCERT curriculum.
+
+Generate a multiple choice question (MCQ) for ${scienceCategory} on topic "${chapterTitle}" at ${difficulty} difficulty level.${adaptiveContext}${previousQuestionsContext}
+
+CBSE Science MCQ Guidelines:
+- Follow NCERT textbook patterns and terminology for Class ${classLevel}
+- ${categoryGuidelines}
+- Create 4 distinct options (A, B, C, D) with only ONE correct answer
+- Make distractors (wrong answers) plausible but clearly incorrect
+- Options should be of similar length and complexity
+- Use scientific terminology appropriate for Class ${classLevel}
+- Include numerical values, units, or diagrams where relevant
+
+MCQ Question Types (choose one):
+1. Concept-based: Test understanding of a scientific principle
+2. Fact-based: Test knowledge of scientific facts or definitions
+3. Application-based: Apply concepts to real-world scenarios
+4. Calculation-based: Simple calculations (for easy) to multi-step (for hard)
+5. Diagram-based: Describe a diagram or process
+
+IMPORTANT - MCQ Format Rules:
+1. Question should be clear, concise, and test one specific concept
+2. All 4 options must be distinct and scientifically accurate (except the distractors)
+3. Provide a clear explanation including why the answer is correct
+4. Use SI units where applicable
+5. Ensure Class ${classLevel} students can solve without advanced knowledge
+
+Example GOOD Science MCQ (Physics):
+Question: "A car travels 150 km in 3 hours. What is its average speed?"
+Options: ["A. 30 km/h", "B. 45 km/h", "C. 50 km/h", "D. 60 km/h"]
+Correct: "C"
+Explanation: "Average speed = Total distance ÷ Total time = 150 km ÷ 3 hours = 50 km/h. The formula for average speed is distance divided by time."
+
+Example GOOD Science MCQ (Biology):
+Question: "Which organelle is known as the powerhouse of the cell?"
+Options: ["A. Nucleus", "B. Mitochondria", "C. Ribosome", "D. Chloroplast"]
+Correct: "B"
+Explanation: "Mitochondria are called the powerhouse of the cell because they produce energy (ATP) through cellular respiration. The nucleus controls cell activities, ribosomes make proteins, and chloroplasts perform photosynthesis in plant cells."
+
+Return your response in this exact JSON format:
+{
+  "question": "<the question text>",
+  "options": ["A. <option1>", "B. <option2>", "C. <option3>", "D. <option4>"],
+  "correctOption": "<A, B, C, or D>",
+  "correctAnswer": "<the full text of the correct answer>",
+  "explanation": "<detailed explanation of why this answer is correct>",
+  "questionType": "mcq"
+}
+
+Make the question challenging but fair for Class ${classLevel} CBSE students. Ensure scientific accuracy and appropriate difficulty level.`;
+
+  const startTime = Date.now();
+  
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      max_completion_tokens: 800,
+    });
+    
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    const content = response.choices[0]?.message?.content?.trim();
+    
+    if (!content) {
+      throw new Error("AI returned empty response");
+    }
+    
+    const result = JSON.parse(content);
+    console.log(`[AI] Science MCQ generated in ${elapsed}s: ${result.question.substring(0, 50)}...`);
+    
+    // Validate MCQ format
+    if (!Array.isArray(result.options) || result.options.length !== 4) {
+      throw new Error("Invalid MCQ format: must have exactly 4 options");
+    }
+    
+    if (!["A", "B", "C", "D"].includes(result.correctOption)) {
+      throw new Error("Invalid MCQ format: correctOption must be A, B, C, or D");
+    }
+    
+    if (!result.explanation || result.explanation.trim().length === 0) {
+      console.error("[AI ERROR] Science MCQ missing explanation");
+      result.explanation = "No explanation provided";
+    }
+    
+    return {
+      question: result.question || "Error generating question",
+      options: result.options,
+      correctOption: result.correctOption,
+      correctAnswer: result.correctAnswer || result.options[0] || "N/A",
+      explanation: result.explanation,
+      questionType: "mcq",
+    };
+  } catch (error: any) {
+    console.error(`[AI ERROR] Failed to generate science MCQ:`, error.message || error);
+    throw new Error(`Failed to generate science MCQ: ${error.message || "Unknown error"}`);
   }
 }
 

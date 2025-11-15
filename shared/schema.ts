@@ -20,7 +20,9 @@ export type User = typeof users.$inferSelect;
 // Test session schema for tracking current tests
 export const testSessions = pgTable("test_sessions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  language: text("language").notNull(),
+  mode: text("mode").notNull().default("language"), // 'language' or 'science'
+  language: text("language"), // For language mode
+  scienceCategory: text("science_category"), // For science mode: physics, chemistry, biology, general
   classLevel: integer("class_level").notNull(),
   difficulty: text("difficulty").notNull(),
   testType: text("test_type").notNull().default("mixed"),

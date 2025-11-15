@@ -167,26 +167,62 @@ const CHAPTERS: Record<string, Array<{ id: number; title: string; description: s
     { id: 24, title: "ನಿರಾಕರಣೆ ವಾಕ್ಯಗಳು (Nirakarane Vakyagalu)", description: "Negative sentences" },
     { id: 25, title: "ಪ್ರಶ್ನಾರ್ಥಕ ಪದಗಳು (Prashnarthaka Padagalu)", description: "Question words and formation" },
   ],
+  // General Science chapters across four categories
+  physics: [
+    { id: 1, title: "Measurement and Units", description: "Physical quantities, SI units, measurement tools" },
+    { id: 2, title: "Motion", description: "Types of motion, speed, velocity, distance-time graphs" },
+    { id: 3, title: "Force and Pressure", description: "Types of forces, pressure, atmospheric pressure" },
+    { id: 4, title: "Work and Energy", description: "Work, energy forms, law of conservation of energy" },
+    { id: 5, title: "Simple Machines", description: "Levers, pulleys, inclined planes, mechanical advantage" },
+    { id: 6, title: "Gravity", description: "Universal gravitation, weight, free fall" },
+  ],
+  chemistry: [
+    { id: 7, title: "Matter and Its States", description: "Solid, liquid, gas, changes of state" },
+    { id: 8, title: "Elements and Compounds", description: "Pure substances, mixtures, separation techniques" },
+    { id: 9, title: "Atoms and Molecules", description: "Atomic structure, ions, chemical formulae" },
+    { id: 10, title: "Acids, Bases and Salts", description: "Properties, pH scale, neutralization" },
+    { id: 11, title: "Chemical Reactions", description: "Types of reactions, balancing equations" },
+    { id: 12, title: "Metals and Non-metals", description: "Properties, reactivity series, corrosion" },
+  ],
+  biology: [
+    { id: 13, title: "Cell - Basic Unit of Life", description: "Cell structure, organelles, prokaryotic vs eukaryotic" },
+    { id: 14, title: "Tissues", description: "Plant and animal tissues, functions" },
+    { id: 15, title: "Life Processes", description: "Nutrition, respiration, transportation, excretion" },
+    { id: 16, title: "Diversity in Living Organisms", description: "Classification, five kingdoms" },
+    { id: 17, title: "Human Body Systems", description: "Digestive, circulatory, respiratory, nervous systems" },
+    { id: 18, title: "Reproduction", description: "Asexual and sexual reproduction, human reproduction" },
+    { id: 19, title: "Heredity and Evolution", description: "Genes, DNA, natural selection, adaptation" },
+  ],
+  general: [
+    { id: 20, title: "Natural Resources", description: "Air, water, soil, conservation" },
+    { id: 21, title: "Environmental Science", description: "Pollution, ecosystem, biodiversity" },
+    { id: 22, title: "Light and Reflection", description: "Laws of reflection, mirrors, image formation" },
+    { id: 23, title: "Sound", description: "Production, propagation, characteristics" },
+    { id: 24, title: "Heat and Temperature", description: "Thermal energy, heat transfer, expansion" },
+    { id: 25, title: "Electricity and Magnetism", description: "Electric current, circuits, magnets" },
+  ],
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Get chapters for a language
-  app.get("/api/chapters/:language", (req, res) => {
-    const { language } = req.params;
-    const chapters = CHAPTERS[language.toLowerCase()] || [];
+  // Get chapters for a language or science category
+  app.get("/api/chapters/:subject", (req, res) => {
+    const { subject } = req.params;
+    const chapters = CHAPTERS[subject.toLowerCase()] || [];
     res.json(chapters);
   });
 
   // Start a new test session
   app.post("/api/test/start", async (req, res) => {
     try {
-      const { language, class: classLevel, difficulty, chapter, testLength, testType } = req.body;
+      const { mode, language, scienceCategory, class: classLevel, difficulty, chapter, testLength, testType } = req.body;
       
       const session = await storage.createTestSession({
-        language,
+        mode: mode || "language",
+        language: mode === "language" ? language : null,
+        scienceCategory: mode === "science" ? scienceCategory : null,
         classLevel,
         difficulty,
-        testType: testType || "mixed",
+        testType: testType || "mcq-only", // Science tests are MCQ-only by default
         chapter,
         testLength: testLength || 10,
         currentQuestion: 0,
@@ -212,7 +248,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Session not found" });
       }
 
-      const chapters = CHAPTERS[session.language.toLowerCase()] || [];
+      // Get subject key based on mode
+      const subjectKey = session.mode === "science" 
+        ? session.scienceCategory.toLowerCase() 
+        : session.language.toLowerCase();
+      
+      const chapters = CHAPTERS[subjectKey] || [];
       const chapter = chapters.find(c => c.id === session.chapter);
       
       if (!chapter) {
@@ -250,7 +291,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const questionData = await generateQuestion({
+        mode: session.mode,
         language: session.language,
+        scienceCategory: session.scienceCategory,
         classLevel: session.classLevel,
         difficulty: session.difficulty,
         chapter: session.chapter,
