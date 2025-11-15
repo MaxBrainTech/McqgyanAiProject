@@ -37,8 +37,11 @@ export async function generateQuestion(params: QuestionGenerationParams & { isMc
 }> {
   const { mode, language, scienceCategory, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance, previousQuestions, isMcq } = params;
   
+  console.log(`[generateQuestion] mode=${mode}, language=${language}, scienceCategory=${scienceCategory}, isMcq=${isMcq}`);
+  
   // For science mode, use different generation logic
   if (mode === 'science') {
+    console.log(`[generateQuestion] Calling generateScienceQuestion with category=${scienceCategory}`);
     return generateScienceQuestion({ scienceCategory, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance, previousQuestions, isMcq });
   }
   

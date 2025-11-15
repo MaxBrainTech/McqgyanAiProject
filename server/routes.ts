@@ -216,6 +216,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { mode, language, scienceCategory, class: classLevel, difficulty, chapter, testLength, testType } = req.body;
       
+      console.log(`[TEST START] mode=${mode}, language=${language}, scienceCategory=${scienceCategory}, class=${classLevel}, difficulty=${difficulty}`);
+      
       const session = await storage.createTestSession({
         mode: mode || "language",
         language: mode === "language" ? language : null,
@@ -231,6 +233,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         conversationHistory: "[]",
       });
 
+      console.log(`[SESSION CREATED] mode=${session.mode}, language=${session.language}, scienceCategory=${session.scienceCategory}`);
+      
       res.json(session);
     } catch (error) {
       console.error("Error starting test:", error);

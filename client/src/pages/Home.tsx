@@ -88,7 +88,13 @@ export default function Home({ onStartTest }: HomeProps) {
 
   const handleDifficultySelect = (difficulty: string | number) => {
     setSelectedDifficulty(difficulty as string);
-    setStep("testType");
+    // Science mode always uses MCQ-only tests, so skip test type selection
+    if (selectedMode === "science") {
+      setSelectedTestType("mcq-only");
+      setStep("testLength");
+    } else {
+      setStep("testType");
+    }
   };
 
   const handleTestTypeSelect = (testType: string) => {
@@ -145,14 +151,14 @@ export default function Home({ onStartTest }: HomeProps) {
                 MCQGyaan AI
               </span>
             </h1>
-            <p className="text-base sm:text-lg md:text-xl text-foreground/80 max-w-3xl mx-auto px-4">
-              Master French, German, Spanish, Hindi, Marathi, and Kannada with AI-powered adaptive testing
-              <span className="block mt-3 font-semibold text-foreground text-base flex flex-wrap items-center justify-center gap-3">
+            <div className="text-base sm:text-lg md:text-xl text-foreground/80 max-w-3xl mx-auto px-4">
+              <p className="mb-3">Master French, German, Spanish, Hindi, Marathi, and Kannada with AI-powered adaptive testing</p>
+              <div className="font-semibold text-foreground text-base flex flex-wrap items-center justify-center gap-3">
                 <Badge variant="secondary" className="text-base">6 Languages</Badge>
                 <Badge variant="secondary" className="text-base">25 chapters each</Badge>
                 <Badge variant="secondary" className="text-base">Real-time AI feedback</Badge>
-              </span>
-            </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -508,12 +514,17 @@ export default function Home({ onStartTest }: HomeProps) {
         {step === "testLength" && (
           <div className="space-y-6 max-w-4xl mx-auto">
             <div className="flex items-center gap-3 sm:gap-4 mb-6">
-              <Button variant="outline" onClick={() => setStep("testType")} data-testid="button-back" size="sm">
+              <Button 
+                variant="outline" 
+                onClick={() => setStep(selectedMode === "science" ? "difficulty" : "testType")} 
+                data-testid="button-back" 
+                size="sm"
+              >
                 ← Back
               </Button>
               <div>
                 <h2 className="text-lg sm:text-xl md:text-2xl font-bold capitalize">
-                  {selectedLanguage} - Class {selectedClass} - {selectedDifficulty} - {selectedTestType === "mcq-only" ? "MCQ Only" : "Mixed"}
+                  {selectedMode === "science" ? selectedScienceCategory : selectedLanguage} - Class {selectedClass} - {selectedDifficulty} - {selectedTestType === "mcq-only" ? "MCQ Only" : "Mixed"}
                 </h2>
                 <p className="text-sm text-muted-foreground">Step 4 of 5</p>
               </div>
