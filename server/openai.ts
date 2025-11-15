@@ -52,12 +52,12 @@ export async function generateQuestion(params: QuestionGenerationParams & { isMc
     ? `\n\n⚠️ CRITICAL: DO NOT REPEAT THESE QUESTIONS - Generate a completely NEW and DIFFERENT question:\n${previousQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}\n`
     : '';
 
-  if (isMcq) {
+  if (isMcq && language) {
     return generateMcqQuestion({ language, classLevel, difficulty, chapterTitle, questionNumber, adaptiveContext, previousQuestionsContext });
   }
 
-  const isIndianLanguage = ['hindi', 'marathi', 'kannada'].includes(language.toLowerCase());
-  const languageLower = language.toLowerCase();
+  const languageLower = language?.toLowerCase() || "";
+  const isIndianLanguage = ['hindi', 'marathi', 'kannada'].includes(languageLower);
   
   // Determine script type and examples based on language
   const scriptInfo = languageLower === 'kannada' 
@@ -235,8 +235,8 @@ async function generateMcqQuestion(params: {
 }> {
   const { language, classLevel, difficulty, chapterTitle, adaptiveContext, previousQuestionsContext } = params;
 
-  const isIndianLanguage = ['hindi', 'marathi', 'kannada'].includes(language.toLowerCase());
-  const languageLower = language.toLowerCase();
+  const languageLower = language?.toLowerCase() || "";
+  const isIndianLanguage = ['hindi', 'marathi', 'kannada'].includes(languageLower);
   
   // Determine script type and MCQ examples based on language
   const mcqScriptInfo = languageLower === 'kannada'

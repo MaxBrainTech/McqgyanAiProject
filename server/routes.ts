@@ -250,8 +250,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get subject key based on mode
       const subjectKey = session.mode === "science" 
-        ? session.scienceCategory.toLowerCase() 
-        : session.language.toLowerCase();
+        ? (session.scienceCategory || "general").toLowerCase() 
+        : (session.language || "french").toLowerCase();
       
       const chapters = CHAPTERS[subjectKey] || [];
       const chapter = chapters.find(c => c.id === session.chapter);
@@ -292,8 +292,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const questionData = await generateQuestion({
         mode: session.mode,
-        language: session.language,
-        scienceCategory: session.scienceCategory,
+        language: session.language || undefined,
+        scienceCategory: session.scienceCategory || undefined,
         classLevel: session.classLevel,
         difficulty: session.difficulty,
         chapter: session.chapter,
@@ -377,7 +377,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           question: currentQuestionData.question,
           correctAnswer: currentQuestionData.correctAnswer,
           studentAnswer: answer,
-          language: session.language,
+          language: session.language || "english",
           classLevel: session.classLevel,
           difficulty: session.difficulty,
         });
