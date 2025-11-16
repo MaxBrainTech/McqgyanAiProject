@@ -1,10 +1,27 @@
 import OpenAI from "openai";
 
-// This is using Replit's AI Integrations service, which provides OpenAI-compatible API access without requiring your own OpenAI API key.
+// OpenAI Configuration
+// Priority: Use your own OPENAI_API_KEY if provided, otherwise fall back to Replit's AI Integrations
 const openai = new OpenAI({
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY
+  apiKey: process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+  baseURL: process.env.OPENAI_API_KEY ? undefined : process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
+
+// GPT Model Configuration - You can change these to use different models
+export const GPT_MODELS = {
+  // Best for complex reasoning, coding, and analysis
+  ADVANCED: "gpt-4o",           // GPT-4 Optimized - Most capable, balanced cost/performance
+  
+  // Fast and cost-effective for simpler tasks
+  STANDARD: "gpt-4o-mini",      // GPT-4 Mini - Faster, cheaper, still very capable
+  
+  // Alternative options you can use:
+  // "gpt-4-turbo": Latest GPT-4 Turbo with vision
+  // "gpt-3.5-turbo": Fastest, cheapest, good for simple tasks
+} as const;
+
+// Current model in use - Change this to switch models globally
+const CURRENT_MODEL = GPT_MODELS.STANDARD;  // Using gpt-4o-mini for cost efficiency
 
 // CBSE Blueprint Metadata - Defines age-appropriate expectations for each class level
 const CBSE_CLASS_GUIDELINES = {
@@ -92,7 +109,7 @@ Return JSON format:
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: CURRENT_MODEL,
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       max_completion_tokens: 500,
@@ -149,7 +166,7 @@ Return JSON:
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: CURRENT_MODEL,
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       max_completion_tokens: 400,
@@ -322,7 +339,7 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
   
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: CURRENT_MODEL,
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       max_completion_tokens: 500,
@@ -543,7 +560,7 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
   
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: CURRENT_MODEL,
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       max_completion_tokens: 800,
@@ -790,7 +807,7 @@ Make the question challenging but fair for Class ${classLevel} CBSE students. En
   
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: CURRENT_MODEL,
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       max_completion_tokens: 800,
@@ -934,7 +951,7 @@ Return in this exact JSON format:
   
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: CURRENT_MODEL,
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       max_completion_tokens: 1000,
