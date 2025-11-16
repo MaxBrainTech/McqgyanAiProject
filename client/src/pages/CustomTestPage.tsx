@@ -183,11 +183,21 @@ export default function CustomTestPage({ onBack }: CustomTestPageProps) {
                             )}
                           </div>
                         </CardHeader>
-                        <CardContent className="text-sm space-y-2">
+                        <CardContent className="text-sm space-y-3">
                           <p className="font-medium">{question.question}</p>
-                          <p>Your answer: <span className="text-blue-600">{answers[question.id]}</span></p>
+                          <div className="p-2 bg-blue-50 dark:bg-blue-950 rounded">
+                            <p><span className="font-semibold">Your answer:</span> <span className="text-blue-600">{answers[question.id]}</span></p>
+                          </div>
                           {!result?.isCorrect && (
-                            <p>Correct answer: <span className="text-green-600">{result?.correctAnswer}</span></p>
+                            <div className="p-2 bg-green-50 dark:bg-green-950 rounded">
+                              <p><span className="font-semibold">Correct answer:</span> <span className="text-green-600">{result?.correctAnswer}</span></p>
+                            </div>
+                          )}
+                          {result?.explanation && (
+                            <div className="p-3 bg-purple-50 dark:bg-purple-950 rounded">
+                              <p className="font-semibold mb-1">Explanation:</p>
+                              <p className="text-muted-foreground">{result.explanation}</p>
+                            </div>
                           )}
                         </CardContent>
                       </Card>
@@ -213,12 +223,29 @@ export default function CustomTestPage({ onBack }: CustomTestPageProps) {
       <div className="container mx-auto max-w-2xl">
         <Card>
           <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>{testData?.test?.title}</CardTitle>
+            <div className="flex justify-between items-start mb-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  if (confirm("Are you sure you want to exit the test? Your progress will be lost.")) {
+                    setTestStarted(false);
+                    setShareCode("");
+                    setCurrentQuestionIndex(0);
+                    setAnswers({});
+                    setResults({});
+                  }
+                }}
+                data-testid="button-exit-test"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Exit Test
+              </Button>
               <span className="text-sm text-muted-foreground">
                 Question {currentQuestionIndex + 1} of {testData?.questions?.length}
               </span>
             </div>
+            <CardTitle>{testData?.test?.title}</CardTitle>
             <CardDescription>
               {testData?.test?.subject} • Class {testData?.test?.classLevel}
             </CardDescription>
