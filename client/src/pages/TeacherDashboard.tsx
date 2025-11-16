@@ -11,9 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { GraduationCap, LogOut, Plus, Share2, Eye, Loader2 } from "lucide-react";
+import { GraduationCap, LogOut, Plus, Share2, Eye, Loader2, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const testSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
@@ -111,6 +113,91 @@ export default function TeacherDashboard({ teacherData, onLogout }: TeacherDashb
       title: "Copied!",
       description: "Share code copied to clipboard",
     });
+  }
+
+  async function downloadQuestionPaper(testId: string) {
+    try {
+      // Fetch test details if not already loaded
+      const response = await fetch(`/api/teacher/${teacherData.id}/tests/${testId}`);
+      const data = await response.json();
+      
+      const doc = new jsPDF();
+      
+      // Add title
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.text(data.test.title, 14, 20);
+      
+      // Add test details
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Subject: ${data.test.subject}`, 14, 30);
+      doc.text(`Class: ${data.test.classLevel}`, 14, 36);
+      doc.text(`Difficulty: ${data.test.difficulty}`, 14, 42);
+      doc.text(`Total Questions: ${data.questions.length}`, 14, 48);
+      doc.text(`Share Code: ${data.test.shareCode}`, 14, 54);
+      
+      // Add instructions if available
+      if (data.test.instructions) {
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.text("Instructions:", 14, 62);
+        doc.setFont("helvetica", "normal");
+        const instructionLines = doc.splitTextToSize(data.test.instructions, 180);
+        doc.text(instructionLines, 14, 68);
+      }
+      
+      // Add questions
+      let yPos = data.test.instructions ? 80 : 64;
+      data.questions.forEach((question: any, index: number) => {
+        // Check if we need a new page
+        if (yPos > 260) {
+          doc.addPage();
+          yPos = 20;
+        }
+        
+        // Question number and text
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.text(`Question ${index + 1}:`, 14, yPos);
+        
+        doc.setFont("helvetica", "normal");
+        const questionLines = doc.splitTextToSize(question.question, 180);
+        doc.text(questionLines, 14, yPos + 6);
+        yPos += 6 + (questionLines.length * 5);
+        
+        // Options for MCQ
+        if (question.questionType === "mcq" && question.options) {
+          doc.setFontSize(11);
+          question.options.forEach((option: string, optIdx: number) => {
+            if (yPos > 260) {
+              doc.addPage();
+              yPos = 20;
+            }
+            const optionText = `${String.fromCharCode(65 + optIdx)}. ${option}`;
+            const optionLines = doc.splitTextToSize(optionText, 170);
+            doc.text(optionLines, 20, yPos);
+            yPos += optionLines.length * 5;
+          });
+        }
+        
+        yPos += 8; // Space between questions
+      });
+      
+      // Save the PDF
+      doc.save(`${data.test.title}_${data.test.shareCode}.pdf`);
+      
+      toast({
+        title: "Downloaded",
+        description: "Question paper downloaded successfully",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to download question paper",
+      });
+    }
   }
 
   return (
@@ -413,6 +500,15 @@ export default function TeacherDashboard({ teacherData, onLogout }: TeacherDashb
                         >
                           <Eye className="h-4 w-4 mr-1" />
                           View Questions
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => downloadQuestionPaper(test.id)}
+                          data-testid={`button-download-${test.id}`}
+                        >
+                          <Download className="h-4 w-4 mr-1" />
+                          Download PDF
                         </Button>
                         <Button 
                           variant="outline" 
