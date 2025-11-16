@@ -73,6 +73,7 @@ export const customTests = pgTable("custom_tests", {
   syllabus: text("syllabus").notNull(), // CBSE topic/chapter
   numQuestions: integer("num_questions").notNull(),
   testType: text("test_type").notNull().default("mcq"), // mcq, open-ended, mixed
+  gptModel: text("gpt_model").notNull().default("gpt-4o-mini"), // GPT model selection
   shareCode: text("share_code").notNull().unique(), // For students to access
   instructions: text("instructions"),
   status: text("status").notNull().default("draft"), // draft, published

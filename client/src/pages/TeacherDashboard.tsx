@@ -25,6 +25,7 @@ const testSchema = z.object({
   syllabus: z.string().min(5, "Syllabus/topic must be at least 5 characters"),
   numQuestions: z.number().min(5).max(50),
   testType: z.enum(["mcq", "open-ended", "mixed"]),
+  gptModel: z.enum(["gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"]),
   instructions: z.string().optional(),
 });
 
@@ -64,6 +65,7 @@ export default function TeacherDashboard({ teacherData, onLogout }: TeacherDashb
       syllabus: "",
       numQuestions: 10,
       testType: "mcq",
+      gptModel: "gpt-4o-mini",
       instructions: "",
     },
   });
@@ -377,6 +379,35 @@ export default function TeacherDashboard({ teacherData, onLogout }: TeacherDashb
                               <SelectItem value="mcq">MCQ Only</SelectItem>
                               <SelectItem value="open-ended">Open-Ended Only</SelectItem>
                               <SelectItem value="mixed">Mixed</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="gptModel"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>GPT Model</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-gpt-model">
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="gpt-4o-mini">
+                                GPT-4o Mini (Fast & Affordable) ⚡
+                              </SelectItem>
+                              <SelectItem value="gpt-4o">
+                                GPT-4o (Best Quality) ⭐
+                              </SelectItem>
+                              <SelectItem value="gpt-3.5-turbo">
+                                GPT-3.5 Turbo (Cheapest) 💰
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />

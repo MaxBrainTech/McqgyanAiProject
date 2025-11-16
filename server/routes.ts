@@ -292,9 +292,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/teacher/:teacherId/generate-test", async (req, res) => {
     try {
       const { teacherId } = req.params;
-      const { title, subject, classLevel, difficulty, syllabus, numQuestions, testType, instructions } = req.body;
+      const { title, subject, classLevel, difficulty, syllabus, numQuestions, testType, gptModel, instructions } = req.body;
       
-      console.log(`[CUSTOM TEST] Generating ${numQuestions} ${difficulty} questions for ${subject} - ${syllabus}`);
+      console.log(`[CUSTOM TEST] Generating ${numQuestions} ${difficulty} questions for ${subject} - ${syllabus} using ${gptModel || 'gpt-4o-mini'}`);
       
       // Create custom test
       const test = await storage.createCustomTest({
@@ -306,6 +306,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         syllabus,
         numQuestions,
         testType: testType || "mcq",
+        gptModel: gptModel || "gpt-4o-mini",
         instructions: instructions || undefined,
         status: "draft",
       });
@@ -333,6 +334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             chapterTitle: syllabus,
             questionNumber: i,
             isMcq: testType === "mcq",
+            gptModel: gptModel || "gpt-4o-mini",
           });
           
           const question = await storage.createCustomQuestion({

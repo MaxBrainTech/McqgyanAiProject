@@ -73,6 +73,7 @@ interface QuestionGenerationParams {
   questionNumber: number;
   previousPerformance?: string;
   previousQuestions?: string[];
+  gptModel?: string;
 }
 
 interface AnswerEvaluationParams {
@@ -196,17 +197,20 @@ export async function generateQuestion(params: QuestionGenerationParams & { isMc
   correctOption?: string;
   explanation?: string;
 }> {
-  const { mode, language, scienceCategory, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance, previousQuestions, isMcq } = params;
+  const { mode, language, scienceCategory, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance, previousQuestions, isMcq, gptModel } = params;
+  
+  // Use the specified model or fall back to CURRENT_MODEL
+  const modelToUse = gptModel || CURRENT_MODEL;
   
   console.log(`[generateQuestion] mode=${mode}, language=${language}, scienceCategory=${scienceCategory}, isMcq=${isMcq}`);
   
   // For science mode, use different generation logic
   if (mode === 'science') {
-    console.log(`[generateQuestion] Calling generateScienceQuestion with category=${scienceCategory}`);
-    return generateScienceQuestion({ scienceCategory, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance, previousQuestions, isMcq });
+    console.log(`[generateQuestion] Calling generateScienceQuestion with category=${scienceCategory}, model=${modelToUse}`);
+    return generateScienceQuestion({ scienceCategory, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance, previousQuestions, isMcq, gptModel: modelToUse });
   }
   
-  console.log(`[AI] Generating ${isMcq ? 'MCQ' : 'open-ended'} question #${questionNumber} for ${language} - ${difficulty} difficulty`);
+  console.log(`[AI] Generating ${isMcq ? 'MCQ' : 'open-ended'} question #${questionNumber} for ${language} - ${difficulty} difficulty using ${modelToUse}`);
   
   const adaptiveContext = previousPerformance 
     ? `\nThe student's previous performance: ${previousPerformance}. Adjust the difficulty accordingly.`
@@ -217,7 +221,7 @@ export async function generateQuestion(params: QuestionGenerationParams & { isMc
     : '';
 
   if (isMcq && language) {
-    return generateMcqQuestion({ language, classLevel, difficulty, chapterTitle, questionNumber, adaptiveContext, previousQuestionsContext });
+    return generateMcqQuestion({ language, classLevel, difficulty, chapterTitle, questionNumber, adaptiveContext, previousQuestionsContext, gptModel: modelToUse });
   }
 
   const languageLower = language?.toLowerCase() || "";
@@ -451,6 +455,7 @@ async function generateMcqQuestion(params: {
   questionNumber: number;
   adaptiveContext: string;
   previousQuestionsContext: string;
+  gptModel?: string;
 }): Promise<{
   question: string;
   correctAnswer: string;
@@ -459,7 +464,8 @@ async function generateMcqQuestion(params: {
   correctOption: string;
   explanation: string;
 }> {
-  const { language, classLevel, difficulty, chapterTitle, adaptiveContext, previousQuestionsContext } = params;
+  const { language, classLevel, difficulty, chapterTitle, adaptiveContext, previousQuestionsContext, gptModel } = params;
+  const modelToUse = gptModel || CURRENT_MODEL;
 
   const languageLower = language?.toLowerCase() || "";
   const isIndianLanguage = ['hindi', 'marathi', 'kannada'].includes(languageLower);
@@ -560,7 +566,7 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
   
   try {
     const response = await openai.chat.completions.create({
-      model: CURRENT_MODEL,
+      model: modelToUse,
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       max_completion_tokens: 800,
@@ -574,7 +580,7 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
     }
     
     const result = JSON.parse(content);
-    console.log(`[AI] MCQ generated in ${elapsed}s: ${result.question.substring(0, 50)}...`);
+    console.log(`[AI] MCQ generated in ${elapsed}s using ${modelToUse}: ${result.question.substring(0, 50)}...`);
     
     // Validate MCQ response
     if (!Array.isArray(result.options) || result.options.length !== 4) {
@@ -708,6 +714,7 @@ async function generateScienceQuestion(params: {
   previousPerformance?: string;
   previousQuestions?: string[];
   isMcq?: boolean;
+  gptModel?: string;
 }): Promise<{
   question: string;
   correctAnswer: string;
@@ -716,7 +723,8 @@ async function generateScienceQuestion(params: {
   correctOption: string;
   explanation: string;
 }> {
-  const { scienceCategory, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance, previousQuestions, isMcq } = params;
+  const { scienceCategory, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance, previousQuestions, isMcq, gptModel } = params;
+  const modelToUse = gptModel || CURRENT_MODEL;
   
   console.log(`[AI] Generating science MCQ #${questionNumber} for ${scienceCategory} - ${difficulty} difficulty`);
   
@@ -807,7 +815,7 @@ Make the question challenging but fair for Class ${classLevel} CBSE students. En
   
   try {
     const response = await openai.chat.completions.create({
-      model: CURRENT_MODEL,
+      model: modelToUse,
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       max_completion_tokens: 800,
@@ -821,7 +829,7 @@ Make the question challenging but fair for Class ${classLevel} CBSE students. En
     }
     
     const result = JSON.parse(content);
-    console.log(`[AI] Science MCQ generated in ${elapsed}s: ${result.question.substring(0, 50)}...`);
+    console.log(`[AI] Science MCQ generated in ${elapsed}s using ${modelToUse}: ${result.question.substring(0, 50)}...`);
     
     // Validate MCQ format
     if (!Array.isArray(result.options) || result.options.length !== 4) {
