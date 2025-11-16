@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { GraduationCap, LogOut, Plus, Share2, Eye, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const testSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
@@ -47,6 +48,8 @@ const SUBJECTS = [
 
 export default function TeacherDashboard({ teacherData, onLogout }: TeacherDashboardProps) {
   const [showForm, setShowForm] = useState(false);
+  const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
+  const [showQuestionsDialog, setShowQuestionsDialog] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<TestForm>({
@@ -67,6 +70,11 @@ export default function TeacherDashboard({ teacherData, onLogout }: TeacherDashb
     queryKey: [`/api/teacher/${teacherData.id}/tests`],
   });
 
+  const { data: testDetails } = useQuery<any>({
+    queryKey: [`/api/teacher/${teacherData.id}/tests/${selectedTestId}`],
+    enabled: !!selectedTestId,
+  });
+
   const generateMutation = useMutation({
     mutationFn: async (data: TestForm) => {
       const res = await apiRequest("POST", `/api/teacher/${teacherData.id}/generate-test`, data);
@@ -80,6 +88,9 @@ export default function TeacherDashboard({ teacherData, onLogout }: TeacherDashb
       queryClient.invalidateQueries({ queryKey: [`/api/teacher/${teacherData.id}/tests`] });
       form.reset();
       setShowForm(false);
+      // Show the questions dialog
+      setSelectedTestId(result.test.id);
+      setShowQuestionsDialog(true);
     },
     onError: (error: any) => {
       toast({
@@ -387,10 +398,22 @@ export default function TeacherDashboard({ teacherData, onLogout }: TeacherDashb
                       <p className="text-sm text-muted-foreground">
                         Topic: {test.syllabus} • {test.numQuestions} questions
                       </p>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <code className="px-3 py-1 bg-muted rounded text-sm font-mono">
                           {test.shareCode}
                         </code>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => {
+                            setSelectedTestId(test.id);
+                            setShowQuestionsDialog(true);
+                          }}
+                          data-testid={`button-view-${test.id}`}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View Questions
+                        </Button>
                         <Button 
                           variant="outline" 
                           size="sm" 
@@ -398,7 +421,7 @@ export default function TeacherDashboard({ teacherData, onLogout }: TeacherDashb
                           data-testid={`button-copy-${test.id}`}
                         >
                           <Share2 className="h-4 w-4 mr-1" />
-                          Copy
+                          Copy Code
                         </Button>
                       </div>
                     </div>
@@ -409,6 +432,64 @@ export default function TeacherDashboard({ teacherData, onLogout }: TeacherDashb
           )}
         </div>
       </div>
+
+      {/* Questions Preview Dialog */}
+      <Dialog open={showQuestionsDialog} onOpenChange={setShowQuestionsDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{testDetails?.test?.title}</DialogTitle>
+            <DialogDescription>
+              {testDetails?.test?.subject} • Class {testDetails?.test?.classLevel} • {testDetails?.test?.difficulty}
+            </DialogDescription>
+          </DialogHeader>
+          {testDetails?.questions ? (
+            <div className="space-y-6">
+              {testDetails.questions.map((q: any, idx: number) => (
+                <Card key={q.id}>
+                  <CardHeader>
+                    <CardTitle className="text-base">Question {idx + 1}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="font-medium">{q.question}</p>
+                    {q.questionType === "mcq" && q.options && (
+                      <div className="space-y-2">
+                        <p className="text-sm font-semibold">Options:</p>
+                        {q.options.map((opt: string, optIdx: number) => (
+                          <div 
+                            key={optIdx} 
+                            className={`p-2 rounded ${q.correctOption === String.fromCharCode(65 + optIdx) ? 'bg-green-100 dark:bg-green-900' : 'bg-muted'}`}
+                          >
+                            {String.fromCharCode(65 + optIdx)}. {opt}
+                            {q.correctOption === String.fromCharCode(65 + optIdx) && (
+                              <Badge variant="default" className="ml-2">Correct</Badge>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {q.questionType === "open-ended" && (
+                      <div className="p-3 bg-green-100 dark:bg-green-900 rounded">
+                        <p className="text-sm font-semibold">Model Answer:</p>
+                        <p>{q.correctAnswer}</p>
+                      </div>
+                    )}
+                    {q.explanation && (
+                      <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded">
+                        <p className="text-sm font-semibold">Explanation:</p>
+                        <p className="text-sm">{q.explanation}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="flex justify-center p-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
