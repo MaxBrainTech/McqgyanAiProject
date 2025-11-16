@@ -85,11 +85,12 @@ interface AnswerEvaluationParams {
 }
 
 // Helper function to verify answer correctness independently
-async function verifyAnswer(question: string, proposedAnswer: string, mode: string): Promise<{
+async function verifyAnswer(question: string, proposedAnswer: string, mode: string, gptModel?: string): Promise<{
   isValid: boolean;
   explanation: string;
   alternativeAnswer?: string;
 }> {
+  const modelToUse = gptModel || CURRENT_MODEL;
   const prompt = `You are an independent fact-checker verifying the correctness of an answer.
 
 Question: ${question}
@@ -110,7 +111,7 @@ Return JSON format:
 
   try {
     const response = await openai.chat.completions.create({
-      model: CURRENT_MODEL,
+      model: modelToUse,
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       max_completion_tokens: 500,
@@ -139,8 +140,10 @@ async function assessQuestionQuality(
   question: string,
   classLevel: number,
   difficulty: string,
-  mode: string
+  mode: string,
+  gptModel?: string
 ): Promise<{ score: number; issues: string[] }> {
+  const modelToUse = gptModel || CURRENT_MODEL;
   const guidelines = CBSE_CLASS_GUIDELINES[classLevel as keyof typeof CBSE_CLASS_GUIDELINES];
   
   const prompt = `You are a CBSE curriculum expert evaluating question quality for Class ${classLevel}.
@@ -167,7 +170,7 @@ Return JSON:
 
   try {
     const response = await openai.chat.completions.create({
-      model: CURRENT_MODEL,
+      model: modelToUse,
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       max_completion_tokens: 400,
@@ -343,7 +346,7 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
   
   try {
     const response = await openai.chat.completions.create({
-      model: CURRENT_MODEL,
+      model: modelToUse,
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       max_completion_tokens: 500,
@@ -357,7 +360,7 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
     }
     
     const result = JSON.parse(content);
-    console.log(`[AI] Question generated in ${elapsed}s: ${result.question.substring(0, 50)}...`);
+    console.log(`[AI] Question generated in ${elapsed}s using ${modelToUse}: ${result.question.substring(0, 50)}...`);
     
     // Validate question completeness for Indian languages
     if (isIndianLanguage) {
@@ -400,7 +403,8 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
     const verification = await verifyAnswer(
       result.question,
       result.correctAnswer,
-      'language'
+      'language',
+      modelToUse
     );
     
     let verifiedAnswer = result.correctAnswer;
@@ -423,7 +427,8 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
       result.question,
       classLevel,
       difficulty,
-      'language'
+      'language',
+      modelToUse
     );
     
     console.log(`[AI] Quality Score: ${quality.score}/10`);
@@ -637,7 +642,8 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
     const verification = await verifyAnswer(
       result.question,
       result.correctAnswer,
-      'language'
+      'language',
+      modelToUse
     );
     
     let verifiedAnswer = result.correctAnswer;
@@ -678,7 +684,8 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
       result.question,
       classLevel,
       difficulty,
-      'language'
+      'language',
+      modelToUse
     );
     
     console.log(`[AI] Quality Score: ${quality.score}/10`);
@@ -850,7 +857,8 @@ Make the question challenging but fair for Class ${classLevel} CBSE students. En
     const verification = await verifyAnswer(
       result.question,
       result.correctAnswer,
-      'science'
+      'science',
+      modelToUse
     );
     
     let verifiedAnswer = result.correctAnswer;
@@ -891,7 +899,8 @@ Make the question challenging but fair for Class ${classLevel} CBSE students. En
       result.question,
       classLevel,
       difficulty,
-      'science'
+      'science',
+      modelToUse
     );
     
     console.log(`[AI] Quality Score: ${quality.score}/10`);
@@ -919,13 +928,14 @@ Make the question challenging but fair for Class ${classLevel} CBSE students. En
   }
 }
 
-export async function evaluateAnswer(params: AnswerEvaluationParams & { correctAnswer: string }): Promise<{
+export async function evaluateAnswer(params: AnswerEvaluationParams & { correctAnswer: string; gptModel?: string }): Promise<{
   score: number;
   feedback: string;
   isCorrect: boolean;
   encouragement: string;
 }> {
-  const { question, studentAnswer, correctAnswer, language, classLevel, difficulty } = params;
+  const { question, studentAnswer, correctAnswer, language, classLevel, difficulty, gptModel } = params;
+  const modelToUse = gptModel || CURRENT_MODEL;
 
   console.log(`[AI] Evaluating answer: "${studentAnswer.substring(0, 30)}..."`);
 
@@ -959,7 +969,7 @@ Return in this exact JSON format:
   
   try {
     const response = await openai.chat.completions.create({
-      model: CURRENT_MODEL,
+      model: modelToUse,
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       max_completion_tokens: 1000,
@@ -969,7 +979,7 @@ Return in this exact JSON format:
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     
     const result = JSON.parse(content);
-    console.log(`[AI] Answer evaluated in ${elapsed}s - Score: ${result.score}/10 - Correct: ${result.isCorrect}`);
+    console.log(`[AI] Answer evaluated in ${elapsed}s using ${modelToUse} - Score: ${result.score}/10 - Correct: ${result.isCorrect}`);
     
     return {
       score: result.score || 0,

@@ -456,6 +456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           language: test.subject,
           classLevel: test.classLevel,
           difficulty: test.difficulty,
+          gptModel: test.gptModel || "gpt-4o-mini",
         });
         
         res.json({

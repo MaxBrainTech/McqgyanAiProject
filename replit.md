@@ -65,7 +65,13 @@ Preferred communication style: Simple, everyday language.
 - Conversation history stored within session for adaptive difficulty
 
 **AI Integration:**
-- OpenAI API integration via Replit AI Integrations service (GPT-4o model)
+- OpenAI API integration using user's own API key via environment variables
+- **GPT Model Selection** (November 2025 Update):
+  - Teachers can select GPT model per test: gpt-4o, gpt-4o-mini, or gpt-3.5-turbo
+  - Default model: gpt-4o-mini for optimal cost efficiency (~$0.15 per million tokens)
+  - Per-test cost estimates: ~$0.005-$0.01 for 10 questions depending on model
+  - Model configuration stored with each test in database
+  - Flexible model switching allows quality vs cost optimization
 - **Multi-Stage AI Quality Control System** (November 2025 Update):
   - **CBSE Blueprint Metadata**: Class-specific guidelines (6-10) with Bloom's Taxonomy levels, age-appropriate vocabulary, and cognitive skill requirements
   - **Answer Verification**: Independent re-solving of questions to cross-check correctness before presenting to students
@@ -112,9 +118,10 @@ Preferred communication style: Simple, everyday language.
 ### External Dependencies
 
 **AI Services:**
-- **OpenAI API** (via Replit AI Integrations): GPT models for question generation and answer evaluation
-  - Base URL: `process.env.AI_INTEGRATIONS_OPENAI_BASE_URL`
-  - API Key: `process.env.AI_INTEGRATIONS_OPENAI_API_KEY`
+- **OpenAI API**: GPT models for question generation and answer evaluation
+  - API Key: `process.env.OPENAI_API_KEY` (user's own OpenAI API key)
+  - Models available: gpt-4o, gpt-4o-mini (default), gpt-3.5-turbo
+  - Per-test model selection for quality vs cost optimization
 
 **Database:**
 - **Neon Serverless PostgreSQL**: Cloud-hosted database
@@ -136,6 +143,5 @@ Preferred communication style: Simple, everyday language.
 
 **Environment Variables Required:**
 - `DATABASE_URL`: PostgreSQL connection string
-- `AI_INTEGRATIONS_OPENAI_BASE_URL`: OpenAI API base URL
-- `AI_INTEGRATIONS_OPENAI_API_KEY`: OpenAI API authentication key
+- `OPENAI_API_KEY`: OpenAI API authentication key (user's own key)
 - `NODE_ENV`: Environment mode (development/production)
