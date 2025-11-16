@@ -168,7 +168,10 @@ export default function TeacherAuth({ onSuccess }: TeacherAuthProps) {
                       <FormControl>
                         <Input 
                           placeholder="John Doe" 
-                          {...field}
+                          value={field.value}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
                           data-testid="input-fullname"
                         />
                       </FormControl>
@@ -186,7 +189,10 @@ export default function TeacherAuth({ onSuccess }: TeacherAuthProps) {
                         <Input 
                           type="email" 
                           placeholder="teacher@school.com" 
-                          {...field}
+                          value={field.value}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
                           data-testid="input-email"
                         />
                       </FormControl>
@@ -203,7 +209,10 @@ export default function TeacherAuth({ onSuccess }: TeacherAuthProps) {
                       <FormControl>
                         <Input 
                           placeholder="Choose username" 
-                          {...field}
+                          value={field.value}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
                           data-testid="input-username-register"
                         />
                       </FormControl>
@@ -221,7 +230,10 @@ export default function TeacherAuth({ onSuccess }: TeacherAuthProps) {
                         <Input 
                           type="password" 
                           placeholder="Minimum 6 characters" 
-                          {...field}
+                          value={field.value}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
                           data-testid="input-password-register"
                         />
                       </FormControl>
@@ -238,7 +250,10 @@ export default function TeacherAuth({ onSuccess }: TeacherAuthProps) {
                       <FormControl>
                         <Input 
                           placeholder="Your school name" 
-                          {...field}
+                          value={field.value || ""}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
                           data-testid="input-school"
                         />
                       </FormControl>
