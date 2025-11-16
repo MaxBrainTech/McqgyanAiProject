@@ -235,7 +235,7 @@ export default function CustomTestPage({ onBack }: CustomTestPageProps) {
                   setAnswers(prev => ({ ...prev, [currentQuestion.id]: value }))
                 }
               >
-                {JSON.parse(currentQuestion.options).map((option: string, idx: number) => (
+                {currentQuestion.options.map((option: string, idx: number) => (
                   <div key={idx} className="flex items-center space-x-2">
                     <RadioGroupItem value={String.fromCharCode(65 + idx)} id={`option-${idx}`} />
                     <Label htmlFor={`option-${idx}`}>{option}</Label>
