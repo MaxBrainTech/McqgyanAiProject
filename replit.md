@@ -81,9 +81,10 @@ Preferred communication style: Simple, everyday language.
   - Previous performance for adaptive learning
 - Language-specific quality controls for Indian languages (Hindi, Marathi, Kannada):
   - Enforces complete sentences in proper Devanagari/Kannada script
-  - Validates question completeness before displaying to students
-  - Provides detailed examples and formatting rules
-  - Rejects incomplete or placeholder content
+  - Validates question completeness (minimum 30 characters, no trailing "...")
+  - Rejects questions ending with incomplete placeholders or ellipses
+  - Provides detailed examples showing complete vs incomplete questions
+  - Strict validation against placeholder patterns (___+, TODO, incomplete)
 - Answer evaluation with detailed feedback in simple English
 - Encouraging personality designed for young learners (ages 11-16)
 

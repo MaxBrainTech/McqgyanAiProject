@@ -233,21 +233,26 @@ export async function generateQuestion(params: QuestionGenerationParams & { isMc
 3. NO PLACEHOLDERS: Never use "...", "___", or incomplete phrases in the ${language} text itself
 4. CONTEXT: Provide enough context so students understand exactly what is being asked
 5. CLARITY: Questions must be self-contained and unambiguous
+6. NEVER END WITH "...": Questions must end with a complete sentence or question mark, NEVER with "..."
 
 Example EXCELLENT ${language} questions:
 - "Translate the following English sentence into ${language}: 'My mother cooks delicious food.'"
   Correct Answer: "${scriptInfo.exampleTranslation}" (FULL sentence in ${scriptInfo.scriptName})
 
-- "Fill in the blank with the correct ${language} word. Sentence: '${scriptInfo.exampleFillBlank}' (He goes to school.) What word means 'school'?"
+- "Fill in the blank with the correct ${language} word in this sentence: '${scriptInfo.exampleFillBlank}' (He goes to school.) What is the ${language} word for 'school'?"
   Correct Answer: "${scriptInfo.exampleFillBlankAnswer}" (complete word provided)
 
 - "Write the ${language} word for 'book' and use it in a complete sentence."
   Correct Answer: "${scriptInfo.exampleWord} - ${scriptInfo.exampleSentence}" (word + complete sentence)
 
+- "Which of the following is a प्रश्नवाचक शब्द (interrogative word) in ${language}: How would you ask 'What is your name?' in ${language}?"
+  Correct Answer: "क्या" (complete interrogative word)
+
 Example BAD ${language} questions (NEVER DO THIS):
 - "Translate: 'Hello'" (too short, no context)
 - "Fill in the blank without English hint" (unclear what to fill)
-- "Write the word for..." (incomplete, no clear instruction)
+- "Write the word for..." (ENDS WITH "..." - INCOMPLETE!)
+- "Which of the following is a प्रश्नवाचक शब्द..." (ENDS WITH "..." - INCOMPLETE!)
 
 VALIDATION CHECKLIST before responding:
 ✓ English instructions are complete and crystal clear
@@ -335,16 +340,18 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
     
     // Validate question completeness for Indian languages
     if (isIndianLanguage) {
-      if (!result.question || result.question.length < 20) {
+      if (!result.question || result.question.length < 30) {
         throw new Error("Generated question is too short or incomplete");
       }
       if (!result.correctAnswer || result.correctAnswer.length < 2) {
         throw new Error("Generated answer is incomplete or missing");
       }
       // Check for placeholder patterns that suggest incomplete content
-      const hasPlaceholders = /\.{3,}|___+|incomplete|TODO/i.test(result.question + result.correctAnswer);
-      if (hasPlaceholders) {
-        throw new Error("Generated question contains placeholders or incomplete content");
+      // Allow "..." in English instructions but catch truly incomplete content
+      const hasPlaceholders = /___+|incomplete|TODO|ending with\.{3,}$/i.test(result.question + result.correctAnswer);
+      const endsIncomplete = /\.\.\.$/.test(result.question.trim());
+      if (hasPlaceholders || endsIncomplete) {
+        throw new Error("Generated question contains placeholders or ends incompletely");
       }
       
       // Validate correct script usage (only if answer should be in the native language)
