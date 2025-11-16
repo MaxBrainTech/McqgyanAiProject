@@ -365,6 +365,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get test details for teacher (with full questions and answers)
+  app.get("/api/teacher/:teacherId/tests/:testId", async (req, res) => {
+    try {
+      const { teacherId, testId } = req.params;
+      const test = await storage.getCustomTest(testId);
+      
+      if (!test || test.teacherId !== teacherId) {
+        return res.status(404).json({ error: "Test not found" });
+      }
+      
+      const questions = await storage.getCustomQuestions(testId);
+      
+      // Parse options for teacher view
+      const questionsWithParsedOptions = questions.map(q => ({
+        ...q,
+        options: q.options ? JSON.parse(q.options) : null,
+      }));
+      
+      res.json({ test, questions: questionsWithParsedOptions });
+    } catch (error) {
+      console.error("Error fetching test details:", error);
+      res.status(500).json({ error: "Failed to fetch test details" });
+    }
+  });
+
   // Get custom test by share code (for students)
   app.get("/api/custom-test/:shareCode", async (req, res) => {
     try {
