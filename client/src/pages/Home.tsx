@@ -20,10 +20,14 @@ interface HomeProps {
     chapter: number;
     testLength: number;
   }) => void;
+  onCustomMCQ?: {
+    teacher: () => void;
+    student: () => void;
+  };
 }
 
-export default function Home({ onStartTest }: HomeProps) {
-  const [step, setStep] = useState<"mode" | "subject" | "class" | "difficulty" | "testType" | "testLength" | "chapter">("mode");
+export default function Home({ onStartTest, onCustomMCQ }: HomeProps) {
+  const [step, setStep] = useState<"mode" | "subject" | "class" | "difficulty" | "testType" | "testLength" | "chapter" | "custom">("mode");
   const [selectedMode, setSelectedMode] = useState<string>("");
   const [selectedLanguage, setSelectedLanguage] = useState<string>("");
   const [selectedScienceCategory, setSelectedScienceCategory] = useState<string>("");
@@ -68,7 +72,11 @@ export default function Home({ onStartTest }: HomeProps) {
 
   const handleModeSelect = (mode: string) => {
     setSelectedMode(mode);
-    setStep("subject");
+    if (mode === "custom") {
+      setStep("custom");
+    } else {
+      setStep("subject");
+    }
   };
 
   const handleLanguageSelect = (language: string) => {
@@ -173,7 +181,7 @@ export default function Home({ onStartTest }: HomeProps) {
                 <p className="text-base text-muted-foreground">Select between language learning or science quizzes</p>
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
                 <Card 
                   className="p-8 text-center hover-elevate cursor-pointer border-2 hover:border-primary transition-all"
                   onClick={() => handleModeSelect("language")}
@@ -203,6 +211,21 @@ export default function Home({ onStartTest }: HomeProps) {
                   </p>
                   <Badge variant="secondary" className="mt-4 text-base">4 Categories</Badge>
                 </Card>
+
+                <Card 
+                  className="p-8 text-center hover-elevate cursor-pointer border-2 hover:border-purple-500 transition-all"
+                  onClick={() => handleModeSelect("custom")}
+                  data-testid="card-mode-custom"
+                >
+                  <div className="inline-flex p-4 bg-purple-500/10 rounded-full mb-4">
+                    <GraduationCap className="w-12 h-12 text-purple-600" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Custom MCQ</h3>
+                  <p className="text-base text-muted-foreground">
+                    Teachers create tests, students take them
+                  </p>
+                  <Badge variant="secondary" className="mt-4 text-base">Teacher/Student</Badge>
+                </Card>
               </div>
             </div>
 
@@ -227,6 +250,48 @@ export default function Home({ onStartTest }: HomeProps) {
                 <LeaderboardCard entries={leaderboard} />
               </div>
             )}
+          </div>
+        )}
+
+        {step === "custom" && (
+          <div className="space-y-6 sm:space-y-8">
+            <div className="text-center mb-8">
+              <Button variant="outline" onClick={() => setStep("mode")} className="mb-4">
+                ← Back
+              </Button>
+              <h2 className="text-2xl sm:text-3xl font-bold mb-2">Custom MCQ Platform</h2>
+              <p className="text-base text-muted-foreground">Choose your role to continue</p>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
+              <Card 
+                className="p-8 text-center hover-elevate cursor-pointer border-2 hover:border-primary transition-all"
+                onClick={() => onCustomMCQ?.teacher()}
+                data-testid="card-role-teacher"
+              >
+                <div className="inline-flex p-4 bg-primary/10 rounded-full mb-4">
+                  <GraduationCap className="w-12 h-12 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">I'm a Teacher</h3>
+                <p className="text-base text-muted-foreground">
+                  Create and manage custom MCQ tests for your students
+                </p>
+              </Card>
+
+              <Card 
+                className="p-8 text-center hover-elevate cursor-pointer border-2 hover:border-accent transition-all"
+                onClick={() => onCustomMCQ?.student()}
+                data-testid="card-role-student"
+              >
+                <div className="inline-flex p-4 bg-accent/10 rounded-full mb-4">
+                  <BookOpen className="w-12 h-12 text-accent" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">I'm a Student</h3>
+                <p className="text-base text-muted-foreground">
+                  Take custom tests using a share code from your teacher
+                </p>
+              </Card>
+            </div>
           </div>
         )}
 
