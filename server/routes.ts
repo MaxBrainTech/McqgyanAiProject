@@ -211,6 +211,238 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(chapters);
   });
 
+  // Teacher Registration
+  app.post("/api/teacher/register", async (req, res) => {
+    try {
+      const { username, password, fullName, email, school } = req.body;
+      
+      // Validate required fields
+      if (!username || !password || !fullName || !email) {
+        return res.status(400).json({ error: "All fields except school are required" });
+      }
+      
+      // Check if username or email already exists
+      const existingUsername = await storage.getTeacherByUsername(username);
+      if (existingUsername) {
+        return res.status(400).json({ error: "Username already exists" });
+      }
+      
+      const existingEmail = await storage.getTeacherByEmail(email);
+      if (existingEmail) {
+        return res.status(400).json({ error: "Email already exists" });
+      }
+      
+      // For security, you'd normally hash the password here
+      // For simplicity, we'll store it as-is (NOT recommended for production)
+      const teacher = await storage.createTeacher({
+        username,
+        password,
+        fullName,
+        email,
+        school: school || undefined,
+      });
+      
+      // Don't send password back
+      const { password: _, ...teacherData } = teacher;
+      res.json(teacherData);
+    } catch (error) {
+      console.error("Error registering teacher:", error);
+      res.status(500).json({ error: "Failed to register teacher" });
+    }
+  });
+
+  // Teacher Login
+  app.post("/api/teacher/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ error: "Username and password are required" });
+      }
+      
+      const teacher = await storage.getTeacherByUsername(username);
+      
+      // NOTE: In production, use bcrypt or similar for password hashing!
+      if (!teacher || teacher.password !== password) {
+        return res.status(401).json({ error: "Invalid username or password" });
+      }
+      
+      // Don't send password back
+      const { password: _, ...teacherData } = teacher;
+      res.json(teacherData);
+    } catch (error) {
+      console.error("Error logging in teacher:", error);
+      res.status(500).json({ error: "Failed to login" });
+    }
+  });
+
+  // Get all custom tests for a teacher
+  app.get("/api/teacher/:teacherId/tests", async (req, res) => {
+    try {
+      const { teacherId } = req.params;
+      const tests = await storage.getCustomTestsByTeacher(teacherId);
+      res.json(tests);
+    } catch (error) {
+      console.error("Error fetching tests:", error);
+      res.status(500).json({ error: "Failed to fetch tests" });
+    }
+  });
+
+  // Create and generate custom MCQ test
+  app.post("/api/teacher/:teacherId/generate-test", async (req, res) => {
+    try {
+      const { teacherId } = req.params;
+      const { title, subject, classLevel, difficulty, syllabus, numQuestions, testType, instructions } = req.body;
+      
+      console.log(`[CUSTOM TEST] Generating ${numQuestions} ${difficulty} questions for ${subject} - ${syllabus}`);
+      
+      // Create custom test
+      const test = await storage.createCustomTest({
+        teacherId,
+        title,
+        subject,
+        classLevel,
+        difficulty,
+        syllabus,
+        numQuestions,
+        testType: testType || "mcq",
+        instructions: instructions || undefined,
+        status: "draft",
+      });
+      
+      console.log(`[CUSTOM TEST] Created test ${test.id} with share code: ${test.shareCode}`);
+      
+      // Generate questions using AI
+      const questions = [];
+      
+      // Determine if this is a science subject or language subject
+      const scienceSubjects = ['physics', 'chemistry', 'biology', 'general'];
+      const isScience = scienceSubjects.includes(subject.toLowerCase());
+      
+      for (let i = 1; i <= numQuestions; i++) {
+        try {
+          console.log(`[CUSTOM TEST] Generating question ${i}/${numQuestions}...`);
+          
+          const questionData = await generateQuestion({
+            mode: isScience ? "science" : "language",
+            language: isScience ? undefined : subject,
+            scienceCategory: isScience ? subject.toLowerCase() : undefined,
+            classLevel,
+            difficulty,
+            chapter: 1, // Custom tests use direct topic, not chapter ID
+            chapterTitle: syllabus,
+            questionNumber: i,
+            isMcq: testType === "mcq",
+          });
+          
+          const question = await storage.createCustomQuestion({
+            testId: test.id,
+            questionNumber: i,
+            question: questionData.question,
+            questionType: questionData.questionType,
+            options: questionData.options ? JSON.stringify(questionData.options) : null,
+            correctOption: questionData.correctOption || null,
+            correctAnswer: questionData.correctAnswer,
+            explanation: questionData.explanation || "",
+          });
+          
+          questions.push(question);
+        } catch (error) {
+          console.error(`Error generating question ${i}:`, error);
+          // Continue with other questions
+        }
+      }
+      
+      console.log(`[CUSTOM TEST] Generated ${questions.length}/${numQuestions} questions successfully`);
+      
+      // Update test status to published
+      await storage.updateCustomTest(test.id, { status: "published" });
+      
+      res.json({ test, questionsGenerated: questions.length });
+    } catch (error) {
+      console.error("Error generating test:", error);
+      res.status(500).json({ error: "Failed to generate test" });
+    }
+  });
+
+  // Get custom test by share code (for students)
+  app.get("/api/custom-test/:shareCode", async (req, res) => {
+    try {
+      const { shareCode } = req.params;
+      const test = await storage.getCustomTestByShareCode(shareCode);
+      
+      if (!test) {
+        return res.status(404).json({ error: "Test not found" });
+      }
+      
+      const questions = await storage.getCustomQuestions(test.id);
+      
+      // Don't send correct answers to students
+      const questionsForStudent = questions.map(q => ({
+        id: q.id,
+        questionNumber: q.questionNumber,
+        question: q.question,
+        questionType: q.questionType,
+        options: q.options ? JSON.parse(q.options) : null,
+      }));
+      
+      res.json({ test, questions: questionsForStudent });
+    } catch (error) {
+      console.error("Error fetching custom test:", error);
+      res.status(500).json({ error: "Failed to fetch test" });
+    }
+  });
+
+  // Submit answer for custom test question
+  app.post("/api/custom-test/evaluate", async (req, res) => {
+    try {
+      const { testId, questionId, studentAnswer } = req.body;
+      
+      const test = await storage.getCustomTest(testId);
+      if (!test) {
+        return res.status(404).json({ error: "Test not found" });
+      }
+      
+      const questions = await storage.getCustomQuestions(testId);
+      const question = questions.find(q => q.id === questionId);
+      
+      if (!question) {
+        return res.status(404).json({ error: "Question not found" });
+      }
+      
+      // For MCQ, check if answer matches
+      if (question.questionType === "mcq") {
+        const isCorrect = studentAnswer.trim().toUpperCase() === question.correctOption;
+        res.json({
+          isCorrect,
+          correctAnswer: question.correctAnswer,
+          correctOption: question.correctOption,
+          explanation: question.explanation,
+          score: isCorrect ? 10 : 0,
+        });
+      } else {
+        // For open-ended, use AI to evaluate
+        const evaluation = await evaluateAnswer({
+          question: question.question,
+          studentAnswer,
+          correctAnswer: question.correctAnswer,
+          language: test.subject,
+          classLevel: test.classLevel,
+          difficulty: test.difficulty,
+        });
+        
+        res.json({
+          ...evaluation,
+          correctAnswer: question.correctAnswer,
+          explanation: question.explanation,
+        });
+      }
+    } catch (error) {
+      console.error("Error evaluating answer:", error);
+      res.status(500).json({ error: "Failed to evaluate answer" });
+    }
+  });
+
   // Start a new test session
   app.post("/api/test/start", async (req, res) => {
     try {
