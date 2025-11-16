@@ -66,11 +66,18 @@ Preferred communication style: Simple, everyday language.
 
 **AI Integration:**
 - OpenAI API integration via Replit AI Integrations service (GPT-4o model)
+- **Multi-Stage AI Quality Control System** (November 2025 Update):
+  - **CBSE Blueprint Metadata**: Class-specific guidelines (6-10) with Bloom's Taxonomy levels, age-appropriate vocabulary, and cognitive skill requirements
+  - **Answer Verification**: Independent re-solving of questions to cross-check correctness before presenting to students
+  - **Quality Assessment**: Automated scoring of questions on curriculum alignment, clarity, difficulty matching, and age-appropriateness
+  - **Science Fact-Checking**: Numerical answer verification with step-by-step calculation validation
+  - **Threshold-Based Filtering**: Questions below quality threshold (6/10) are flagged and logged
 - Advanced prompt engineering for question generation based on:
-  - CBSE curriculum guidelines
-  - Student class level (6-10)
-  - Difficulty level (Easy/Medium/Hard)
-  - Chapter/topic selection
+  - CBSE/NCERT curriculum patterns and terminology
+  - Bloom's Taxonomy cognitive levels (Remember → Create)
+  - Student class level (6-10) with age-appropriate vocabulary
+  - Difficulty level (Easy/Medium/Hard) mapped to question complexity
+  - Chapter/topic selection with subject-specific guidelines
   - Previous performance for adaptive learning
 - Language-specific quality controls for Indian languages (Hindi, Marathi, Kannada):
   - Enforces complete sentences in proper Devanagari/Kannada script
@@ -78,7 +85,7 @@ Preferred communication style: Simple, everyday language.
   - Provides detailed examples and formatting rules
   - Rejects incomplete or placeholder content
 - Answer evaluation with detailed feedback in simple English
-- Encouraging personality designed for young learners
+- Encouraging personality designed for young learners (ages 11-16)
 
 **Data Models:**
 - `User`: User authentication (username, password)
