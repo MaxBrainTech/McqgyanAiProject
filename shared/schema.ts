@@ -42,3 +42,70 @@ export const insertTestSessionSchema = createInsertSchema(testSessions).omit({
 
 export type InsertTestSession = z.infer<typeof insertTestSessionSchema>;
 export type TestSession = typeof testSessions.$inferSelect;
+
+// Teachers table for custom MCQ creation
+export const teachers = pgTable("teachers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  fullName: text("full_name").notNull(),
+  email: text("email").notNull().unique(),
+  school: text("school"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertTeacherSchema = createInsertSchema(teachers).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertTeacher = z.infer<typeof insertTeacherSchema>;
+export type Teacher = typeof teachers.$inferSelect;
+
+// Custom tests created by teachers
+export const customTests = pgTable("custom_tests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  teacherId: varchar("teacher_id").notNull().references(() => teachers.id),
+  title: text("title").notNull(),
+  subject: text("subject").notNull(), // Physics, Chemistry, Biology, Hindi, etc.
+  classLevel: integer("class_level").notNull(),
+  difficulty: text("difficulty").notNull(), // easy, medium, hard
+  syllabus: text("syllabus").notNull(), // CBSE topic/chapter
+  numQuestions: integer("num_questions").notNull(),
+  testType: text("test_type").notNull().default("mcq"), // mcq, open-ended, mixed
+  shareCode: text("share_code").notNull().unique(), // For students to access
+  instructions: text("instructions"),
+  status: text("status").notNull().default("draft"), // draft, published
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertCustomTestSchema = createInsertSchema(customTests).omit({
+  id: true,
+  createdAt: true,
+  shareCode: true,
+});
+
+export type InsertCustomTest = z.infer<typeof insertCustomTestSchema>;
+export type CustomTest = typeof customTests.$inferSelect;
+
+// Custom questions generated for each test
+export const customQuestions = pgTable("custom_questions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  testId: varchar("test_id").notNull().references(() => customTests.id),
+  questionNumber: integer("question_number").notNull(),
+  question: text("question").notNull(),
+  questionType: text("question_type").notNull(), // mcq, open-ended
+  options: text("options"), // JSON array for MCQ options
+  correctOption: text("correct_option"), // A, B, C, or D for MCQ
+  correctAnswer: text("correct_answer").notNull(),
+  explanation: text("explanation").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertCustomQuestionSchema = createInsertSchema(customQuestions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertCustomQuestion = z.infer<typeof insertCustomQuestionSchema>;
+export type CustomQuestion = typeof customQuestions.$inferSelect;
