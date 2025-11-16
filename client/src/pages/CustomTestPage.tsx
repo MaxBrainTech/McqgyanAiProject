@@ -5,10 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, Loader2, Download } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface CustomTestPageProps {
   onBack: () => void;
@@ -103,6 +105,164 @@ export default function CustomTestPage({ onBack }: CustomTestPageProps) {
     const totalScore = Object.values(results).reduce((sum: number, r: any) => sum + (r.score || 0), 0);
     const maxScore = total * 10;
     return { correct, total, totalScore, maxScore };
+  }
+
+  function downloadQuestionPaper() {
+    const doc = new jsPDF();
+    
+    // Add title
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text(testData?.test?.title || "Question Paper", 14, 20);
+    
+    // Add test details
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Subject: ${testData?.test?.subject}`, 14, 30);
+    doc.text(`Class: ${testData?.test?.classLevel}`, 14, 36);
+    doc.text(`Difficulty: ${testData?.test?.difficulty}`, 14, 42);
+    doc.text(`Total Questions: ${testData?.questions?.length}`, 14, 48);
+    doc.text(`Share Code: ${shareCode}`, 14, 54);
+    
+    // Add questions
+    let yPos = 64;
+    testData?.questions.forEach((question: any, index: number) => {
+      // Check if we need a new page
+      if (yPos > 260) {
+        doc.addPage();
+        yPos = 20;
+      }
+      
+      // Question number and text
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text(`Question ${index + 1}:`, 14, yPos);
+      
+      doc.setFont("helvetica", "normal");
+      const questionLines = doc.splitTextToSize(question.question, 180);
+      doc.text(questionLines, 14, yPos + 6);
+      yPos += 6 + (questionLines.length * 5);
+      
+      // Options for MCQ
+      if (question.questionType === "mcq" && question.options) {
+        doc.setFontSize(11);
+        question.options.forEach((option: string, optIdx: number) => {
+          if (yPos > 260) {
+            doc.addPage();
+            yPos = 20;
+          }
+          const optionText = `${String.fromCharCode(65 + optIdx)}. ${option}`;
+          const optionLines = doc.splitTextToSize(optionText, 170);
+          doc.text(optionLines, 20, yPos);
+          yPos += optionLines.length * 5;
+        });
+      }
+      
+      yPos += 8; // Space between questions
+    });
+    
+    // Save the PDF
+    doc.save(`${testData?.test?.title || "Question_Paper"}_${shareCode}.pdf`);
+    
+    toast({
+      title: "Downloaded",
+      description: "Question paper downloaded successfully",
+    });
+  }
+
+  function downloadAnswerSheet() {
+    const doc = new jsPDF();
+    const stats = calculateStats();
+    const percentage = Math.round((stats.totalScore / stats.maxScore) * 100);
+    
+    // Add title
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("Answer Sheet", 14, 20);
+    
+    // Add test details
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Test: ${testData?.test?.title}`, 14, 30);
+    doc.text(`Subject: ${testData?.test?.subject} | Class: ${testData?.test?.classLevel}`, 14, 36);
+    doc.text(`Score: ${stats.totalScore}/${stats.maxScore} (${percentage}%)`, 14, 42);
+    doc.text(`Correct Answers: ${stats.correct}/${stats.total}`, 14, 48);
+    
+    // Add questions with answers
+    let yPos = 58;
+    testData?.questions.forEach((question: any, index: number) => {
+      const result = results[question.id];
+      
+      // Check if we need a new page
+      if (yPos > 240) {
+        doc.addPage();
+        yPos = 20;
+      }
+      
+      // Question
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text(`Q${index + 1}: `, 14, yPos);
+      
+      doc.setFont("helvetica", "normal");
+      const questionLines = doc.splitTextToSize(question.question, 180);
+      doc.text(questionLines, 14, yPos + 5);
+      yPos += 5 + (questionLines.length * 5);
+      
+      // Your answer
+      doc.setFontSize(10);
+      doc.setTextColor(33, 150, 243); // Blue
+      doc.setFont("helvetica", "bold");
+      doc.text("Your Answer: ", 14, yPos);
+      doc.setFont("helvetica", "normal");
+      const yourAnswerLines = doc.splitTextToSize(answers[question.id] || "Not answered", 150);
+      doc.text(yourAnswerLines, 50, yPos);
+      yPos += Math.max(5, yourAnswerLines.length * 5);
+      
+      // Correct answer (if wrong)
+      if (!result?.isCorrect) {
+        doc.setTextColor(76, 175, 80); // Green
+        doc.setFont("helvetica", "bold");
+        doc.text("Correct Answer: ", 14, yPos);
+        doc.setFont("helvetica", "normal");
+        const correctLines = doc.splitTextToSize(result?.correctAnswer || "", 150);
+        doc.text(correctLines, 50, yPos);
+        yPos += Math.max(5, correctLines.length * 5);
+      }
+      
+      // Explanation
+      if (result?.explanation) {
+        doc.setTextColor(156, 39, 176); // Purple
+        doc.setFont("helvetica", "bold");
+        doc.text("Explanation: ", 14, yPos);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont("helvetica", "normal");
+        const explLines = doc.splitTextToSize(result.explanation, 180);
+        doc.text(explLines, 14, yPos + 5);
+        yPos += 5 + (explLines.length * 5);
+      }
+      
+      // Result indicator
+      doc.setTextColor(0, 0, 0);
+      if (result?.isCorrect) {
+        doc.setTextColor(76, 175, 80);
+        doc.text("✓ Correct", 14, yPos);
+      } else {
+        doc.setTextColor(244, 67, 54);
+        doc.text("✗ Incorrect", 14, yPos);
+      }
+      doc.setTextColor(0, 0, 0);
+      
+      yPos += 10; // Space between questions
+    });
+    
+    // Save the PDF
+    doc.save(`Answer_Sheet_${testData?.test?.title || "Test"}_${shareCode}.pdf`);
+    
+    toast({
+      title: "Downloaded",
+      description: "Answer sheet downloaded successfully",
+    });
   }
 
   if (!testStarted) {
@@ -205,9 +365,20 @@ export default function CustomTestPage({ onBack }: CustomTestPageProps) {
                   })}
                 </div>
 
-                <Button onClick={() => window.location.reload()} className="w-full">
-                  Take Another Test
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={downloadAnswerSheet} 
+                    variant="outline" 
+                    className="flex-1"
+                    data-testid="button-download-answer-sheet"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Answer Sheet
+                  </Button>
+                  <Button onClick={() => window.location.reload()} className="flex-1">
+                    Take Another Test
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -224,23 +395,34 @@ export default function CustomTestPage({ onBack }: CustomTestPageProps) {
         <Card>
           <CardHeader>
             <div className="flex justify-between items-start mb-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => {
-                  if (confirm("Are you sure you want to exit the test? Your progress will be lost.")) {
-                    setTestStarted(false);
-                    setShareCode("");
-                    setCurrentQuestionIndex(0);
-                    setAnswers({});
-                    setResults({});
-                  }
-                }}
-                data-testid="button-exit-test"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Exit Test
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    if (confirm("Are you sure you want to exit the test? Your progress will be lost.")) {
+                      setTestStarted(false);
+                      setShareCode("");
+                      setCurrentQuestionIndex(0);
+                      setAnswers({});
+                      setResults({});
+                    }
+                  }}
+                  data-testid="button-exit-test"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Exit Test
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={downloadQuestionPaper}
+                  data-testid="button-download-question-paper"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Questions
+                </Button>
+              </div>
               <span className="text-sm text-muted-foreground">
                 Question {currentQuestionIndex + 1} of {testData?.questions?.length}
               </span>
