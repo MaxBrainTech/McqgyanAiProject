@@ -72,12 +72,21 @@ Preferred communication style: Simple, everyday language.
   - Per-test cost estimates: ~$0.005-$0.01 for 10 questions depending on model
   - Model configuration stored with each test in database
   - Flexible model switching allows quality vs cost optimization
+- **Retry Logic for Reliable Question Generation** (November 2025 Update):
+  - Automatic retry up to 3 attempts for failed question generation
+  - Ensures exact question count matches teacher's selection
+  - Prevents partial test generation due to transient AI errors
 - **Multi-Stage AI Quality Control System** (November 2025 Update):
   - **CBSE Blueprint Metadata**: Class-specific guidelines (6-10) with Bloom's Taxonomy levels, age-appropriate vocabulary, and cognitive skill requirements
   - **Answer Verification**: Independent re-solving of questions to cross-check correctness before presenting to students
   - **Quality Assessment**: Automated scoring of questions on curriculum alignment, clarity, difficulty matching, and age-appropriateness
   - **Science Fact-Checking**: Numerical answer verification with step-by-step calculation validation
   - **Threshold-Based Filtering**: Questions below quality threshold (6/10) are flagged and logged
+- **Question Type Support** (November 2025 Update):
+  - Both MCQ and open-ended questions supported for all subjects
+  - Science questions properly respect testType parameter
+  - Open-ended questions include detailed model answers
+  - Language questions support translation, grammar, vocabulary formats
 - Advanced prompt engineering for question generation based on:
   - CBSE/NCERT curriculum patterns and terminology
   - Bloom's Taxonomy cognitive levels (Remember → Create)
