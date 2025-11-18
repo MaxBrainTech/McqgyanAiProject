@@ -161,6 +161,7 @@ export class MemStorage implements IStorage {
       id,
       shareCode,
       testType: insertTest.testType ?? "mcq",
+      gptModel: insertTest.gptModel ?? "gpt-4o-mini",
       status: insertTest.status ?? "draft",
       instructions: insertTest.instructions ?? null,
       createdAt: new Date(),

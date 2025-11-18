@@ -407,28 +407,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Verify teacher owns this question's test
       const test = await storage.getCustomTest(existingQuestion.testId);
-      if (!test || test.teacherId !== teacherId) {
+      if (!test) {
+        return res.status(404).json({ error: "Test not found" });
+      }
+      if (test.teacherId !== teacherId) {
         return res.status(403).json({ error: "Unauthorized" });
       }
       
+      // Validate inputs
+      if (!question || question.trim().length < 5) {
+        return res.status(400).json({ error: "Question must be at least 5 characters" });
+      }
+      if (!explanation || explanation.trim().length < 5) {
+        return res.status(400).json({ error: "Explanation must be at least 5 characters" });
+      }
+      
       const updates: Partial<typeof existingQuestion> = {
-        question,
-        correctAnswer,
-        explanation,
+        question: question.trim(),
+        explanation: explanation.trim(),
       };
       
       if (existingQuestion.questionType === "mcq") {
-        updates.options = options ? JSON.stringify(options) : null;
-        updates.correctOption = correctOption || null;
+        // Validate MCQ options
+        if (!options || !Array.isArray(options)) {
+          return res.status(400).json({ error: "MCQ questions must have options array" });
+        }
+        
+        if (!correctOption || !["A", "B", "C", "D"].includes(correctOption)) {
+          return res.status(400).json({ error: "Must select a valid correct option (A, B, C, or D)" });
+        }
+        
+        // Find which option was marked as correct
+        const originalCorrectIndex = correctOption.charCodeAt(0) - 65;
+        const correctOptionText = options[originalCorrectIndex];
+        
+        if (!correctOptionText || correctOptionText.trim().length === 0) {
+          return res.status(400).json({ error: "The selected correct option cannot be empty" });
+        }
+        
+        // Filter out empty options while preserving the correct option
+        const validOptions = options
+          .map((opt: string, idx: number) => ({ text: opt?.trim() || "", index: idx }))
+          .filter(opt => opt.text.length > 0);
+        
+        if (validOptions.length < 2) {
+          return res.status(400).json({ error: "MCQ questions must have at least 2 valid options" });
+        }
+        
+        // Find the new index of the correct option after filtering
+        const newCorrectIndex = validOptions.findIndex(opt => opt.index === originalCorrectIndex);
+        if (newCorrectIndex === -1) {
+          return res.status(400).json({ error: "The correct option was removed. Please select a different correct option." });
+        }
+        
+        // Map the new correct option letter
+        const newCorrectOption = String.fromCharCode(65 + newCorrectIndex);
+        const finalOptions = validOptions.map(opt => opt.text);
+        
+        updates.options = JSON.stringify(finalOptions);
+        updates.correctOption = newCorrectOption;
+        updates.correctAnswer = finalOptions[newCorrectIndex];
+      } else {
+        // Open-ended question
+        if (!correctAnswer || correctAnswer.trim().length < 5) {
+          return res.status(400).json({ error: "Correct answer must be at least 5 characters" });
+        }
+        updates.correctAnswer = correctAnswer.trim();
       }
       
       const updatedQuestion = await storage.updateCustomQuestion(questionId, updates);
+      if (!updatedQuestion) {
+        return res.status(500).json({ error: "Failed to update question" });
+      }
       
       console.log(`[QUESTION EDIT] Question ${questionId} updated successfully`);
       
       res.json({
         ...updatedQuestion,
-        options: updatedQuestion?.options ? JSON.parse(updatedQuestion.options) : null,
+        options: updatedQuestion.options ? JSON.parse(updatedQuestion.options) : null,
       });
     } catch (error) {
       console.error("Error editing question:", error);
@@ -456,7 +512,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Verify teacher owns this question's test
       const test = await storage.getCustomTest(existingQuestion.testId);
-      if (!test || test.teacherId !== teacherId) {
+      if (!test) {
+        return res.status(404).json({ error: "Test not found" });
+      }
+      if (test.teacherId !== teacherId) {
         return res.status(403).json({ error: "Unauthorized" });
       }
       
@@ -470,32 +529,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
         options: parsedOptions,
         correctAnswer: existingQuestion.correctAnswer,
         explanation: existingQuestion.explanation,
-        teacherFeedback: feedback,
+        teacherFeedback: feedback.trim(),
         subject: test.subject,
         classLevel: test.classLevel,
         difficulty: test.difficulty,
         gptModel: test.gptModel,
       });
       
-      // Update question with AI improvements
+      // Validate AI response
+      if (!improvedQuestion.question || improvedQuestion.question.trim().length < 5) {
+        console.error(`[AI QUESTION EDIT] Invalid AI response: question too short`);
+        return res.status(500).json({ error: "AI generated an invalid question. Please try again with different feedback." });
+      }
+      if (!improvedQuestion.explanation || improvedQuestion.explanation.trim().length < 5) {
+        console.error(`[AI QUESTION EDIT] Invalid AI response: explanation too short`);
+        return res.status(500).json({ error: "AI generated an invalid explanation. Please try again." });
+      }
+      
       const updates: Partial<typeof existingQuestion> = {
-        question: improvedQuestion.question,
-        correctAnswer: improvedQuestion.correctAnswer,
-        explanation: improvedQuestion.explanation,
+        question: improvedQuestion.question.trim(),
+        explanation: improvedQuestion.explanation.trim(),
       };
       
-      if (existingQuestion.questionType === "mcq" && improvedQuestion.options) {
+      if (existingQuestion.questionType === "mcq") {
+        // Validate MCQ improvements
+        if (!improvedQuestion.options || !Array.isArray(improvedQuestion.options) || improvedQuestion.options.length < 2) {
+          console.error(`[AI QUESTION EDIT] Invalid AI response: insufficient options`);
+          return res.status(500).json({ error: "AI generated invalid options. Please try again." });
+        }
+        if (!improvedQuestion.correctOption || !["A", "B", "C", "D"].includes(improvedQuestion.correctOption)) {
+          console.error(`[AI QUESTION EDIT] Invalid AI response: invalid correct option`);
+          return res.status(500).json({ error: "AI generated an invalid correct option. Please try again." });
+        }
+        
+        const correctIndex = improvedQuestion.correctOption.charCodeAt(0) - 65;
+        if (correctIndex >= improvedQuestion.options.length) {
+          console.error(`[AI QUESTION EDIT] Invalid AI response: correct option out of bounds`);
+          return res.status(500).json({ error: "AI generated an inconsistent question. Please try again." });
+        }
+        
+        // Validate options are non-empty
+        const validOptions = improvedQuestion.options.filter((opt: string) => opt && opt.trim().length > 0);
+        if (validOptions.length < improvedQuestion.options.length) {
+          console.error(`[AI QUESTION EDIT] AI generated empty options`);
+          return res.status(500).json({ error: "AI generated empty options. Please try again." });
+        }
+        
         updates.options = JSON.stringify(improvedQuestion.options);
-        updates.correctOption = improvedQuestion.correctOption || null;
+        updates.correctOption = improvedQuestion.correctOption;
+        updates.correctAnswer = improvedQuestion.options[correctIndex];
+      } else {
+        // Validate open-ended improvements
+        if (!improvedQuestion.correctAnswer || improvedQuestion.correctAnswer.trim().length < 5) {
+          console.error(`[AI QUESTION EDIT] Invalid AI response: answer too short`);
+          return res.status(500).json({ error: "AI generated an invalid answer. Please try again." });
+        }
+        updates.correctAnswer = improvedQuestion.correctAnswer.trim();
+        // Clear MCQ-specific fields for open-ended questions
+        updates.options = null;
+        updates.correctOption = null;
       }
       
       const updatedQuestion = await storage.updateCustomQuestion(questionId, updates);
+      if (!updatedQuestion) {
+        return res.status(500).json({ error: "Failed to save improved question" });
+      }
       
       console.log(`[AI QUESTION EDIT] Question ${questionId} improved successfully using AI`);
       
       res.json({
         ...updatedQuestion,
-        options: updatedQuestion?.options ? JSON.parse(updatedQuestion.options) : null,
+        options: updatedQuestion.options ? JSON.parse(updatedQuestion.options) : null,
       });
     } catch (error: any) {
       console.error("Error in AI-assisted edit:", error);
