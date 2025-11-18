@@ -108,160 +108,291 @@ export default function CustomTestPage({ onBack }: CustomTestPageProps) {
   }
 
   function downloadQuestionPaper() {
-    const doc = new jsPDF();
+    const printWindow = window.open('', '', 'width=800,height=600');
+    if (!printWindow) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please allow popups to download PDF",
+      });
+      return;
+    }
     
-    // Add title
-    doc.setFontSize(18);
-    doc.setFont("helvetica", "bold");
-    doc.text(testData?.test?.title || "Question Paper", 14, 20);
-    
-    // Add test details
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Subject: ${testData?.test?.subject}`, 14, 30);
-    doc.text(`Class: ${testData?.test?.classLevel}`, 14, 36);
-    doc.text(`Difficulty: ${testData?.test?.difficulty}`, 14, 42);
-    doc.text(`Total Questions: ${testData?.questions?.length}`, 14, 48);
-    doc.text(`Share Code: ${shareCode}`, 14, 54);
-    
-    // Add questions
-    let yPos = 64;
-    testData?.questions.forEach((question: any, index: number) => {
-      // Check if we need a new page
-      if (yPos > 260) {
-        doc.addPage();
-        yPos = 20;
-      }
-      
-      // Question number and text
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "bold");
-      doc.text(`Question ${index + 1}:`, 14, yPos);
-      
-      doc.setFont("helvetica", "normal");
-      const questionLines = doc.splitTextToSize(question.question, 180);
-      doc.text(questionLines, 14, yPos + 6);
-      yPos += 6 + (questionLines.length * 5);
-      
-      // Options for MCQ
-      if (question.questionType === "mcq" && question.options) {
-        doc.setFontSize(11);
-        question.options.forEach((option: string, optIdx: number) => {
-          if (yPos > 260) {
-            doc.addPage();
-            yPos = 20;
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>${testData?.test?.title || "Question Paper"}</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&family=Noto+Sans+Devanagari:wght@400;700&display=swap" rel="stylesheet">
+        <style>
+          @page { margin: 1.5cm; size: A4; }
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body {
+            font-family: 'Noto Sans', 'Noto Sans Devanagari', Arial, sans-serif;
+            font-size: 12pt;
+            line-height: 1.6;
+            color: #000;
+            padding: 20px;
           }
-          const optionText = `${String.fromCharCode(65 + optIdx)}. ${option}`;
-          const optionLines = doc.splitTextToSize(optionText, 170);
-          doc.text(optionLines, 20, yPos);
-          yPos += optionLines.length * 5;
-        });
-      }
-      
-      yPos += 8; // Space between questions
-    });
-    
-    // Save the PDF
-    doc.save(`${testData?.test?.title || "Question_Paper"}_${shareCode}.pdf`);
+          .header {
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+          }
+          h1 {
+            font-size: 20pt;
+            font-weight: bold;
+            margin-bottom: 10px;
+          }
+          .test-info {
+            font-size: 11pt;
+            line-height: 1.8;
+          }
+          .question {
+            margin: 20px 0;
+            page-break-inside: avoid;
+          }
+          .question-number {
+            font-weight: bold;
+            font-size: 13pt;
+            margin-bottom: 8px;
+          }
+          .question-text {
+            margin-bottom: 12px;
+            font-size: 12pt;
+            line-height: 1.8;
+          }
+          .options {
+            margin-left: 20px;
+          }
+          .option {
+            margin: 8px 0;
+            line-height: 1.8;
+          }
+          @media print {
+            body { padding: 0; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${testData?.test?.title || "Question Paper"}</h1>
+          <div class="test-info">
+            <div><strong>Subject:</strong> ${testData?.test?.subject}</div>
+            <div><strong>Class:</strong> ${testData?.test?.classLevel}</div>
+            <div><strong>Difficulty:</strong> ${testData?.test?.difficulty}</div>
+            <div><strong>Total Questions:</strong> ${testData?.questions?.length}</div>
+            <div><strong>Share Code:</strong> ${shareCode}</div>
+          </div>
+        </div>
+        
+        ${testData?.questions.map((q: any, idx: number) => `
+          <div class="question">
+            <div class="question-number">Question ${idx + 1}:</div>
+            <div class="question-text">${q.question}</div>
+            ${q.questionType === 'mcq' && q.options ? `
+              <div class="options">
+                ${q.options.map((opt: string, optIdx: number) => `
+                  <div class="option">
+                    <strong>${String.fromCharCode(65 + optIdx)}.</strong> ${opt}
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+        `).join('')}
+        
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+              setTimeout(function() { window.close(); }, 100);
+            }, 500);
+          };
+        </script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
     
     toast({
-      title: "Downloaded",
-      description: "Question paper downloaded successfully",
+      title: "Print Dialog Opened",
+      description: "Choose 'Save as PDF' to download",
     });
   }
 
   function downloadAnswerSheet() {
-    const doc = new jsPDF();
     const stats = calculateStats();
     const percentage = Math.round((stats.totalScore / stats.maxScore) * 100);
     
-    // Add title
-    doc.setFontSize(18);
-    doc.setFont("helvetica", "bold");
-    doc.text("Answer Sheet", 14, 20);
+    const printWindow = window.open('', '', 'width=800,height=600');
+    if (!printWindow) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please allow popups to download PDF",
+      });
+      return;
+    }
     
-    // Add test details
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Test: ${testData?.test?.title}`, 14, 30);
-    doc.text(`Subject: ${testData?.test?.subject} | Class: ${testData?.test?.classLevel}`, 14, 36);
-    doc.text(`Score: ${stats.totalScore}/${stats.maxScore} (${percentage}%)`, 14, 42);
-    doc.text(`Correct Answers: ${stats.correct}/${stats.total}`, 14, 48);
-    
-    // Add questions with answers
-    let yPos = 58;
-    testData?.questions.forEach((question: any, index: number) => {
-      const result = results[question.id];
-      
-      // Check if we need a new page
-      if (yPos > 240) {
-        doc.addPage();
-        yPos = 20;
-      }
-      
-      // Question
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "bold");
-      doc.text(`Q${index + 1}: `, 14, yPos);
-      
-      doc.setFont("helvetica", "normal");
-      const questionLines = doc.splitTextToSize(question.question, 180);
-      doc.text(questionLines, 14, yPos + 5);
-      yPos += 5 + (questionLines.length * 5);
-      
-      // Your answer
-      doc.setFontSize(10);
-      doc.setTextColor(33, 150, 243); // Blue
-      doc.setFont("helvetica", "bold");
-      doc.text("Your Answer: ", 14, yPos);
-      doc.setFont("helvetica", "normal");
-      const yourAnswerLines = doc.splitTextToSize(answers[question.id] || "Not answered", 150);
-      doc.text(yourAnswerLines, 50, yPos);
-      yPos += Math.max(5, yourAnswerLines.length * 5);
-      
-      // Correct answer (if wrong)
-      if (!result?.isCorrect) {
-        doc.setTextColor(76, 175, 80); // Green
-        doc.setFont("helvetica", "bold");
-        doc.text("Correct Answer: ", 14, yPos);
-        doc.setFont("helvetica", "normal");
-        const correctLines = doc.splitTextToSize(result?.correctAnswer || "", 150);
-        doc.text(correctLines, 50, yPos);
-        yPos += Math.max(5, correctLines.length * 5);
-      }
-      
-      // Explanation
-      if (result?.explanation) {
-        doc.setTextColor(156, 39, 176); // Purple
-        doc.setFont("helvetica", "bold");
-        doc.text("Explanation: ", 14, yPos);
-        doc.setTextColor(0, 0, 0);
-        doc.setFont("helvetica", "normal");
-        const explLines = doc.splitTextToSize(result.explanation, 180);
-        doc.text(explLines, 14, yPos + 5);
-        yPos += 5 + (explLines.length * 5);
-      }
-      
-      // Result indicator
-      doc.setTextColor(0, 0, 0);
-      if (result?.isCorrect) {
-        doc.setTextColor(76, 175, 80);
-        doc.text("✓ Correct", 14, yPos);
-      } else {
-        doc.setTextColor(244, 67, 54);
-        doc.text("✗ Incorrect", 14, yPos);
-      }
-      doc.setTextColor(0, 0, 0);
-      
-      yPos += 10; // Space between questions
-    });
-    
-    // Save the PDF
-    doc.save(`Answer_Sheet_${testData?.test?.title || "Test"}_${shareCode}.pdf`);
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Answer Sheet - ${testData?.test?.title}</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&family=Noto+Sans+Devanagari:wght@400;700&display=swap" rel="stylesheet">
+        <style>
+          @page { margin: 1.5cm; size: A4; }
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body {
+            font-family: 'Noto Sans', 'Noto Sans Devanagari', Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.5;
+            color: #000;
+            padding: 20px;
+          }
+          .header {
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+          }
+          h1 {
+            font-size: 20pt;
+            font-weight: bold;
+            margin-bottom: 10px;
+          }
+          .test-info {
+            font-size: 11pt;
+            line-height: 1.8;
+          }
+          .score-summary {
+            background: #f0f9ff;
+            padding: 15px;
+            border-left: 4px solid #3b82f6;
+            margin: 15px 0;
+            page-break-inside: avoid;
+          }
+          .question-block {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            page-break-inside: avoid;
+          }
+          .question-header {
+            font-weight: bold;
+            font-size: 12pt;
+            margin-bottom: 10px;
+          }
+          .question-text {
+            margin-bottom: 12px;
+            line-height: 1.7;
+          }
+          .answer-section {
+            margin: 10px 0;
+            padding: 8px;
+            background: #f9fafb;
+            border-radius: 4px;
+          }
+          .label {
+            font-weight: bold;
+            display: inline-block;
+            min-width: 130px;
+          }
+          .your-answer { color: #2563eb; }
+          .correct-answer { color: #16a34a; }
+          .explanation { 
+            margin-top: 10px;
+            padding: 10px;
+            background: #fef3c7;
+            border-left: 3px solid #f59e0b;
+            font-size: 10pt;
+            line-height: 1.6;
+          }
+          .result-correct {
+            color: #16a34a;
+            font-weight: bold;
+            margin-top: 8px;
+          }
+          .result-incorrect {
+            color: #dc2626;
+            font-weight: bold;
+            margin-top: 8px;
+          }
+          @media print {
+            body { padding: 0; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Answer Sheet</h1>
+          <div class="test-info">
+            <div><strong>Test:</strong> ${testData?.test?.title}</div>
+            <div><strong>Subject:</strong> ${testData?.test?.subject} | <strong>Class:</strong> ${testData?.test?.classLevel}</div>
+          </div>
+        </div>
+        
+        <div class="score-summary">
+          <div style="font-size: 14pt; font-weight: bold; margin-bottom: 5px;">Score: ${stats.totalScore}/${stats.maxScore} (${percentage}%)</div>
+          <div>Correct Answers: ${stats.correct} out of ${stats.total}</div>
+        </div>
+        
+        ${testData?.questions.map((q: any, idx: number) => {
+          const result = results[q.id];
+          const isCorrect = result?.isCorrect;
+          return `
+            <div class="question-block">
+              <div class="question-header">Question ${idx + 1}:</div>
+              <div class="question-text">${q.question}</div>
+              
+              <div class="answer-section">
+                <div class="your-answer">
+                  <span class="label">Your Answer:</span> ${answers[q.id] || "Not answered"}
+                </div>
+                ${!isCorrect && result?.correctAnswer ? `
+                  <div class="correct-answer">
+                    <span class="label">Correct Answer:</span> ${result.correctAnswer}
+                  </div>
+                ` : ''}
+              </div>
+              
+              ${result?.explanation ? `
+                <div class="explanation">
+                  <strong>Explanation:</strong><br/>
+                  ${result.explanation}
+                </div>
+              ` : ''}
+              
+              <div class="${isCorrect ? 'result-correct' : 'result-incorrect'}">
+                ${isCorrect ? '✓ Correct' : '✗ Incorrect'}
+              </div>
+            </div>
+          `;
+        }).join('')}
+        
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+              setTimeout(function() { window.close(); }, 100);
+            }, 500);
+          };
+        </script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
     
     toast({
-      title: "Downloaded",
-      description: "Answer sheet downloaded successfully",
+      title: "Print Dialog Opened",
+      description: "Choose 'Save as PDF' to download answer sheet",
     });
   }
 

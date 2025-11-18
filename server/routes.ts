@@ -332,27 +332,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const scienceSubjects = ['physics', 'chemistry', 'biology', 'general'];
       const isScience = scienceSubjects.includes(subject.toLowerCase());
       
-      // Generate exact number of questions - keep trying until we have them all
-      let generatedCount = 0;
-      let currentTopicIndex = 0;
-      const maxTotalAttempts = numQuestions * 10; // Safety limit: 10 attempts per question
+      // Generate exact number of questions using queue-based round-robin retry
+      const maxAttemptsPerTopic = 3;
+      const maxTotalAttempts = numQuestions * topics.length * maxAttemptsPerTopic;
+      const perTopicFailures = new Map<string, number>(); // Track failures per topic
+      let topicQueue = [...topics]; // Clone topics into a queue
       let totalAttempts = 0;
+      let generatedCount = 0;
+      
+      // Initialize failure counts
+      topics.forEach((topic: string) => perTopicFailures.set(topic, 0));
       
       while (generatedCount < numQuestions && totalAttempts < maxTotalAttempts) {
         const currentQuestionNumber = generatedCount + 1;
+        
+        // Check if we have any topics left to try
+        if (topicQueue.length === 0) {
+          console.error(`[CUSTOM TEST] All topics exhausted. Generated ${generatedCount}/${numQuestions}`);
+          break;
+        }
+        
         let questionGenerated = false;
-        let attempts = 0;
-        const maxAttemptsPerQuestion = 3;
+        let attemptsThisQuestion = 0;
         
-        // Select topic for this question (round-robin distribution)
-        const currentTopic = topics[currentTopicIndex % topics.length];
-        
-        // Try up to 3 times for this question, and respect global limit
-        while (!questionGenerated && attempts < maxAttemptsPerQuestion && totalAttempts < maxTotalAttempts) {
+        // Try topics from the queue until we succeed or exhaust queue for this question
+        while (!questionGenerated && attemptsThisQuestion < topicQueue.length && topicQueue.length > 0) {
+          const currentTopic = topicQueue.shift()!; // Pop from front
+          const failures = perTopicFailures.get(currentTopic) || 0;
+          
+          // Skip permanently exhausted topics
+          if (failures >= maxAttemptsPerTopic) {
+            console.warn(`[CUSTOM TEST] Topic "${currentTopic}" permanently exhausted (${failures} failures)`);
+            attemptsThisQuestion++;
+            continue;
+          }
+          
           try {
-            attempts++;
             totalAttempts++;
-            console.log(`[CUSTOM TEST] Generating question ${currentQuestionNumber}/${numQuestions} from topic "${currentTopic}" (attempt ${attempts}/${maxAttemptsPerQuestion}, total attempts: ${totalAttempts}/${maxTotalAttempts})`);
+            attemptsThisQuestion++;
+            console.log(`[CUSTOM TEST] Question ${currentQuestionNumber}/${numQuestions} - Topic "${currentTopic}" (failures: ${failures}/${maxAttemptsPerTopic}, queue size: ${topicQueue.length + 1})`);
             
             const questionData = await generateQuestion({
               mode: isScience ? "science" : "language",
@@ -360,8 +378,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               scienceCategory: isScience ? subject.toLowerCase() : undefined,
               classLevel,
               difficulty,
-              chapter: 1, // Custom tests use direct topic, not chapter ID
-              chapterTitle: currentTopic, // Use the selected topic for this question
+              chapter: 1,
+              chapterTitle: currentTopic,
               questionNumber: currentQuestionNumber,
               isMcq: testType === "mcq",
               gptModel: gptModel || "gpt-4o-mini",
@@ -381,23 +399,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
             questions.push(question);
             generatedCount++;
             questionGenerated = true;
-            currentTopicIndex++; // Move to next topic for round-robin distribution
-            console.log(`[CUSTOM TEST] ✓ Question ${currentQuestionNumber}/${numQuestions} generated successfully from topic "${currentTopic}"`);
+            perTopicFailures.set(currentTopic, 0); // Reset failures on success
+            topicQueue.push(currentTopic); // Push back to end of queue
+            console.log(`[CUSTOM TEST] ✓ Question ${currentQuestionNumber}/${numQuestions} generated from topic "${currentTopic}"`);
           } catch (error) {
-            console.error(`[CUSTOM TEST] ✗ Error generating question ${currentQuestionNumber} (attempt ${attempts}/${maxAttemptsPerQuestion}):`, error);
+            console.error(`[CUSTOM TEST] ✗ Failed question ${currentQuestionNumber} with topic "${currentTopic}":`, error);
             
-            if (attempts >= maxAttemptsPerQuestion) {
-              console.warn(`[CUSTOM TEST] Failed question ${currentQuestionNumber} after ${maxAttemptsPerQuestion} attempts. Will try different topic.`);
+            // Increment failure count
+            const newFailures = failures + 1;
+            perTopicFailures.set(currentTopic, newFailures);
+            
+            // Only push back if still has retry budget
+            if (newFailures < maxAttemptsPerTopic) {
+              topicQueue.push(currentTopic);
             } else {
-              console.log(`[CUSTOM TEST] Retrying question ${currentQuestionNumber}...`);
+              console.warn(`[CUSTOM TEST] Topic "${currentTopic}" removed from queue (reached ${maxAttemptsPerTopic} failures)`);
             }
           }
         }
         
-        // If we couldn't generate this question, try a different topic
         if (!questionGenerated) {
-          console.warn(`[CUSTOM TEST] Moving to next topic after failing to generate question ${currentQuestionNumber}`);
-          currentTopicIndex++;
+          console.error(`[CUSTOM TEST] Could not generate question ${currentQuestionNumber} - all topics exhausted or failed`);
+          break;
         }
       }
       

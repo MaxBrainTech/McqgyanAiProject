@@ -197,81 +197,147 @@ export default function TeacherDashboard({ teacherData, onLogout }: TeacherDashb
       const response = await fetch(`/api/teacher/${teacherData.id}/tests/${testId}`);
       const data = await response.json();
       
-      const doc = new jsPDF();
-      
-      // Add title
-      doc.setFontSize(18);
-      doc.setFont("helvetica", "bold");
-      doc.text(data.test.title, 14, 20);
-      
-      // Add test details
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "normal");
-      doc.text(`Subject: ${data.test.subject}`, 14, 30);
-      doc.text(`Class: ${data.test.classLevel}`, 14, 36);
-      doc.text(`Difficulty: ${data.test.difficulty}`, 14, 42);
-      doc.text(`Total Questions: ${data.questions.length}`, 14, 48);
-      doc.text(`Share Code: ${data.test.shareCode}`, 14, 54);
-      
-      // Add instructions if available
-      if (data.test.instructions) {
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "bold");
-        doc.text("Instructions:", 14, 62);
-        doc.setFont("helvetica", "normal");
-        const instructionLines = doc.splitTextToSize(data.test.instructions, 180);
-        doc.text(instructionLines, 14, 68);
+      // Create a printable HTML view
+      const printWindow = window.open('', '', 'width=800,height=600');
+      if (!printWindow) {
+        throw new Error("Please allow popups to download PDF");
       }
       
-      // Add questions
-      let yPos = data.test.instructions ? 80 : 64;
-      data.questions.forEach((question: any, index: number) => {
-        // Check if we need a new page
-        if (yPos > 260) {
-          doc.addPage();
-          yPos = 20;
-        }
-        
-        // Question number and text
-        doc.setFontSize(12);
-        doc.setFont("helvetica", "bold");
-        doc.text(`Question ${index + 1}:`, 14, yPos);
-        
-        doc.setFont("helvetica", "normal");
-        const questionLines = doc.splitTextToSize(question.question, 180);
-        doc.text(questionLines, 14, yPos + 6);
-        yPos += 6 + (questionLines.length * 5);
-        
-        // Options for MCQ
-        if (question.questionType === "mcq" && question.options) {
-          doc.setFontSize(11);
-          question.options.forEach((option: string, optIdx: number) => {
-            if (yPos > 260) {
-              doc.addPage();
-              yPos = 20;
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>${data.test.title}</title>
+          <link rel="preconnect" href="https://fonts.googleapis.com">
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+          <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&family=Noto+Sans+Devanagari:wght@400;700&display=swap" rel="stylesheet">
+          <style>
+            @page { 
+              margin: 1.5cm;
+              size: A4;
             }
-            const optionText = `${String.fromCharCode(65 + optIdx)}. ${option}`;
-            const optionLines = doc.splitTextToSize(optionText, 170);
-            doc.text(optionLines, 20, yPos);
-            yPos += optionLines.length * 5;
-          });
-        }
-        
-        yPos += 8; // Space between questions
-      });
-      
-      // Save the PDF
-      doc.save(`${data.test.title}_${data.test.shareCode}.pdf`);
+            * { 
+              margin: 0; 
+              padding: 0; 
+              box-sizing: border-box; 
+            }
+            body {
+              font-family: 'Noto Sans', 'Noto Sans Devanagari', Arial, sans-serif;
+              font-size: 12pt;
+              line-height: 1.6;
+              color: #000;
+              padding: 20px;
+            }
+            .header {
+              border-bottom: 2px solid #333;
+              padding-bottom: 15px;
+              margin-bottom: 20px;
+            }
+            h1 {
+              font-size: 20pt;
+              font-weight: bold;
+              margin-bottom: 10px;
+            }
+            .test-info {
+              font-size: 11pt;
+              line-height: 1.8;
+            }
+            .instructions {
+              background: #f5f5f5;
+              padding: 12px;
+              border-left: 4px solid #666;
+              margin: 15px 0;
+              page-break-inside: avoid;
+            }
+            .instructions strong {
+              display: block;
+              margin-bottom: 5px;
+            }
+            .question {
+              margin: 20px 0;
+              page-break-inside: avoid;
+            }
+            .question-number {
+              font-weight: bold;
+              font-size: 13pt;
+              margin-bottom: 8px;
+            }
+            .question-text {
+              margin-bottom: 12px;
+              font-size: 12pt;
+              line-height: 1.8;
+            }
+            .options {
+              margin-left: 20px;
+            }
+            .option {
+              margin: 8px 0;
+              line-height: 1.8;
+            }
+            @media print {
+              body { padding: 0; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>${data.test.title}</h1>
+            <div class="test-info">
+              <div><strong>Subject:</strong> ${data.test.subject}</div>
+              <div><strong>Class:</strong> ${data.test.classLevel}</div>
+              <div><strong>Difficulty:</strong> ${data.test.difficulty}</div>
+              <div><strong>Total Questions:</strong> ${data.questions.length}</div>
+              <div><strong>Share Code:</strong> ${data.test.shareCode}</div>
+            </div>
+          </div>
+          
+          ${data.test.instructions ? `
+            <div class="instructions">
+              <strong>Instructions:</strong>
+              ${data.test.instructions}
+            </div>
+          ` : ''}
+          
+          ${data.questions.map((q: any, idx: number) => `
+            <div class="question">
+              <div class="question-number">Question ${idx + 1}:</div>
+              <div class="question-text">${q.question}</div>
+              ${q.questionType === 'mcq' && q.options ? `
+                <div class="options">
+                  ${q.options.map((opt: string, optIdx: number) => `
+                    <div class="option">
+                      <strong>${String.fromCharCode(65 + optIdx)}.</strong> ${opt}
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
+            </div>
+          `).join('')}
+          
+          <script>
+            window.onload = function() {
+              setTimeout(function() {
+                window.print();
+                setTimeout(function() { window.close(); }, 100);
+              }, 500);
+            };
+          </script>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
       
       toast({
-        title: "Downloaded",
-        description: "Question paper downloaded successfully",
+        title: "Print Dialog Opened",
+        description: "Choose 'Save as PDF' to download the question paper",
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to download question paper",
+        description: error.message || "Failed to generate question paper",
       });
     }
   }
