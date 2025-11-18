@@ -332,20 +332,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const scienceSubjects = ['physics', 'chemistry', 'biology', 'general'];
       const isScience = scienceSubjects.includes(subject.toLowerCase());
       
-      // Distribute questions evenly across topics
-      for (let i = 1; i <= numQuestions; i++) {
+      // Generate exact number of questions - keep trying until we have them all
+      let generatedCount = 0;
+      let currentTopicIndex = 0;
+      const maxTotalAttempts = numQuestions * 10; // Safety limit: 10 attempts per question
+      let totalAttempts = 0;
+      
+      while (generatedCount < numQuestions && totalAttempts < maxTotalAttempts) {
+        const currentQuestionNumber = generatedCount + 1;
         let questionGenerated = false;
         let attempts = 0;
-        const maxAttempts = 3;
+        const maxAttemptsPerQuestion = 3;
         
         // Select topic for this question (round-robin distribution)
-        const topicIndex = (i - 1) % topics.length;
-        const currentTopic = topics[topicIndex];
+        const currentTopic = topics[currentTopicIndex % topics.length];
         
-        while (!questionGenerated && attempts < maxAttempts) {
+        // Try up to 3 times for this question, and respect global limit
+        while (!questionGenerated && attempts < maxAttemptsPerQuestion && totalAttempts < maxTotalAttempts) {
           try {
             attempts++;
-            console.log(`[CUSTOM TEST] Generating question ${i}/${numQuestions} from topic "${currentTopic}" (attempt ${attempts}/${maxAttempts})`);
+            totalAttempts++;
+            console.log(`[CUSTOM TEST] Generating question ${currentQuestionNumber}/${numQuestions} from topic "${currentTopic}" (attempt ${attempts}/${maxAttemptsPerQuestion}, total attempts: ${totalAttempts}/${maxTotalAttempts})`);
             
             const questionData = await generateQuestion({
               mode: isScience ? "science" : "language",
@@ -355,14 +362,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
               difficulty,
               chapter: 1, // Custom tests use direct topic, not chapter ID
               chapterTitle: currentTopic, // Use the selected topic for this question
-              questionNumber: i,
+              questionNumber: currentQuestionNumber,
               isMcq: testType === "mcq",
               gptModel: gptModel || "gpt-4o-mini",
             });
             
             const question = await storage.createCustomQuestion({
               testId: test.id,
-              questionNumber: i,
+              questionNumber: currentQuestionNumber,
               question: questionData.question,
               questionType: questionData.questionType,
               options: questionData.options ? JSON.stringify(questionData.options) : null,
@@ -372,18 +379,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
             
             questions.push(question);
+            generatedCount++;
             questionGenerated = true;
-            console.log(`[CUSTOM TEST] ✓ Question ${i}/${numQuestions} generated successfully from topic "${currentTopic}"`);
+            currentTopicIndex++; // Move to next topic for round-robin distribution
+            console.log(`[CUSTOM TEST] ✓ Question ${currentQuestionNumber}/${numQuestions} generated successfully from topic "${currentTopic}"`);
           } catch (error) {
-            console.error(`[CUSTOM TEST] ✗ Error generating question ${i} (attempt ${attempts}/${maxAttempts}):`, error);
+            console.error(`[CUSTOM TEST] ✗ Error generating question ${currentQuestionNumber} (attempt ${attempts}/${maxAttemptsPerQuestion}):`, error);
             
-            if (attempts >= maxAttempts) {
-              console.error(`[CUSTOM TEST] Failed to generate question ${i} after ${maxAttempts} attempts. Skipping.`);
+            if (attempts >= maxAttemptsPerQuestion) {
+              console.warn(`[CUSTOM TEST] Failed question ${currentQuestionNumber} after ${maxAttemptsPerQuestion} attempts. Will try different topic.`);
             } else {
-              console.log(`[CUSTOM TEST] Retrying question ${i}...`);
+              console.log(`[CUSTOM TEST] Retrying question ${currentQuestionNumber}...`);
             }
           }
         }
+        
+        // If we couldn't generate this question, try a different topic
+        if (!questionGenerated) {
+          console.warn(`[CUSTOM TEST] Moving to next topic after failing to generate question ${currentQuestionNumber}`);
+          currentTopicIndex++;
+        }
+      }
+      
+      // If we didn't get the full count, return error
+      if (generatedCount < numQuestions) {
+        console.error(`[CUSTOM TEST] ERROR: Only generated ${generatedCount}/${numQuestions} questions after ${totalAttempts} total attempts`);
+        return res.status(503).json({ 
+          error: `Could only generate ${generatedCount} out of ${numQuestions} questions after multiple attempts. Please try again with simpler topics or reduce the question count.`,
+          questionsGenerated: generatedCount,
+          requested: numQuestions
+        });
       }
       
       console.log(`[CUSTOM TEST] Generated ${questions.length}/${numQuestions} questions successfully across ${topics.length} topic(s)`);
