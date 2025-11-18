@@ -22,7 +22,10 @@ const testSchema = z.object({
   subject: z.string().min(1, "Subject is required"),
   classLevel: z.number().min(6).max(10),
   difficulty: z.enum(["easy", "medium", "hard"]),
-  syllabus: z.string().min(5, "Syllabus/topic must be at least 5 characters"),
+  topic1: z.string().min(3, "Topic 1 is required (minimum 3 characters)"),
+  topic2: z.string().optional(),
+  topic3: z.string().optional(),
+  topic4: z.string().optional(),
   numQuestions: z.number().min(5).max(50),
   testType: z.enum(["mcq", "open-ended", "mixed"]),
   gptModel: z.enum(["gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"]),
@@ -66,7 +69,10 @@ export default function TeacherDashboard({ teacherData, onLogout }: TeacherDashb
       subject: "",
       classLevel: 7,
       difficulty: "medium",
-      syllabus: "",
+      topic1: "",
+      topic2: "",
+      topic3: "",
+      topic4: "",
       numQuestions: 10,
       testType: "mcq",
       gptModel: "gpt-4o-mini",
@@ -85,7 +91,24 @@ export default function TeacherDashboard({ teacherData, onLogout }: TeacherDashb
 
   const generateMutation = useMutation({
     mutationFn: async (data: TestForm) => {
-      const res = await apiRequest("POST", `/api/teacher/${teacherData.id}/generate-test`, data);
+      // Combine topics into comma-separated syllabus
+      const topics = [data.topic1, data.topic2, data.topic3, data.topic4]
+        .filter(topic => topic && topic.trim().length > 0)
+        .join(', ');
+      
+      const payload = {
+        title: data.title,
+        subject: data.subject,
+        classLevel: data.classLevel,
+        difficulty: data.difficulty,
+        syllabus: topics, // Send combined topics as syllabus
+        numQuestions: data.numQuestions,
+        testType: data.testType,
+        gptModel: data.gptModel,
+        instructions: data.instructions,
+      };
+      
+      const res = await apiRequest("POST", `/api/teacher/${teacherData.id}/generate-test`, payload);
       return await res.json();
     },
     onSuccess: (result: any) => {
@@ -467,26 +490,86 @@ export default function TeacherDashboard({ teacherData, onLogout }: TeacherDashb
                     />
                   </div>
 
-                  <FormField
-                    control={form.control}
-                    name="syllabus"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Syllabus/Topic (Up to 4 topics)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="e.g., Force and Motion, Photosynthesis, French Verbs" 
-                            {...field}
-                            data-testid="input-syllabus"
-                          />
-                        </FormControl>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Separate multiple topics with commas. Questions will be distributed evenly across all topics.
-                        </p>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="space-y-3">
+                    <FormLabel className="text-base">Syllabus/Topics</FormLabel>
+                    <p className="text-sm text-muted-foreground">
+                      Enter up to 4 topics. Questions will be distributed evenly across all topics you provide.
+                    </p>
+                    
+                    <div className="grid gap-3">
+                      <FormField
+                        control={form.control}
+                        name="topic1"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Topic 1 (Required)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="e.g., Force and Motion" 
+                                {...field}
+                                data-testid="input-topic1"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="topic2"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Topic 2 (Optional)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="e.g., Photosynthesis" 
+                                {...field}
+                                data-testid="input-topic2"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="topic3"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Topic 3 (Optional)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="e.g., French Verbs" 
+                                {...field}
+                                data-testid="input-topic3"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="topic4"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Topic 4 (Optional)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="e.g., Cell Structure" 
+                                {...field}
+                                data-testid="input-topic4"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
 
                   <FormField
                     control={form.control}
