@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { GraduationCap, LogOut, Plus, Share2, Eye, Loader2, Download } from "lucide-react";
+import { GraduationCap, LogOut, Plus, Share2, Eye, Loader2, Download, Edit, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import jsPDF from "jspdf";
@@ -53,6 +53,10 @@ export default function TeacherDashboard({ teacherData, onLogout }: TeacherDashb
   const [showForm, setShowForm] = useState(false);
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
   const [showQuestionsDialog, setShowQuestionsDialog] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState<any | null>(null);
+  const [showManualEditDialog, setShowManualEditDialog] = useState(false);
+  const [showAIEditDialog, setShowAIEditDialog] = useState(false);
+  const [aiEditFeedback, setAIEditFeedback] = useState("");
   const { toast } = useToast();
 
   const form = useForm<TestForm>({
@@ -101,6 +105,53 @@ export default function TeacherDashboard({ teacherData, onLogout }: TeacherDashb
         variant: "destructive",
         title: "Generation failed",
         description: error.message || "Could not generate test",
+      });
+    },
+  });
+
+  const manualEditMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("PATCH", `/api/teacher/${teacherData.id}/question/${data.questionId}/edit`, data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Question Updated!",
+        description: "Your changes have been saved successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/teacher/${teacherData.id}/tests/${selectedTestId}`] });
+      setShowManualEditDialog(false);
+      setEditingQuestion(null);
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Update failed",
+        description: error.message || "Could not update question",
+      });
+    },
+  });
+
+  const aiEditMutation = useMutation({
+    mutationFn: async (data: { questionId: string; feedback: string }) => {
+      const res = await apiRequest("POST", `/api/teacher/${teacherData.id}/question/${data.questionId}/ai-edit`, { feedback: data.feedback });
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Question Improved!",
+        description: "AI has successfully updated the question based on your feedback.",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/teacher/${teacherData.id}/tests/${selectedTestId}`] });
+      setShowAIEditDialog(false);
+      setEditingQuestion(null);
+      setAIEditFeedback("");
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "AI Edit failed",
+        description: error.message || "Could not improve question with AI",
       });
     },
   });
@@ -574,7 +625,35 @@ export default function TeacherDashboard({ teacherData, onLogout }: TeacherDashb
               {testDetails.questions.map((q: any, idx: number) => (
                 <Card key={q.id}>
                   <CardHeader>
-                    <CardTitle className="text-base">Question {idx + 1}</CardTitle>
+                    <div className="flex justify-between items-center">
+                      <CardTitle className="text-base">Question {idx + 1}</CardTitle>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setEditingQuestion(q);
+                            setShowManualEditDialog(true);
+                          }}
+                          data-testid={`button-edit-${q.id}`}
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setEditingQuestion(q);
+                            setShowAIEditDialog(true);
+                          }}
+                          data-testid={`button-ai-edit-${q.id}`}
+                        >
+                          <Sparkles className="h-4 w-4 mr-1" />
+                          AI Edit
+                        </Button>
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <p className="font-medium">{q.question}</p>
@@ -617,6 +696,226 @@ export default function TeacherDashboard({ teacherData, onLogout }: TeacherDashb
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Manual Edit Dialog */}
+      {editingQuestion && (
+        <Dialog open={showManualEditDialog} onOpenChange={setShowManualEditDialog}>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Question</DialogTitle>
+              <DialogDescription>
+                Manually edit the question, options, answer, and explanation
+              </DialogDescription>
+            </DialogHeader>
+            <ManualEditForm
+              question={editingQuestion}
+              onSave={(data) => {
+                manualEditMutation.mutate({
+                  questionId: editingQuestion.id,
+                  ...data,
+                });
+              }}
+              onCancel={() => {
+                setShowManualEditDialog(false);
+                setEditingQuestion(null);
+              }}
+              isLoading={manualEditMutation.isPending}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* AI Edit Dialog */}
+      {editingQuestion && (
+        <Dialog open={showAIEditDialog} onOpenChange={setShowAIEditDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>AI-Assisted Edit</DialogTitle>
+              <DialogDescription>
+                Tell AI what you want to improve about this question
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <p className="font-semibold text-sm mb-2">Current Question:</p>
+                <p className="text-sm">{editingQuestion.question}</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Feedback for AI (minimum 10 characters)
+                </label>
+                <Textarea
+                  placeholder="e.g., 'Make it more challenging', 'Simplify the language', 'Fix the incorrect option B', 'Add more detail to the explanation'..."
+                  value={aiEditFeedback}
+                  onChange={(e) => setAIEditFeedback(e.target.value)}
+                  rows={4}
+                  data-testid="textarea-ai-feedback"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => {
+                    if (aiEditFeedback.trim().length < 10) {
+                      toast({
+                        variant: "destructive",
+                        title: "Feedback too short",
+                        description: "Please provide at least 10 characters of feedback",
+                      });
+                      return;
+                    }
+                    aiEditMutation.mutate({
+                      questionId: editingQuestion.id,
+                      feedback: aiEditFeedback,
+                    });
+                  }}
+                  disabled={aiEditMutation.isPending || aiEditFeedback.trim().length < 10}
+                  data-testid="button-ai-improve"
+                >
+                  {aiEditMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Improving...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Improve with AI
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowAIEditDialog(false);
+                    setEditingQuestion(null);
+                    setAIEditFeedback("");
+                  }}
+                  disabled={aiEditMutation.isPending}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
+  );
+}
+
+// Manual Edit Form Component
+function ManualEditForm({ question, onSave, onCancel, isLoading }: {
+  question: any;
+  onSave: (data: any) => void;
+  onCancel: () => void;
+  isLoading: boolean;
+}) {
+  const [questionText, setQuestionText] = useState(question.question);
+  const [options, setOptions] = useState(question.options || ["", "", "", ""]);
+  const [correctOption, setCorrectOption] = useState(question.correctOption || "A");
+  const [correctAnswer, setCorrectAnswer] = useState(question.correctAnswer);
+  const [explanation, setExplanation] = useState(question.explanation);
+
+  const isMCQ = question.questionType === "mcq";
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Question</label>
+        <Textarea
+          value={questionText}
+          onChange={(e) => setQuestionText(e.target.value)}
+          rows={3}
+          data-testid="textarea-question"
+        />
+      </div>
+
+      {isMCQ ? (
+        <>
+          <div className="space-y-3">
+            <label className="text-sm font-medium">Options</label>
+            {options.map((opt: string, idx: number) => (
+              <div key={idx} className="flex gap-2 items-center">
+                <span className="font-semibold w-6">{String.fromCharCode(65 + idx)}.</span>
+                <Input
+                  value={opt}
+                  onChange={(e) => {
+                    const newOptions = [...options];
+                    newOptions[idx] = e.target.value;
+                    setOptions(newOptions);
+                  }}
+                  placeholder={`Option ${String.fromCharCode(65 + idx)}`}
+                  data-testid={`input-option-${idx}`}
+                />
+              </div>
+            ))}
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Correct Option</label>
+            <Select value={correctOption} onValueChange={setCorrectOption}>
+              <SelectTrigger data-testid="select-correct-option">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {["A", "B", "C", "D"].map((opt) => (
+                  <SelectItem key={opt} value={opt}>
+                    Option {opt}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </>
+      ) : (
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Correct Answer</label>
+          <Textarea
+            value={correctAnswer}
+            onChange={(e) => setCorrectAnswer(e.target.value)}
+            rows={2}
+            data-testid="textarea-correct-answer"
+          />
+        </div>
+      )}
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Explanation</label>
+        <Textarea
+          value={explanation}
+          onChange={(e) => setExplanation(e.target.value)}
+          rows={3}
+          data-testid="textarea-explanation"
+        />
+      </div>
+
+      <div className="flex gap-2">
+        <Button
+          onClick={() => {
+            onSave({
+              question: questionText,
+              options: isMCQ ? options : undefined,
+              correctOption: isMCQ ? correctOption : undefined,
+              correctAnswer: isMCQ ? options[correctOption.charCodeAt(0) - 65] : correctAnswer,
+              explanation,
+            });
+          }}
+          disabled={isLoading}
+          data-testid="button-save-edit"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            "Save Changes"
+          )}
+        </Button>
+        <Button variant="outline" onClick={onCancel} disabled={isLoading}>
+          Cancel
+        </Button>
+      </div>
     </div>
   );
 }
