@@ -321,37 +321,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isScience = scienceSubjects.includes(subject.toLowerCase());
       
       for (let i = 1; i <= numQuestions; i++) {
-        try {
-          console.log(`[CUSTOM TEST] Generating question ${i}/${numQuestions}...`);
-          
-          const questionData = await generateQuestion({
-            mode: isScience ? "science" : "language",
-            language: isScience ? undefined : subject,
-            scienceCategory: isScience ? subject.toLowerCase() : undefined,
-            classLevel,
-            difficulty,
-            chapter: 1, // Custom tests use direct topic, not chapter ID
-            chapterTitle: syllabus,
-            questionNumber: i,
-            isMcq: testType === "mcq",
-            gptModel: gptModel || "gpt-4o-mini",
-          });
-          
-          const question = await storage.createCustomQuestion({
-            testId: test.id,
-            questionNumber: i,
-            question: questionData.question,
-            questionType: questionData.questionType,
-            options: questionData.options ? JSON.stringify(questionData.options) : null,
-            correctOption: questionData.correctOption || null,
-            correctAnswer: questionData.correctAnswer,
-            explanation: questionData.explanation || "",
-          });
-          
-          questions.push(question);
-        } catch (error) {
-          console.error(`Error generating question ${i}:`, error);
-          // Continue with other questions
+        let questionGenerated = false;
+        let attempts = 0;
+        const maxAttempts = 3;
+        
+        while (!questionGenerated && attempts < maxAttempts) {
+          try {
+            attempts++;
+            console.log(`[CUSTOM TEST] Generating question ${i}/${numQuestions}... (attempt ${attempts}/${maxAttempts})`);
+            
+            const questionData = await generateQuestion({
+              mode: isScience ? "science" : "language",
+              language: isScience ? undefined : subject,
+              scienceCategory: isScience ? subject.toLowerCase() : undefined,
+              classLevel,
+              difficulty,
+              chapter: 1, // Custom tests use direct topic, not chapter ID
+              chapterTitle: syllabus,
+              questionNumber: i,
+              isMcq: testType === "mcq",
+              gptModel: gptModel || "gpt-4o-mini",
+            });
+            
+            const question = await storage.createCustomQuestion({
+              testId: test.id,
+              questionNumber: i,
+              question: questionData.question,
+              questionType: questionData.questionType,
+              options: questionData.options ? JSON.stringify(questionData.options) : null,
+              correctOption: questionData.correctOption || null,
+              correctAnswer: questionData.correctAnswer,
+              explanation: questionData.explanation || "",
+            });
+            
+            questions.push(question);
+            questionGenerated = true;
+            console.log(`[CUSTOM TEST] ✓ Question ${i}/${numQuestions} generated successfully`);
+          } catch (error) {
+            console.error(`[CUSTOM TEST] ✗ Error generating question ${i} (attempt ${attempts}/${maxAttempts}):`, error);
+            
+            if (attempts >= maxAttempts) {
+              console.error(`[CUSTOM TEST] Failed to generate question ${i} after ${maxAttempts} attempts. Skipping.`);
+            } else {
+              console.log(`[CUSTOM TEST] Retrying question ${i}...`);
+            }
+          }
         }
       }
       

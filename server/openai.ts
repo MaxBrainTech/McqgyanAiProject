@@ -726,14 +726,15 @@ async function generateScienceQuestion(params: {
   question: string;
   correctAnswer: string;
   questionType: string;
-  options: string[];
-  correctOption: string;
-  explanation: string;
+  options?: string[];
+  correctOption?: string;
+  explanation?: string;
 }> {
-  const { scienceCategory, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance, previousQuestions, isMcq, gptModel } = params;
+  const { scienceCategory, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance, previousQuestions, isMcq = true, gptModel } = params;
   const modelToUse = gptModel || CURRENT_MODEL;
   
-  console.log(`[AI] Generating science MCQ #${questionNumber} for ${scienceCategory} - ${difficulty} difficulty`);
+  const questionTypeText = isMcq ? 'MCQ' : 'open-ended';
+  console.log(`[AI] Generating science ${questionTypeText} question #${questionNumber} for ${scienceCategory} - ${difficulty} difficulty`);
   
   const guidelines = CBSE_CLASS_GUIDELINES[classLevel as keyof typeof CBSE_CLASS_GUIDELINES];
   
@@ -754,6 +755,10 @@ async function generateScienceQuestion(params: {
 
   const categoryGuidelines = categoryContext[scienceCategory?.toLowerCase() as keyof typeof categoryContext] || "";
 
+  const questionTypeInstruction = isMcq 
+    ? "Generate a multiple choice question (MCQ)"
+    : "Generate an open-ended question that requires a detailed written answer";
+
   const prompt = `You are a strict CBSE General Science teacher for Class ${classLevel} following the official NCERT curriculum.
 
 🎯 CBSE CLASS ${classLevel} BLUEPRINT REQUIREMENTS:
@@ -763,48 +768,41 @@ async function generateScienceQuestion(params: {
 - Question Type Examples: ${guidelines.examples}
 - Typical Mark Allocation: ${guidelines.marks}
 
-Generate a multiple choice question (MCQ) for ${scienceCategory} on topic "${chapterTitle}" at ${difficulty} difficulty level.${adaptiveContext}${previousQuestionsContext}
+${questionTypeInstruction} for ${scienceCategory} on topic "${chapterTitle}" at ${difficulty} difficulty level.${adaptiveContext}${previousQuestionsContext}
 
-CBSE Science MCQ Guidelines:
+CBSE Science Guidelines:
 - Follow NCERT textbook patterns and terminology EXACTLY for Class ${classLevel}
 - ${categoryGuidelines}
-- Create 4 distinct options (A, B, C, D) with only ONE correct answer
-- Make distractors (wrong answers) plausible but clearly incorrect
-- Options should be of similar length and complexity
 - Use scientific terminology appropriate for Class ${classLevel} students (age 11-16)
 - Include numerical values with proper SI units where relevant
 - Ensure the question tests age-appropriate understanding, not rote memorization
+
+${isMcq ? `MCQ-Specific Requirements:
+- Create 4 distinct options (A, B, C, D) with only ONE correct answer
+- Make distractors (wrong answers) plausible but clearly incorrect
+- Options should be of similar length and complexity
+- All 4 options must be distinct and well-formatted` : `Open-Ended Requirements:
+- Question should require a detailed written answer (2-5 sentences)
+- Answer should demonstrate understanding of concepts, not just memorization
+- Provide a model answer that shows the depth of response expected`}
 
 🔬 CRITICAL - SCIENTIFIC ACCURACY REQUIREMENTS:
 1. For numerical questions: Show complete calculation steps in explanation
 2. For conceptual questions: Base answer on verified scientific principles
 3. Double-check all facts against standard NCERT textbooks
 4. Ensure units are correct (use SI units: meters, kilograms, seconds, etc.)
-5. Verify that the correct option is definitively right and distractors are definitively wrong
+${isMcq ? '5. Verify that the correct option is definitively right and distractors are definitively wrong' : '5. Model answer should be complete, accurate, and age-appropriate'}
 
-MCQ Question Types (choose one appropriate for ${difficulty} level):
+Question Types (choose one appropriate for ${difficulty} level):
 1. EASY: Fact-based recall, simple definitions, direct NCERT terminology
 2. MEDIUM: Application to familiar scenarios, 1-step calculations, compare-contrast
 3. HARD: Multi-step reasoning, unfamiliar applications, analyze cause-effect
 
-IMPORTANT - MCQ Format Rules:
-1. Question must be crystal clear and test ONE specific concept
-2. All 4 options must be distinct and well-formatted
-3. Provide detailed explanation with step-by-step reasoning
-4. For calculations: show formula, substitution, and final answer with units
-5. Ensure age-appropriate vocabulary for Class ${classLevel} (avoid university-level terms)
-
-Example EXCELLENT Science MCQ (Physics - Class 8):
+${isMcq ? `Example EXCELLENT Science MCQ (Physics - Class 8):
 Question: "A car travels 150 km in 3 hours. What is its average speed?"
 Options: ["A. 30 km/h", "B. 45 km/h", "C. 50 km/h", "D. 60 km/h"]
 Correct: "C"
 Explanation: "Average speed = Total distance ÷ Total time = 150 km ÷ 3 hours = 50 km/h. The formula for average speed is distance divided by time."
-
-Example EXCELLENT Science MCQ (Biology - Class 9):
-Question: "Which organelle is known as the powerhouse of the cell?"
-Options: ["A. Nucleus", "B. Mitochondria", "C. Ribosome", "D. Chloroplast"]
-Correct: "B"
-Explanation: "Mitochondria are called the powerhouse of the cell because they produce energy (ATP) through cellular respiration. The nucleus controls cell activities, ribosomes make proteins, and chloroplasts perform photosynthesis in plant cells."
 
 Return your response in this exact JSON format:
 {
@@ -814,7 +812,17 @@ Return your response in this exact JSON format:
   "correctAnswer": "<the full text of the correct answer>",
   "explanation": "<detailed step-by-step explanation proving why this answer is correct>",
   "questionType": "mcq"
-}
+}` : `Example EXCELLENT Open-Ended Question (Biology - Class 9):
+Question: "Explain the process of photosynthesis and state why it is important for life on Earth."
+Correct Answer: "Photosynthesis is the process by which green plants make their own food using sunlight, carbon dioxide, and water. Chlorophyll in the leaves absorbs sunlight energy, which is used to convert carbon dioxide from air and water from soil into glucose (food) and oxygen. The equation is: 6CO2 + 6H2O + Light Energy → C6H12O6 + 6O2. Photosynthesis is important because it provides oxygen for all living organisms to breathe and is the primary source of food energy in ecosystems."
+
+Return your response in this exact JSON format:
+{
+  "question": "<the question text - clear and age-appropriate>",
+  "correctAnswer": "<detailed model answer showing expected depth>",
+  "explanation": "<additional explanation if needed, or can be same as correctAnswer>",
+  "questionType": "open-ended"
+}`}
 
 Make the question challenging but fair for Class ${classLevel} CBSE students. Ensure 100% scientific accuracy - you will be fact-checked.`;
 
@@ -836,95 +844,151 @@ Make the question challenging but fair for Class ${classLevel} CBSE students. En
     }
     
     const result = JSON.parse(content);
-    console.log(`[AI] Science MCQ generated in ${elapsed}s using ${modelToUse}: ${result.question.substring(0, 50)}...`);
+    console.log(`[AI] Science ${isMcq ? 'MCQ' : 'open-ended'} generated in ${elapsed}s using ${modelToUse}: ${result.question.substring(0, 50)}...`);
     
-    // Validate MCQ format
-    if (!Array.isArray(result.options) || result.options.length !== 4) {
-      throw new Error("Invalid MCQ format: must have exactly 4 options");
-    }
-    
-    if (!["A", "B", "C", "D"].includes(result.correctOption)) {
-      throw new Error("Invalid MCQ format: correctOption must be A, B, C, or D");
-    }
-    
-    if (!result.explanation || result.explanation.trim().length === 0) {
-      console.error("[AI ERROR] Science MCQ missing explanation");
-      result.explanation = "No explanation provided";
-    }
-    
-    // STEP 1: Verify answer correctness independently
-    console.log(`[AI] Verifying answer correctness for science question...`);
-    const verification = await verifyAnswer(
-      result.question,
-      result.correctAnswer,
-      'science',
-      modelToUse
-    );
-    
-    let verifiedAnswer = result.correctAnswer;
-    let verifiedExplanation = result.explanation;
-    let verifiedOption = result.correctOption;
-    
-    if (!verification.isValid) {
-      if (verification.alternativeAnswer && verification.alternativeAnswer !== "VERIFICATION_FAILED") {
-        console.warn(`[AI WARNING] Science answer verification failed! Original: "${result.correctAnswer}" | Corrected: "${verification.alternativeAnswer}"`);
-        console.warn(`[AI WARNING] Reason: ${verification.explanation}`);
-        
-        // Try to find which option matches the corrected answer
-        const matchingOptionIndex = result.options.findIndex((opt: string) => 
-          opt.toLowerCase().includes(verification.alternativeAnswer!.toLowerCase()) ||
-          verification.alternativeAnswer!.toLowerCase().includes(opt.replace(/^[A-D]\.\s*/, '').trim().toLowerCase())
-        );
-        
-        if (matchingOptionIndex >= 0) {
-          verifiedOption = String.fromCharCode(65 + matchingOptionIndex); // 65 is 'A'
-          verifiedAnswer = verification.alternativeAnswer;
-          verifiedExplanation = `${result.explanation}\n\n[Verified Answer: ${verification.explanation}]`;
-          console.warn(`[AI WARNING] Updated correctOption from "${result.correctOption}" to "${verifiedOption}"`);
+    if (isMcq) {
+      // Validate MCQ format
+      if (!Array.isArray(result.options) || result.options.length !== 4) {
+        throw new Error("Invalid MCQ format: must have exactly 4 options");
+      }
+      
+      if (!["A", "B", "C", "D"].includes(result.correctOption)) {
+        throw new Error("Invalid MCQ format: correctOption must be A, B, C, or D");
+      }
+      
+      if (!result.explanation || result.explanation.trim().length === 0) {
+        console.error("[AI ERROR] Science MCQ missing explanation");
+        result.explanation = "No explanation provided";
+      }
+      
+      // STEP 1: Verify answer correctness independently
+      console.log(`[AI] Verifying answer correctness for science question...`);
+      const verification = await verifyAnswer(
+        result.question,
+        result.correctAnswer,
+        'science',
+        modelToUse
+      );
+      
+      let verifiedAnswer = result.correctAnswer;
+      let verifiedExplanation = result.explanation;
+      let verifiedOption = result.correctOption;
+      
+      if (!verification.isValid) {
+        if (verification.alternativeAnswer && verification.alternativeAnswer !== "VERIFICATION_FAILED") {
+          console.warn(`[AI WARNING] Science answer verification failed! Original: "${result.correctAnswer}" | Corrected: "${verification.alternativeAnswer}"`);
+          console.warn(`[AI WARNING] Reason: ${verification.explanation}`);
+          
+          // Try to find which option matches the corrected answer
+          const matchingOptionIndex = result.options.findIndex((opt: string) => 
+            opt.toLowerCase().includes(verification.alternativeAnswer!.toLowerCase()) ||
+            verification.alternativeAnswer!.toLowerCase().includes(opt.replace(/^[A-D]\.\s*/, '').trim().toLowerCase())
+          );
+          
+          if (matchingOptionIndex >= 0) {
+            verifiedOption = String.fromCharCode(65 + matchingOptionIndex);
+            verifiedAnswer = verification.alternativeAnswer;
+            verifiedExplanation = `${result.explanation}\n\n[Verified Answer: ${verification.explanation}]`;
+            console.warn(`[AI WARNING] Updated correctOption from "${result.correctOption}" to "${verifiedOption}"`);
+          } else {
+            console.error(`[AI ERROR] Corrected answer "${verification.alternativeAnswer}" does not match any option`);
+            throw new Error(`Science MCQ verification failed: corrected answer not in options`);
+          }
         } else {
-          console.error(`[AI ERROR] Corrected answer "${verification.alternativeAnswer}" does not match any option`);
-          throw new Error(`Science MCQ verification failed: corrected answer not in options`);
+          console.error(`[AI ERROR] Science answer verification failed with no alternative: ${verification.explanation}`);
+          throw new Error(`Science answer verification failed: ${verification.explanation}`);
         }
       } else {
-        console.error(`[AI ERROR] Science answer verification failed with no alternative: ${verification.explanation}`);
-        throw new Error(`Science answer verification failed: ${verification.explanation}`);
+        console.log(`[AI] ✓ Answer verified as correct: ${verification.explanation}`);
       }
+      
+      // STEP 2: Assess question quality
+      console.log(`[AI] Assessing question quality...`);
+      const quality = await assessQuestionQuality(
+        result.question,
+        classLevel,
+        difficulty,
+        'science',
+        modelToUse
+      );
+      
+      console.log(`[AI] Quality Score: ${quality.score}/10`);
+      if (quality.issues.length > 0) {
+        console.log(`[AI] Quality Issues: ${quality.issues.join(', ')}`);
+      }
+      
+      if (quality.score < 6) {
+        console.warn(`[AI WARNING] Question quality below threshold (${quality.score}/10). Consider regeneration.`);
+      }
+      
+      // Return verified MCQ data
+      return {
+        question: result.question || "Error generating question",
+        options: result.options,
+        correctOption: verifiedOption,
+        correctAnswer: verifiedAnswer || result.options[0] || "N/A",
+        explanation: verifiedExplanation,
+        questionType: "mcq",
+      };
     } else {
-      console.log(`[AI] ✓ Answer verified as correct: ${verification.explanation}`);
+      // Handle open-ended questions
+      if (!result.correctAnswer || result.correctAnswer.trim().length < 10) {
+        throw new Error("Invalid open-ended format: answer too short");
+      }
+      
+      // STEP 1: Verify answer correctness
+      console.log(`[AI] Verifying answer correctness for science open-ended question...`);
+      const verification = await verifyAnswer(
+        result.question,
+        result.correctAnswer,
+        'science',
+        modelToUse
+      );
+      
+      let verifiedAnswer = result.correctAnswer;
+      if (!verification.isValid) {
+        if (verification.alternativeAnswer && verification.alternativeAnswer !== "VERIFICATION_FAILED") {
+          console.warn(`[AI WARNING] Answer verification failed! Original: "${result.correctAnswer}" | Corrected: "${verification.alternativeAnswer}"`);
+          console.warn(`[AI WARNING] Reason: ${verification.explanation}`);
+          verifiedAnswer = verification.alternativeAnswer;
+        } else {
+          console.error(`[AI ERROR] Answer verification failed with no alternative: ${verification.explanation}`);
+          throw new Error(`Answer verification failed: ${verification.explanation}`);
+        }
+      } else {
+        console.log(`[AI] ✓ Answer verified as correct`);
+      }
+      
+      // STEP 2: Assess question quality
+      console.log(`[AI] Assessing question quality...`);
+      const quality = await assessQuestionQuality(
+        result.question,
+        classLevel,
+        difficulty,
+        'science',
+        modelToUse
+      );
+      
+      console.log(`[AI] Quality Score: ${quality.score}/10`);
+      if (quality.issues.length > 0) {
+        console.log(`[AI] Quality Issues: ${quality.issues.join(', ')}`);
+      }
+      
+      if (quality.score < 6) {
+        console.warn(`[AI WARNING] Question quality below threshold (${quality.score}/10). Consider manual review.`);
+      }
+      
+      // Return verified open-ended data
+      return {
+        question: result.question || "Error generating question",
+        correctAnswer: verifiedAnswer || "N/A",
+        questionType: result.questionType || "open-ended",
+        explanation: result.explanation || verifiedAnswer,
+      };
     }
-    
-    // STEP 2: Assess question quality
-    console.log(`[AI] Assessing question quality...`);
-    const quality = await assessQuestionQuality(
-      result.question,
-      classLevel,
-      difficulty,
-      'science',
-      modelToUse
-    );
-    
-    console.log(`[AI] Quality Score: ${quality.score}/10`);
-    if (quality.issues.length > 0) {
-      console.log(`[AI] Quality Issues: ${quality.issues.join(', ')}`);
-    }
-    
-    // If quality is too low, log warning but still return (to avoid infinite loops)
-    if (quality.score < 6) {
-      console.warn(`[AI WARNING] Question quality below threshold (${quality.score}/10). Consider regeneration.`);
-    }
-    
-    // Only return verified data
-    return {
-      question: result.question || "Error generating question",
-      options: result.options,
-      correctOption: verifiedOption,
-      correctAnswer: verifiedAnswer || result.options[0] || "N/A",
-      explanation: verifiedExplanation,
-      questionType: "mcq",
-    };
   } catch (error: any) {
-    console.error(`[AI ERROR] Failed to generate science MCQ:`, error.message || error);
-    throw new Error(`Failed to generate science MCQ: ${error.message || "Unknown error"}`);
+    console.error(`[AI ERROR] Failed to generate science ${isMcq ? 'MCQ' : 'open-ended question'}:`, error.message || error);
+    throw new Error(`Failed to generate science ${isMcq ? 'MCQ' : 'open-ended question'}: ${error.message || "Unknown error"}`);
   }
 }
 
