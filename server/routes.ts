@@ -294,7 +294,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { teacherId } = req.params;
       const { title, subject, classLevel, difficulty, syllabus, numQuestions, testType, gptModel, instructions } = req.body;
       
-      console.log(`[CUSTOM TEST] Generating ${numQuestions} ${difficulty} questions for ${subject} - ${syllabus} using ${gptModel || 'gpt-4o-mini'}`);
+      // Parse multiple topics from comma-separated syllabus input
+      const topics = syllabus
+        .split(',')
+        .map((topic: string) => topic.trim())
+        .filter((topic: string) => topic.length > 0)
+        .slice(0, 4); // Limit to maximum 4 topics
+      
+      if (topics.length === 0) {
+        return res.status(400).json({ error: "At least one topic is required" });
+      }
+      
+      console.log(`[CUSTOM TEST] Generating ${numQuestions} ${difficulty} questions for ${subject} - Topics: ${topics.join(', ')} using ${gptModel || 'gpt-4o-mini'}`);
+      console.log(`[CUSTOM TEST] Distribution: ${topics.length} topic(s), ~${Math.ceil(numQuestions / topics.length)} questions per topic`);
       
       // Create custom test
       const test = await storage.createCustomTest({
@@ -303,7 +315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subject,
         classLevel,
         difficulty,
-        syllabus,
+        syllabus, // Store original comma-separated input
         numQuestions,
         testType: testType || "mcq",
         gptModel: gptModel || "gpt-4o-mini",
@@ -320,15 +332,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const scienceSubjects = ['physics', 'chemistry', 'biology', 'general'];
       const isScience = scienceSubjects.includes(subject.toLowerCase());
       
+      // Distribute questions evenly across topics
       for (let i = 1; i <= numQuestions; i++) {
         let questionGenerated = false;
         let attempts = 0;
         const maxAttempts = 3;
         
+        // Select topic for this question (round-robin distribution)
+        const topicIndex = (i - 1) % topics.length;
+        const currentTopic = topics[topicIndex];
+        
         while (!questionGenerated && attempts < maxAttempts) {
           try {
             attempts++;
-            console.log(`[CUSTOM TEST] Generating question ${i}/${numQuestions}... (attempt ${attempts}/${maxAttempts})`);
+            console.log(`[CUSTOM TEST] Generating question ${i}/${numQuestions} from topic "${currentTopic}" (attempt ${attempts}/${maxAttempts})`);
             
             const questionData = await generateQuestion({
               mode: isScience ? "science" : "language",
@@ -337,7 +354,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               classLevel,
               difficulty,
               chapter: 1, // Custom tests use direct topic, not chapter ID
-              chapterTitle: syllabus,
+              chapterTitle: currentTopic, // Use the selected topic for this question
               questionNumber: i,
               isMcq: testType === "mcq",
               gptModel: gptModel || "gpt-4o-mini",
@@ -356,7 +373,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             questions.push(question);
             questionGenerated = true;
-            console.log(`[CUSTOM TEST] ✓ Question ${i}/${numQuestions} generated successfully`);
+            console.log(`[CUSTOM TEST] ✓ Question ${i}/${numQuestions} generated successfully from topic "${currentTopic}"`);
           } catch (error) {
             console.error(`[CUSTOM TEST] ✗ Error generating question ${i} (attempt ${attempts}/${maxAttempts}):`, error);
             
@@ -369,7 +386,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      console.log(`[CUSTOM TEST] Generated ${questions.length}/${numQuestions} questions successfully`);
+      console.log(`[CUSTOM TEST] Generated ${questions.length}/${numQuestions} questions successfully across ${topics.length} topic(s)`);
       
       // Update test status to published
       await storage.updateCustomTest(test.id, { status: "published" });

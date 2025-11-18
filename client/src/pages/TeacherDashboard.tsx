@@ -472,7 +472,7 @@ export default function TeacherDashboard({ teacherData, onLogout }: TeacherDashb
                     name="syllabus"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Syllabus/Topic</FormLabel>
+                        <FormLabel>Syllabus/Topic (Up to 4 topics)</FormLabel>
                         <FormControl>
                           <Input 
                             placeholder="e.g., Force and Motion, Photosynthesis, French Verbs" 
@@ -480,6 +480,9 @@ export default function TeacherDashboard({ teacherData, onLogout }: TeacherDashb
                             data-testid="input-syllabus"
                           />
                         </FormControl>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Separate multiple topics with commas. Questions will be distributed evenly across all topics.
+                        </p>
                         <FormMessage />
                       </FormItem>
                     )}
