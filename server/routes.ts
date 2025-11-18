@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { generateQuestion, evaluateAnswer } from "./openai";
+import { generateQuestion, evaluateAnswer, improveQuestion } from "./openai";
 
 // Comprehensive chapter mappings for all languages (CBSE Curriculum)
 const CHAPTERS: Record<string, Array<{ id: number; title: string; description: string }>> = {
@@ -389,6 +389,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching test details:", error);
       res.status(500).json({ error: "Failed to fetch test details" });
+    }
+  });
+
+  // Manual edit question
+  app.patch("/api/teacher/:teacherId/question/:questionId/edit", async (req, res) => {
+    try {
+      const { teacherId, questionId } = req.params;
+      const { question, options, correctOption, correctAnswer, explanation } = req.body;
+      
+      console.log(`[QUESTION EDIT] Teacher ${teacherId} editing question ${questionId}`);
+      
+      const existingQuestion = await storage.getCustomQuestion(questionId);
+      if (!existingQuestion) {
+        return res.status(404).json({ error: "Question not found" });
+      }
+      
+      // Verify teacher owns this question's test
+      const test = await storage.getCustomTest(existingQuestion.testId);
+      if (!test || test.teacherId !== teacherId) {
+        return res.status(403).json({ error: "Unauthorized" });
+      }
+      
+      const updates: Partial<typeof existingQuestion> = {
+        question,
+        correctAnswer,
+        explanation,
+      };
+      
+      if (existingQuestion.questionType === "mcq") {
+        updates.options = options ? JSON.stringify(options) : null;
+        updates.correctOption = correctOption || null;
+      }
+      
+      const updatedQuestion = await storage.updateCustomQuestion(questionId, updates);
+      
+      console.log(`[QUESTION EDIT] Question ${questionId} updated successfully`);
+      
+      res.json({
+        ...updatedQuestion,
+        options: updatedQuestion?.options ? JSON.parse(updatedQuestion.options) : null,
+      });
+    } catch (error) {
+      console.error("Error editing question:", error);
+      res.status(500).json({ error: "Failed to edit question" });
+    }
+  });
+
+  // AI-assisted edit question
+  app.post("/api/teacher/:teacherId/question/:questionId/ai-edit", async (req, res) => {
+    try {
+      const { teacherId, questionId } = req.params;
+      const { feedback } = req.body;
+      
+      if (!feedback || feedback.trim().length < 10) {
+        return res.status(400).json({ error: "Please provide detailed feedback (at least 10 characters)" });
+      }
+      
+      console.log(`[AI QUESTION EDIT] Teacher ${teacherId} requesting AI edit for question ${questionId}`);
+      console.log(`[AI QUESTION EDIT] Feedback: "${feedback.substring(0, 50)}..."`);
+      
+      const existingQuestion = await storage.getCustomQuestion(questionId);
+      if (!existingQuestion) {
+        return res.status(404).json({ error: "Question not found" });
+      }
+      
+      // Verify teacher owns this question's test
+      const test = await storage.getCustomTest(existingQuestion.testId);
+      if (!test || test.teacherId !== teacherId) {
+        return res.status(403).json({ error: "Unauthorized" });
+      }
+      
+      // Parse options if MCQ
+      const parsedOptions = existingQuestion.options ? JSON.parse(existingQuestion.options) : undefined;
+      
+      // Call AI to improve the question
+      const improvedQuestion = await improveQuestion({
+        originalQuestion: existingQuestion.question,
+        questionType: existingQuestion.questionType,
+        options: parsedOptions,
+        correctAnswer: existingQuestion.correctAnswer,
+        explanation: existingQuestion.explanation,
+        teacherFeedback: feedback,
+        subject: test.subject,
+        classLevel: test.classLevel,
+        difficulty: test.difficulty,
+        gptModel: test.gptModel,
+      });
+      
+      // Update question with AI improvements
+      const updates: Partial<typeof existingQuestion> = {
+        question: improvedQuestion.question,
+        correctAnswer: improvedQuestion.correctAnswer,
+        explanation: improvedQuestion.explanation,
+      };
+      
+      if (existingQuestion.questionType === "mcq" && improvedQuestion.options) {
+        updates.options = JSON.stringify(improvedQuestion.options);
+        updates.correctOption = improvedQuestion.correctOption || null;
+      }
+      
+      const updatedQuestion = await storage.updateCustomQuestion(questionId, updates);
+      
+      console.log(`[AI QUESTION EDIT] Question ${questionId} improved successfully using AI`);
+      
+      res.json({
+        ...updatedQuestion,
+        options: updatedQuestion?.options ? JSON.parse(updatedQuestion.options) : null,
+      });
+    } catch (error: any) {
+      console.error("Error in AI-assisted edit:", error);
+      res.status(500).json({ error: error.message || "Failed to improve question with AI" });
     }
   });
 

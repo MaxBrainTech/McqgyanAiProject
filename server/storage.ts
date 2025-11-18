@@ -34,7 +34,9 @@ export interface IStorage {
   
   // Custom question methods
   createCustomQuestion(question: InsertCustomQuestion): Promise<CustomQuestion>;
+  getCustomQuestion(questionId: string): Promise<CustomQuestion | undefined>;
   getCustomQuestions(testId: string): Promise<CustomQuestion[]>;
+  updateCustomQuestion(questionId: string, updates: Partial<CustomQuestion>): Promise<CustomQuestion | undefined>;
   deleteCustomQuestions(testId: string): Promise<void>;
 }
 
@@ -210,10 +212,23 @@ export class MemStorage implements IStorage {
     return question;
   }
 
+  async getCustomQuestion(questionId: string): Promise<CustomQuestion | undefined> {
+    return this.customQuestions.get(questionId);
+  }
+
   async getCustomQuestions(testId: string): Promise<CustomQuestion[]> {
     return Array.from(this.customQuestions.values())
       .filter((q) => q.testId === testId)
       .sort((a, b) => a.questionNumber - b.questionNumber);
+  }
+
+  async updateCustomQuestion(questionId: string, updates: Partial<CustomQuestion>): Promise<CustomQuestion | undefined> {
+    const question = this.customQuestions.get(questionId);
+    if (!question) return undefined;
+    
+    const updated = { ...question, ...updates };
+    this.customQuestions.set(questionId, updated);
+    return updated;
   }
 
   async deleteCustomQuestions(testId: string): Promise<void> {

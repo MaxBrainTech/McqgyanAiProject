@@ -992,3 +992,103 @@ Return in this exact JSON format:
     throw new Error(`Failed to evaluate answer: ${error.message || "Unknown error"}`);
   }
 }
+
+// AI-assisted question editing
+export async function improveQuestion(params: {
+  originalQuestion: string;
+  questionType: string;
+  options?: string[];
+  correctAnswer: string;
+  explanation: string;
+  teacherFeedback: string;
+  subject: string;
+  classLevel: number;
+  difficulty: string;
+  gptModel?: string;
+}): Promise<{
+  question: string;
+  options?: string[];
+  correctOption?: string;
+  correctAnswer: string;
+  explanation: string;
+}> {
+  const modelToUse = params.gptModel || CURRENT_MODEL;
+  console.log(`[AI] Improving question based on teacher feedback using ${modelToUse}...`);
+
+  const isMCQ = params.questionType === "mcq";
+  
+  const prompt = `You are an expert CBSE question designer for ${params.subject}, Class ${params.classLevel}.
+
+ORIGINAL QUESTION:
+${params.originalQuestion}
+
+${isMCQ ? `OPTIONS:
+${params.options?.map((opt, idx) => `${String.fromCharCode(65 + idx)}. ${opt}`).join('\n')}
+
+CORRECT OPTION: ${params.correctAnswer}` : `CORRECT ANSWER: ${params.correctAnswer}`}
+
+EXPLANATION:
+${params.explanation}
+
+TEACHER'S FEEDBACK/IMPROVEMENT REQUEST:
+${params.teacherFeedback}
+
+Based on the teacher's feedback, improve the question while maintaining CBSE standards for Class ${params.classLevel}.
+Difficulty level: ${params.difficulty}
+
+Requirements:
+1. Address all teacher concerns mentioned in the feedback
+2. Maintain ${params.difficulty} difficulty level
+3. Keep it age-appropriate for Class ${params.classLevel} students (ages ${11 + params.classLevel - 6}-${12 + params.classLevel - 6})
+4. Use clear, unambiguous language
+5. Ensure answer is definitively correct
+6. Provide comprehensive explanation
+
+Return in this exact JSON format:
+${isMCQ ? `{
+  "question": "<improved question text>",
+  "options": ["option1", "option2", "option3", "option4"],
+  "correctOption": "<A, B, C, or D>",
+  "explanation": "<detailed explanation>"
+}` : `{
+  "question": "<improved question text>",
+  "correctAnswer": "<correct answer>",
+  "explanation": "<detailed explanation>"
+}`}`;
+
+  const startTime = Date.now();
+  
+  try {
+    const response = await openai.chat.completions.create({
+      model: modelToUse,
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      max_completion_tokens: 2000,
+    });
+
+    const content = response.choices[0]?.message?.content || "{}";
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    
+    const result = JSON.parse(content);
+    console.log(`[AI] Question improved in ${elapsed}s using ${modelToUse}`);
+    
+    if (isMCQ) {
+      return {
+        question: result.question || params.originalQuestion,
+        options: result.options || params.options,
+        correctOption: result.correctOption || "A",
+        correctAnswer: result.options?.[result.correctOption?.charCodeAt(0) - 65] || result.options?.[0] || "",
+        explanation: result.explanation || params.explanation,
+      };
+    } else {
+      return {
+        question: result.question || params.originalQuestion,
+        correctAnswer: result.correctAnswer || params.correctAnswer,
+        explanation: result.explanation || params.explanation,
+      };
+    }
+  } catch (error: any) {
+    console.error(`[AI ERROR] Failed to improve question:`, error.message || error);
+    throw new Error(`Failed to improve question: ${error.message || "Unknown error"}`);
+  }
+}
