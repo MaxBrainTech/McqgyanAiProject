@@ -57,8 +57,8 @@ export const GPT_MODELS = {
   GPT_35_TURBO: "gpt-3.5-turbo", // Fastest, cheapest, good for simple tasks
 } as const;
 
-// Current model in use - Change this to switch models globally
-const CURRENT_MODEL = GPT_MODELS.STANDARD;  // Using gpt-4o-mini for cost efficiency
+// Current model in use - Change this to switch models globally  
+const CURRENT_MODEL = GPT_MODELS.STANDARD;  // Using gpt-4o-mini as default (o1 models used for verification)
 
 // CBSE Blueprint Metadata - Defines age-appropriate expectations for each class level
 const CBSE_CLASS_GUIDELINES = {
@@ -242,19 +242,35 @@ Return JSON:
 }`;
 
   try {
-    const response = await openai.chat.completions.create({
+    const isO1Model = modelToUse.startsWith('o1');
+    const requestConfig: any = {
       model: modelToUse,
       messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
       max_completion_tokens: 400,
-    });
+    };
+    
+    if (!isO1Model) {
+      requestConfig.response_format = { type: "json_object" };
+    }
+    
+    const response = await openai.chat.completions.create(requestConfig);
 
     const content = response.choices[0]?.message?.content?.trim();
     if (!content) {
       return { score: 5, issues: [] };
     }
 
-    const result = JSON.parse(content);
+    // Extract JSON from response (o1 models might wrap it in markdown)
+    let jsonContent = content;
+    if (content.includes('```json')) {
+      const match = content.match(/```json\s*([\s\S]*?)\s*```/);
+      if (match) jsonContent = match[1];
+    } else if (content.includes('```')) {
+      const match = content.match(/```\s*([\s\S]*?)\s*```/);
+      if (match) jsonContent = match[1];
+    }
+    
+    const result = JSON.parse(jsonContent);
     return {
       score: result.overallScore || 5,
       issues: result.issues || []

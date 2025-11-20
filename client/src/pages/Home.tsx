@@ -44,7 +44,7 @@ export default function Home({ onStartTest, onCustomMCQ }: HomeProps) {
   const [customTopic2, setCustomTopic2] = useState<string>("");
   const [customTopic3, setCustomTopic3] = useState<string>("");
   const [customTopic4, setCustomTopic4] = useState<string>("");
-  const [selectedGptModel, setSelectedGptModel] = useState<string>("gpt-4o");
+  const [selectedGptModel, setSelectedGptModel] = useState<string>("gpt-4o-mini");
   const [selectedBoard, setSelectedBoard] = useState<string>("CBSE");
   const [isGeneratingTest, setIsGeneratingTest] = useState<boolean>(false);
   const [chapters, setChapters] = useState<Array<{ id: number; title: string; description: string }>>([]);
