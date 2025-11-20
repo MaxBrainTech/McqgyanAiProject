@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { generateQuestion, evaluateAnswer, improveQuestion } from "./openai";
+import { generateQuestion, evaluateAnswer, improveQuestion, getEmbedding, cosineSimilarity } from "./openai";
 
 // Comprehensive chapter mappings for all languages (CBSE Curriculum)
 const CHAPTERS: Record<string, Array<{ id: number; title: string; description: string }>> = {
@@ -318,7 +318,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         syllabus, // Store original comma-separated input
         numQuestions,
         testType: testType || "mcq",
-        gptModel: gptModel || "gpt-4o-mini",
+        gptModel: gptModel || "gpt-4o",
         instructions: instructions || undefined,
         status: "draft",
       });
@@ -327,13 +327,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Generate questions using AI
       const questions = [];
+      const generatedQuestionTexts = new Set<string>(); // Track exact question texts for deduplication
+      const questionEmbeddings: number[][] = []; // Track embeddings for semantic similarity
+      const previousQuestionsList: string[] = []; // Track last 5 questions for AI context
+      const SIMILARITY_THRESHOLD = 0.9; // Cosine similarity threshold for duplicate detection
       
       // Determine if this is a science subject or language subject
       const scienceSubjects = ['physics', 'chemistry', 'biology', 'general'];
       const isScience = scienceSubjects.includes(subject.toLowerCase());
       
-      // Generate exact number of questions using queue-based round-robin retry
-      const maxAttemptsPerTopic = 3;
+      // Generate exact number of questions using queue-based round-robin retry with deduplication
+      const maxAttemptsPerTopic = 5; // Increased for dedup retries
       const maxTotalAttempts = numQuestions * topics.length * maxAttemptsPerTopic;
       const perTopicFailures = new Map<string, number>(); // Track failures per topic
       let topicQueue = [...topics]; // Clone topics into a queue
@@ -370,8 +374,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             totalAttempts++;
             attemptsThisQuestion++;
-            console.log(`[CUSTOM TEST] Question ${currentQuestionNumber}/${numQuestions} - Topic "${currentTopic}" (failures: ${failures}/${maxAttemptsPerTopic}, queue size: ${topicQueue.length + 1})`);
+            console.log(`[CUSTOM TEST] Question ${currentQuestionNumber}/${numQuestions} - Topic "${currentTopic}" (failures: ${failures}/${maxAttemptsPerTopic}, previous questions: ${previousQuestionsList.length})`);
             
+            // Pass last 5 questions to AI to avoid repetition
             const questionData = await generateQuestion({
               mode: isScience ? "science" : "language",
               language: isScience ? undefined : subject,
@@ -381,10 +386,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
               chapter: 1,
               chapterTitle: currentTopic,
               questionNumber: currentQuestionNumber,
+              previousQuestions: previousQuestionsList.slice(-5), // Last 5 questions
               isMcq: testType === "mcq",
-              gptModel: gptModel || "gpt-4o-mini",
+              gptModel: gptModel || "gpt-4o", // Default to GPT-4o for better quality
             });
             
+            // Check for exact duplicate
+            const questionText = questionData.question.trim().toLowerCase();
+            if (generatedQuestionTexts.has(questionText)) {
+              console.warn(`[CUSTOM TEST] ⚠️  EXACT DUPLICATE DETECTED: Question text already exists. Retrying...`);
+              throw new Error("Exact duplicate question detected");
+            }
+            
+            // Check for semantic similarity (paraphrased duplicates)
+            const embedding = await getEmbedding(questionData.question);
+            for (let i = 0; i < questionEmbeddings.length; i++) {
+              const similarity = cosineSimilarity(embedding, questionEmbeddings[i]);
+              if (similarity > SIMILARITY_THRESHOLD) {
+                console.warn(`[CUSTOM TEST] ⚠️  SEMANTIC DUPLICATE DETECTED:`);
+                console.warn(`  → New question: "${questionData.question.substring(0, 80)}..."`);
+                console.warn(`  → Similar to Q${i + 1}: "${previousQuestionsList[i].substring(0, 80)}..."`);
+                console.warn(`  → Similarity score: ${similarity.toFixed(3)} (threshold: ${SIMILARITY_THRESHOLD}). Retrying...`);
+                throw new Error(`Semantic duplicate detected (similarity: ${similarity.toFixed(3)})`);
+              }
+            }
+            
+            // Save question to database
             const question = await storage.createCustomQuestion({
               testId: test.id,
               questionNumber: currentQuestionNumber,
@@ -396,14 +423,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
               explanation: questionData.explanation || "",
             });
             
+            // Track this question
             questions.push(question);
+            generatedQuestionTexts.add(questionText);
+            questionEmbeddings.push(embedding);
+            previousQuestionsList.push(questionData.question);
             generatedCount++;
             questionGenerated = true;
             perTopicFailures.set(currentTopic, 0); // Reset failures on success
             topicQueue.push(currentTopic); // Push back to end of queue
-            console.log(`[CUSTOM TEST] ✓ Question ${currentQuestionNumber}/${numQuestions} generated from topic "${currentTopic}"`);
+            console.log(`[CUSTOM TEST] ✓ Question ${currentQuestionNumber}/${numQuestions} generated from topic "${currentTopic}" (unique, semantic check passed)`);
           } catch (error) {
-            console.error(`[CUSTOM TEST] ✗ Failed question ${currentQuestionNumber} with topic "${currentTopic}":`, error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.error(`[CUSTOM TEST] ✗ Failed question ${currentQuestionNumber} with topic "${currentTopic}":`, errorMessage);
             
             // Increment failure count
             const newFailures = failures + 1;

@@ -7,6 +7,42 @@ const openai = new OpenAI({
   baseURL: process.env.OPENAI_API_KEY ? undefined : process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 
+// Embedding model for semantic similarity detection
+const EMBEDDING_MODEL = "text-embedding-3-small";
+
+// Generate embedding vector for a text string
+export async function getEmbedding(text: string): Promise<number[]> {
+  try {
+    const response = await openai.embeddings.create({
+      model: EMBEDDING_MODEL,
+      input: text.trim(),
+    });
+    return response.data[0].embedding;
+  } catch (error) {
+    console.error("[EMBEDDING ERROR]", error);
+    throw error;
+  }
+}
+
+// Calculate cosine similarity between two vectors
+export function cosineSimilarity(vecA: number[], vecB: number[]): number {
+  if (vecA.length !== vecB.length) {
+    throw new Error("Vectors must have the same length");
+  }
+  
+  let dotProduct = 0;
+  let normA = 0;
+  let normB = 0;
+  
+  for (let i = 0; i < vecA.length; i++) {
+    dotProduct += vecA[i] * vecB[i];
+    normA += vecA[i] * vecA[i];
+    normB += vecB[i] * vecB[i];
+  }
+  
+  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+}
+
 // GPT Model Configuration - You can change these to use different models
 export const GPT_MODELS = {
   // Best for complex reasoning, coding, and analysis

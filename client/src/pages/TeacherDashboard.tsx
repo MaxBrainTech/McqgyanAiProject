@@ -75,7 +75,7 @@ export default function TeacherDashboard({ teacherData, onLogout }: TeacherDashb
       topic4: "",
       numQuestions: 10,
       testType: "mcq",
-      gptModel: "gpt-4o-mini",
+      gptModel: "gpt-4o",
       instructions: "",
     },
   });
