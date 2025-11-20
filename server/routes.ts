@@ -1200,6 +1200,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Answer Sheet Evaluation endpoint - evaluate uploaded answer sheet images
+  app.post("/api/evaluate-answer-sheet", async (req, res) => {
+    try {
+      const { images, studentName, classLevel, subject, gptModel } = req.body;
+      
+      // Validate input
+      if (!images || !Array.isArray(images) || images.length === 0) {
+        return res.status(400).json({ error: "At least one image is required" });
+      }
+      
+      if (images.length > 20) {
+        return res.status(400).json({ error: "Maximum 20 images allowed" });
+      }
+      
+      console.log(`[ANSWER SHEET EVAL] Processing ${images.length} images for ${studentName || 'Anonymous'}`);
+      
+      // Import the evaluation function
+      const { evaluateAnswerSheet } = await import("./answerSheetEvaluator");
+      
+      // Evaluate all images
+      const evaluationResult = await evaluateAnswerSheet({
+        images,
+        studentName: studentName || "Anonymous",
+        classLevel,
+        subject,
+        gptModel: gptModel || "gpt-4o",
+      });
+      
+      // Save evaluation to database (optional, for history tracking)
+      const evaluationRecord = await storage.saveAnswerSheetEvaluation({
+        studentName: studentName || null,
+        classLevel: classLevel || null,
+        subject: subject || null,
+        totalImages: images.length,
+        evaluationSummary: JSON.stringify(evaluationResult),
+        gptModel: gptModel || "gpt-4o",
+      });
+      
+      console.log(`[ANSWER SHEET EVAL] ✓ Evaluation completed. ID: ${evaluationRecord.id}`);
+      
+      res.json({
+        id: evaluationRecord.id,
+        ...evaluationResult,
+      });
+      
+    } catch (error: any) {
+      console.error("[ANSWER SHEET EVAL ERROR]", error.message);
+      res.status(500).json({ error: error.message || "Failed to evaluate answer sheet" });
+    }
+  });
+
+  // Get evaluation history
+  app.get("/api/evaluations/history", async (req, res) => {
+    try {
+      const evaluations = await storage.getRecentEvaluations(10);
+      res.json(evaluations);
+    } catch (error: any) {
+      console.error("[EVAL HISTORY ERROR]", error.message);
+      res.status(500).json({ error: "Failed to fetch evaluation history" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

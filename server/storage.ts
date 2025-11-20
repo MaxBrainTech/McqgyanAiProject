@@ -3,7 +3,8 @@ import {
   type TestSession, type InsertTestSession,
   type Teacher, type InsertTeacher,
   type CustomTest, type InsertCustomTest,
-  type CustomQuestion, type InsertCustomQuestion
+  type CustomQuestion, type InsertCustomQuestion,
+  type AnswerSheetEvaluation, type InsertAnswerSheetEvaluation
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -38,6 +39,10 @@ export interface IStorage {
   getCustomQuestions(testId: string): Promise<CustomQuestion[]>;
   updateCustomQuestion(questionId: string, updates: Partial<CustomQuestion>): Promise<CustomQuestion | undefined>;
   deleteCustomQuestions(testId: string): Promise<void>;
+  
+  // Answer sheet evaluation methods
+  saveAnswerSheetEvaluation(evaluation: InsertAnswerSheetEvaluation): Promise<AnswerSheetEvaluation>;
+  getRecentEvaluations(limit: number): Promise<AnswerSheetEvaluation[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -46,6 +51,7 @@ export class MemStorage implements IStorage {
   private teachers: Map<string, Teacher>;
   private customTests: Map<string, CustomTest>;
   private customQuestions: Map<string, CustomQuestion>;
+  private answerSheetEvaluations: Map<string, AnswerSheetEvaluation>;
 
   constructor() {
     this.users = new Map();
@@ -53,6 +59,7 @@ export class MemStorage implements IStorage {
     this.teachers = new Map();
     this.customTests = new Map();
     this.customQuestions = new Map();
+    this.answerSheetEvaluations = new Map();
     
     // Create demo teacher account
     const demoTeacher: Teacher = {
@@ -236,6 +243,27 @@ export class MemStorage implements IStorage {
     const questions = Array.from(this.customQuestions.entries())
       .filter(([_, q]) => q.testId === testId);
     questions.forEach(([id, _]) => this.customQuestions.delete(id));
+  }
+
+  // Answer sheet evaluation methods
+  async saveAnswerSheetEvaluation(insertEvaluation: InsertAnswerSheetEvaluation): Promise<AnswerSheetEvaluation> {
+    const id = randomUUID();
+    const evaluation: AnswerSheetEvaluation = {
+      ...insertEvaluation,
+      id,
+      studentName: insertEvaluation.studentName ?? null,
+      classLevel: insertEvaluation.classLevel ?? null,
+      subject: insertEvaluation.subject ?? null,
+      createdAt: new Date(),
+    };
+    this.answerSheetEvaluations.set(id, evaluation);
+    return evaluation;
+  }
+
+  async getRecentEvaluations(limit: number): Promise<AnswerSheetEvaluation[]> {
+    return Array.from(this.answerSheetEvaluations.values())
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, limit);
   }
 }
 

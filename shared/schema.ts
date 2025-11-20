@@ -110,3 +110,23 @@ export const insertCustomQuestionSchema = createInsertSchema(customQuestions).om
 
 export type InsertCustomQuestion = z.infer<typeof insertCustomQuestionSchema>;
 export type CustomQuestion = typeof customQuestions.$inferSelect;
+
+// Answer sheet evaluations - for students/teachers/parents to upload answer sheets
+export const answerSheetEvaluations = pgTable("answer_sheet_evaluations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  studentName: text("student_name"),
+  classLevel: integer("class_level"),
+  subject: text("subject"),
+  totalImages: integer("total_images").notNull(),
+  evaluationSummary: text("evaluation_summary").notNull(), // JSON with overall feedback
+  gptModel: text("gpt_model").notNull().default("gpt-4o"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertAnswerSheetEvaluationSchema = createInsertSchema(answerSheetEvaluations).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertAnswerSheetEvaluation = z.infer<typeof insertAnswerSheetEvaluationSchema>;
+export type AnswerSheetEvaluation = typeof answerSheetEvaluations.$inferSelect;
