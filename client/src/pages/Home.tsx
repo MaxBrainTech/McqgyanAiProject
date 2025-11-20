@@ -135,6 +135,70 @@ export default function Home({ onStartTest, onCustomMCQ }: HomeProps) {
       setStep("customTopics");
     }
   };
+  
+  const handleCustomTestGenerate = async () => {
+    // Validate that at least topic 1 is filled
+    if (!customTopic1.trim()) {
+      toast({
+        title: "Topic Required",
+        description: "Please enter at least one topic (Topic 1 is mandatory)",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Collect topics
+    const topics = [customTopic1, customTopic2, customTopic3, customTopic4]
+      .filter(t => t && t.trim().length > 0)
+      .join(', ');
+    
+    setIsGeneratingTest(true);
+    
+    try {
+      // Generate test via API
+      const subject = selectedMode === "science" ? selectedScienceCategory : selectedLanguage;
+      const response = await apiRequest("POST", "/api/student/generate-custom-test", {
+        subject,
+        classLevel: selectedClass,
+        difficulty: selectedDifficulty,
+        syllabus: topics,
+        numQuestions: selectedTestLength,
+        testType: selectedTestType === "mcq-only" ? "mcq" : "mixed",
+        gptModel: selectedGptModel,
+        board: selectedBoard,
+        mode: selectedMode,
+      });
+      
+      const data = await response.json();
+      
+      // Start test with generated questions
+      onStartTest({
+        mode: "custom-student",
+        language: selectedMode === "language" ? selectedLanguage : undefined,
+        scienceCategory: selectedMode === "science" ? selectedScienceCategory : undefined,
+        class: selectedClass,
+        difficulty: selectedDifficulty,
+        testType: selectedTestType,
+        testLength: selectedTestLength,
+        chapter: 0, // Not used for custom tests
+        customTestId: data.testId,
+        customQuestions: data.questions,
+      } as any);
+      
+      toast({
+        title: "Test Generated!",
+        description: `Successfully generated ${data.questionsGenerated} unique questions. Good luck!`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Generation Failed",
+        description: error.message || "Failed to generate custom test. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingTest(false);
+    }
+  };
 
   const handleChapterSelect = (chapterId: number) => {
     onStartTest({
@@ -745,6 +809,157 @@ export default function Home({ onStartTest, onCustomMCQ }: HomeProps) {
           </div>
         )}
 
+        {step === "customTopics" && (
+          <div className="space-y-6 max-w-3xl mx-auto">
+            <div className="flex items-center gap-3 sm:gap-4 mb-6">
+              <Button variant="outline" onClick={() => setStep("testMode")} data-testid="button-back" size="sm" disabled={isGeneratingTest}>
+                ← Back
+              </Button>
+              <div>
+                <h2 className="text-lg sm:text-xl md:text-2xl font-bold capitalize">
+                  Create Your Custom Test
+                </h2>
+                <p className="text-sm text-muted-foreground">Step 6 of 6 - Enter your topics and settings</p>
+              </div>
+            </div>
+
+            <Card className="p-6">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <Settings2 className="w-5 h-5" />
+                    Test Topics
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">Enter topics you want to focus on (Topic 1 is mandatory, others are optional)</p>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="topic1" className="text-base">Topic 1 (Required) *</Label>
+                      <Input
+                        id="topic1"
+                        placeholder="e.g., Basic Greetings, Verb Conjugation, Cell Structure"
+                        value={customTopic1}
+                        onChange={(e) => setCustomTopic1(e.target.value)}
+                        className="mt-1"
+                        data-testid="input-topic1"
+                        disabled={isGeneratingTest}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="topic2" className="text-base">Topic 2 (Optional)</Label>
+                      <Input
+                        id="topic2"
+                        placeholder="e.g., Numbers and Counting, Past Tense"
+                        value={customTopic2}
+                        onChange={(e) => setCustomTopic2(e.target.value)}
+                        className="mt-1"
+                        data-testid="input-topic2"
+                        disabled={isGeneratingTest}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="topic3" className="text-base">Topic 3 (Optional)</Label>
+                      <Input
+                        id="topic3"
+                        placeholder="e.g., Family Members, Photosynthesis"
+                        value={customTopic3}
+                        onChange={(e) => setCustomTopic3(e.target.value)}
+                        className="mt-1"
+                        data-testid="input-topic3"
+                        disabled={isGeneratingTest}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="topic4" className="text-base">Topic 4 (Optional)</Label>
+                      <Input
+                        id="topic4"
+                        placeholder="e.g., Food and Drinks, Chemical Reactions"
+                        value={customTopic4}
+                        onChange={(e) => setCustomTopic4(e.target.value)}
+                        className="mt-1"
+                        data-testid="input-topic4"
+                        disabled={isGeneratingTest}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+                  <div>
+                    <Label htmlFor="gptModel" className="text-base">AI Model Quality</Label>
+                    <Select value={selectedGptModel} onValueChange={setSelectedGptModel} disabled={isGeneratingTest}>
+                      <SelectTrigger className="mt-1" data-testid="select-gpt-model">
+                        <SelectValue placeholder="Select GPT Model" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="gpt-4o">GPT-4o (Best Quality, Slower)</SelectItem>
+                        <SelectItem value="gpt-4o-mini">GPT-4o Mini (Balanced)</SelectItem>
+                        <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo (Fastest, Lower Cost)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">Higher quality models generate better questions but take longer</p>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="board" className="text-base">Education Board</Label>
+                    <Select value={selectedBoard} onValueChange={setSelectedBoard} disabled={isGeneratingTest}>
+                      <SelectTrigger className="mt-1" data-testid="select-board">
+                        <SelectValue placeholder="Select Board" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CBSE">CBSE (Central Board)</SelectItem>
+                        <SelectItem value="ICSE">ICSE (Council for Indian School)</SelectItem>
+                        <SelectItem value="IB">IB (International Baccalaureate)</SelectItem>
+                        <SelectItem value="RBSE">RBSE (Rajasthan Board)</SelectItem>
+                        <SelectItem value="State Board">State Board</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">Questions will align with your board's curriculum</p>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t">
+                  <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg mb-4">
+                    <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-blue-600" />
+                      Test Configuration Summary
+                    </h4>
+                    <div className="text-sm space-y-1 text-muted-foreground">
+                      <p><strong>Subject:</strong> {selectedMode === "science" ? selectedScienceCategory : selectedLanguage}</p>
+                      <p><strong>Class:</strong> {selectedClass} | <strong>Difficulty:</strong> {selectedDifficulty}</p>
+                      <p><strong>Type:</strong> {selectedTestType === "mcq-only" ? "MCQ Only" : "Mixed"} | <strong>Questions:</strong> {selectedTestLength}</p>
+                      <p><strong>Topics:</strong> {[customTopic1, customTopic2, customTopic3, customTopic4].filter(t => t.trim()).length} topic(s)</p>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={handleCustomTestGenerate}
+                    disabled={isGeneratingTest || !customTopic1.trim()}
+                    className="w-full"
+                    size="lg"
+                    data-testid="button-generate-custom-test"
+                  >
+                    {isGeneratingTest ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Generating Your Test...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Generate Custom Test
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
+
         {step === "chapter" && (
           <div className="space-y-6 max-w-3xl mx-auto">
             <div className="flex items-center gap-3 sm:gap-4 mb-6">
@@ -755,7 +970,7 @@ export default function Home({ onStartTest, onCustomMCQ }: HomeProps) {
                 <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold capitalize">
                   {selectedLanguage} - Class {selectedClass} - {selectedDifficulty} - {selectedTestType === "mcq-only" ? "MCQ" : "Mixed"} - {selectedTestLength}Q
                 </h2>
-                <p className="text-sm text-muted-foreground">Step 5 of 5</p>
+                <p className="text-sm text-muted-foreground">Step 6 of 6</p>
               </div>
             </div>
 

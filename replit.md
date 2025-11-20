@@ -2,7 +2,13 @@
 
 ## Overview
 
-MCQGyaan AI is a smart mock test application designed for CBSE school students (Class 6-10) learning languages (French, German, Spanish, Hindi, Marathi, and Kannada). The platform provides AI-generated interactive questions that adapt to student performance, offering instant feedback and personalized learning experiences. The app features a vibrant, gamified interface with gradient backgrounds and glassmorphism effects, making language learning engaging and effective for young students.
+MCQGyaan AI is a smart mock test application designed for CBSE school students (Class 6-10) with three distinct modes:
+
+1. **Language Learning Mode**: French, German, Spanish, Hindi, Marathi, and Kannada with pre-defined chapters or custom topics
+2. **General Science Quiz Mode**: Physics, Chemistry, Biology, and General Science categories with chapter selection or custom topics
+3. **Custom MCQ Generator Mode**: Both teachers and students can create personalized tests by specifying topics, difficulty, and AI model
+
+The platform provides AI-generated interactive questions with anti-duplication controls, instant feedback, downloadable PDFs, and comprehensive results tracking. Students can now create custom tests by entering their own topics (1 mandatory, 3 optional), selecting GPT model, difficulty level, and educational board (CBSE, ICSE, IB, RBSE, State Board).
 
 ## User Preferences
 
@@ -29,6 +35,7 @@ Preferred communication style: Simple, everyday language.
   - `ProgressBar`: Test progress tracking
   - `TestSummary`: Final test results and statistics
   - `LeaderboardCard`: Score history and achievements
+  - **Student Custom Test Form** (November 2025): 4 topic inputs (1 required, 3 optional), GPT model selector, educational board selector
 
 **Design System:**
 - Custom color palette with soft blues (#4A90E2), bright yellows (#FCD34D), and language-specific accent colors
@@ -41,10 +48,14 @@ Preferred communication style: Simple, everyday language.
 - Local state with React hooks (useState, useEffect)
 - Client-side persistence using localStorage for leaderboard scores
 - Query client for API data caching and synchronization
+- **Dual-mode TestPage** (November 2025): Supports both session-based (chapter tests) and pre-generated (custom tests) modes
+  - Session-based: Questions generated on-demand via API calls
+  - Pre-generated: All questions generated upfront, evaluated locally
 
 **Routing:**
 - Single-page application with component-based navigation
 - State-driven page transitions between Home and TestPage
+- Test mode selection: "Pre-defined Chapters" vs "Custom Topics"
 
 ### Backend Architecture
 
@@ -58,6 +69,7 @@ Preferred communication style: Simple, everyday language.
 - `GET /api/test/question/:sessionId`: Generate next question using AI
 - `POST /api/test/answer`: Evaluate student answer and provide feedback
 - `GET /api/chapters/:language`: Retrieve chapter list for selected language
+- **`POST /api/student/generate-custom-test`** (November 2025): Generate complete custom test for students with anti-duplication controls
 
 **Session Management:**
 - In-memory storage for test sessions during development

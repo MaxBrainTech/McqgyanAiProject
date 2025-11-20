@@ -478,6 +478,179 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Student custom test generation endpoint
+  app.post("/api/student/generate-custom-test", async (req, res) => {
+    try {
+      const { subject, classLevel, difficulty, syllabus, numQuestions, testType, gptModel, board, mode } = req.body;
+      
+      console.log(`[STUDENT CUSTOM TEST] Generating ${numQuestions} ${difficulty} questions for ${subject} (${board} board)`);
+      
+      // Parse topics from comma-separated syllabus input
+      const topics = syllabus
+        .split(',')
+        .map((topic: string) => topic.trim())
+        .filter((topic: string) => topic.length > 0)
+        .slice(0, 4);
+      
+      if (topics.length === 0) {
+        return res.status(400).json({ error: "At least one topic is required" });
+      }
+      
+      // Create a temporary test session for the student
+      const testId = `student-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+      
+      // Store test metadata in memory for this session
+      const testSession = {
+        id: testId,
+        subject,
+        classLevel,
+        difficulty,
+        topics,
+        numQuestions,
+        testType,
+        gptModel: gptModel || "gpt-4o",
+        board: board || "CBSE",
+        mode,
+        questions: [] as any[],
+        createdAt: new Date(),
+      };
+      
+      // Generate questions using the same logic as teacher tests
+      const scienceSubjects = ['physics', 'chemistry', 'biology', 'general'];
+      const isScience = scienceSubjects.includes(subject.toLowerCase());
+      
+      const generatedQuestionTexts = new Set<string>();
+      const questionEmbeddings: number[][] = [];
+      const previousQuestionsList: string[] = [];
+      const SIMILARITY_THRESHOLD = 0.9;
+      
+      const maxAttemptsPerTopic = 5;
+      const maxTotalAttempts = numQuestions * topics.length * maxAttemptsPerTopic;
+      const perTopicFailures = new Map<string, number>();
+      let topicQueue = [...topics];
+      let totalAttempts = 0;
+      let generatedCount = 0;
+      
+      topics.forEach((topic: string) => perTopicFailures.set(topic, 0));
+      
+      while (generatedCount < numQuestions && totalAttempts < maxTotalAttempts) {
+        const currentQuestionNumber = generatedCount + 1;
+        
+        if (topicQueue.length === 0) {
+          console.error(`[STUDENT CUSTOM TEST] All topics exhausted. Generated ${generatedCount}/${numQuestions}`);
+          break;
+        }
+        
+        let questionGenerated = false;
+        let attemptsThisQuestion = 0;
+        
+        while (!questionGenerated && attemptsThisQuestion < topicQueue.length && topicQueue.length > 0) {
+          const currentTopic = topicQueue.shift()!;
+          const failures = perTopicFailures.get(currentTopic) || 0;
+          
+          if (failures >= maxAttemptsPerTopic) {
+            console.warn(`[STUDENT CUSTOM TEST] Topic "${currentTopic}" permanently exhausted`);
+            attemptsThisQuestion++;
+            continue;
+          }
+          
+          try {
+            totalAttempts++;
+            attemptsThisQuestion++;
+            
+            const questionData = await generateQuestion({
+              mode: isScience ? "science" : "language",
+              language: isScience ? undefined : subject,
+              scienceCategory: isScience ? subject.toLowerCase() : undefined,
+              classLevel,
+              difficulty,
+              chapter: 1,
+              chapterTitle: currentTopic,
+              questionNumber: currentQuestionNumber,
+              previousQuestions: previousQuestionsList.slice(-5),
+              isMcq: testType === "mcq",
+              gptModel: testSession.gptModel,
+            });
+            
+            // Check for exact duplicate
+            const questionText = questionData.question.trim().toLowerCase();
+            if (generatedQuestionTexts.has(questionText)) {
+              console.warn(`[STUDENT CUSTOM TEST] ⚠️  EXACT DUPLICATE DETECTED`);
+              throw new Error("Exact duplicate question detected");
+            }
+            
+            // Check for semantic similarity
+            const embedding = await getEmbedding(questionData.question);
+            for (let i = 0; i < questionEmbeddings.length; i++) {
+              const similarity = cosineSimilarity(embedding, questionEmbeddings[i]);
+              if (similarity > SIMILARITY_THRESHOLD) {
+                console.warn(`[STUDENT CUSTOM TEST] ⚠️  SEMANTIC DUPLICATE DETECTED: Similarity ${similarity.toFixed(3)}`);
+                throw new Error(`Semantic duplicate detected (similarity: ${similarity.toFixed(3)})`);
+              }
+            }
+            
+            // Store question in session
+            testSession.questions.push({
+              questionNumber: currentQuestionNumber,
+              question: questionData.question,
+              questionType: questionData.questionType,
+              options: questionData.options,
+              correctOption: questionData.correctOption,
+              correctAnswer: questionData.correctAnswer,
+              explanation: questionData.explanation || "",
+            });
+            
+            generatedQuestionTexts.add(questionText);
+            questionEmbeddings.push(embedding);
+            previousQuestionsList.push(questionData.question);
+            generatedCount++;
+            questionGenerated = true;
+            perTopicFailures.set(currentTopic, 0);
+            topicQueue.push(currentTopic);
+            console.log(`[STUDENT CUSTOM TEST] ✓ Question ${currentQuestionNumber}/${numQuestions} generated (unique)`);
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.error(`[STUDENT CUSTOM TEST] ✗ Failed question ${currentQuestionNumber}:`, errorMessage);
+            
+            const newFailures = failures + 1;
+            perTopicFailures.set(currentTopic, newFailures);
+            
+            if (newFailures < maxAttemptsPerTopic) {
+              topicQueue.push(currentTopic);
+            } else {
+              console.warn(`[STUDENT CUSTOM TEST] Topic "${currentTopic}" removed from queue`);
+            }
+          }
+        }
+        
+        if (!questionGenerated) {
+          console.error(`[STUDENT CUSTOM TEST] Could not generate question ${currentQuestionNumber}`);
+          break;
+        }
+      }
+      
+      if (generatedCount < numQuestions) {
+        console.error(`[STUDENT CUSTOM TEST] ERROR: Only generated ${generatedCount}/${numQuestions} questions`);
+        return res.status(503).json({
+          error: `Could only generate ${generatedCount} out of ${numQuestions} questions. Please try simpler topics.`,
+          questionsGenerated: generatedCount,
+          requested: numQuestions
+        });
+      }
+      
+      // Store session temporarily (in production, this would go to a database or session store)
+      // For now, we'll pass the questions directly to the frontend
+      res.json({
+        testId: testSession.id,
+        questions: testSession.questions,
+        questionsGenerated: generatedCount
+      });
+    } catch (error) {
+      console.error("Error generating student custom test:", error);
+      res.status(500).json({ error: "Failed to generate custom test" });
+    }
+  });
+
   // Get test details for teacher (with full questions and answers)
   app.get("/api/teacher/:teacherId/tests/:testId", async (req, res) => {
     try {

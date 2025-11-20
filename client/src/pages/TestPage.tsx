@@ -18,12 +18,17 @@ interface TestPageProps {
     testType: string;
     chapter: number;
     testLength: number;
+    customTestId?: string;
+    customQuestions?: any[];
   };
   onExit: () => void;
 }
 
 export default function TestPage({ config, onExit }: TestPageProps) {
+  const isCustomStudentTest = config.mode === "custom-student";
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [customQuestions, setCustomQuestions] = useState<any[]>(config.customQuestions || []);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [currentQuestion, setCurrentQuestion] = useState("");
   const [questionType, setQuestionType] = useState("");
   const [questionOptions, setQuestionOptions] = useState<string[]>([]);
@@ -33,11 +38,24 @@ export default function TestPage({ config, onExit }: TestPageProps) {
   const [totalScore, setTotalScore] = useState(0);
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [showSummary, setShowSummary] = useState(false);
-  const [totalQuestions, setTotalQuestions] = useState(10);
+  const [totalQuestions, setTotalQuestions] = useState(isCustomStudentTest ? customQuestions.length : 10);
   const { toast } = useToast();
 
-  // Start test session
+  // Start test session (skip for custom student tests)
   useEffect(() => {
+    if (isCustomStudentTest) {
+      // For custom student tests, load first question from pre-generated questions
+      if (customQuestions.length > 0) {
+        const firstQuestion = customQuestions[0];
+        setCurrentQuestion(firstQuestion.question);
+        setQuestionType(firstQuestion.questionType || "open-ended");
+        setQuestionOptions(firstQuestion.options || []);
+        setQuestionNumber(1);
+        setTotalQuestions(customQuestions.length);
+      }
+      return;
+    }
+    
     const startSession = async () => {
       try {
         const response = await apiRequest("POST", "/api/test/start", config);
@@ -52,7 +70,7 @@ export default function TestPage({ config, onExit }: TestPageProps) {
       }
     };
     startSession();
-  }, [config, toast]);
+  }, [config, toast, isCustomStudentTest]);
 
   // Generate question mutation
   const generateQuestionMutation = useMutation({
@@ -107,13 +125,60 @@ export default function TestPage({ config, onExit }: TestPageProps) {
   });
 
   const handleSubmitAnswer = (answer: string) => {
-    evaluateAnswerMutation.mutate(answer);
+    if (isCustomStudentTest) {
+      // Prevent duplicate submissions
+      if (showFeedback) {
+        return;
+      }
+      
+      // Local evaluation for custom tests
+      const currentQ = customQuestions[currentQuestionIndex];
+      const isCorrect = currentQ.questionType === "mcq"
+        ? answer === currentQ.correctOption
+        : answer.trim().toLowerCase() === (currentQ.correctAnswer || "").trim().toLowerCase();
+      
+      const pointsEarned = isCorrect ? 10 : 0;
+      const newScore = totalScore + pointsEarned;
+      const newCorrect = correctAnswers + (isCorrect ? 1 : 0);
+      
+      setTotalScore(newScore);
+      setCorrectAnswers(newCorrect);
+      
+      // Build feedback data matching the API response shape
+      setFeedbackData({
+        isCorrect,
+        feedback: currentQ.explanation || (isCorrect ? "Great job! You got it right!" : "Not quite right, but keep trying!"),
+        correctAnswer: currentQ.correctAnswer || currentQ.correctOption,
+        score: pointsEarned,
+        totalScore: newScore,
+        correctAnswers: newCorrect,
+        encouragement: isCorrect 
+          ? "Excellent work! You're doing great!" 
+          : "Don't worry, keep learning and you'll improve!",
+      });
+      setShowFeedback(true);
+    } else {
+      evaluateAnswerMutation.mutate(answer);
+    }
   };
 
   const handleNext = () => {
     setShowFeedback(false);
     if (questionNumber < totalQuestions) {
-      generateQuestionMutation.mutate();
+      if (isCustomStudentTest) {
+        // Load next pre-generated question
+        const nextIndex = currentQuestionIndex + 1;
+        if (nextIndex < customQuestions.length) {
+          const nextQuestion = customQuestions[nextIndex];
+          setCurrentQuestionIndex(nextIndex);
+          setCurrentQuestion(nextQuestion.question);
+          setQuestionType(nextQuestion.questionType || "open-ended");
+          setQuestionOptions(nextQuestion.options || []);
+          setQuestionNumber(nextIndex + 1);
+        }
+      } else {
+        generateQuestionMutation.mutate();
+      }
     } else {
       setShowSummary(true);
     }
@@ -134,7 +199,7 @@ export default function TestPage({ config, onExit }: TestPageProps) {
         <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
           <TestSummary
             totalScore={totalScore}
-            totalQuestions={questionNumber}
+            totalQuestions={totalQuestions}
             correctAnswers={correctAnswers}
             subject={subject || "quiz"}
             onNewTest={handleNewTest}
@@ -145,7 +210,8 @@ export default function TestPage({ config, onExit }: TestPageProps) {
     );
   }
 
-  if (!sessionId || generateQuestionMutation.isPending) {
+  // Skip session check for custom student tests
+  if (!isCustomStudentTest && (!sessionId || generateQuestionMutation.isPending)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
         <div className="text-center space-y-4">
@@ -209,7 +275,7 @@ export default function TestPage({ config, onExit }: TestPageProps) {
               options={questionOptions}
               language={config.language || ""}
               onSubmit={handleSubmitAnswer}
-              isSubmitting={evaluateAnswerMutation.isPending}
+              isSubmitting={isCustomStudentTest ? false : evaluateAnswerMutation.isPending}
             />
           ) : (
             feedbackData && (
