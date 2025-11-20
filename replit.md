@@ -79,8 +79,14 @@ Preferred communication style: Simple, everyday language.
 **AI Integration:**
 - OpenAI API integration using user's own API key via environment variables
 - **GPT Model Selection** (November 2025 Update):
-  - Teachers can select GPT model per test: gpt-4o, gpt-4o-mini, or gpt-3.5-turbo
-  - Default model: gpt-4o-mini for optimal cost efficiency (~$0.15 per million tokens)
+  - Teachers and students can select GPT model per test: o1-preview, o1-mini, gpt-4o, gpt-4o-mini, or gpt-3.5-turbo
+  - **Reasoning Models** (Added November 20, 2025):
+    - O1-Preview: Best reasoning capabilities for complex math/science (higher cost, slower)
+    - O1-Mini: Strong reasoning at lower cost, **recommended for STEM subjects** (default for students)
+  - Standard Models:
+    - GPT-4o: Best quality for general subjects
+    - GPT-4o-mini: Fast and affordable (default for teachers), ~$0.15 per million tokens
+    - GPT-3.5-turbo: Cheapest option
   - Per-test cost estimates: ~$0.005-$0.01 for 10 questions depending on model
   - Model configuration stored with each test in database
   - Flexible model switching allows quality vs cost optimization
@@ -90,9 +96,13 @@ Preferred communication style: Simple, everyday language.
   - Prevents partial test generation due to transient AI errors
 - **Multi-Stage AI Quality Control System** (November 2025 Update):
   - **CBSE Blueprint Metadata**: Class-specific guidelines (6-10) with Bloom's Taxonomy levels, age-appropriate vocabulary, and cognitive skill requirements
-  - **Answer Verification**: Independent re-solving of questions to cross-check correctness before presenting to students
+  - **Answer Verification** (Enhanced November 20, 2025): 
+    - Uses O1-Mini reasoning model for science/math verification (better at calculations)
+    - Independent re-solving of questions to cross-check correctness before presenting to students
+    - **Strict Rejection Policy**: Questions with failed verification are rejected entirely (triggers regeneration)
+    - Previous approach of "fixing" wrong answers has been removed to ensure quality
   - **Quality Assessment**: Automated scoring of questions on curriculum alignment, clarity, difficulty matching, and age-appropriateness
-  - **Science Fact-Checking**: Numerical answer verification with step-by-step calculation validation
+  - **Science Fact-Checking**: Numerical answer verification with step-by-step calculation validation using O1-Mini
   - **Threshold-Based Filtering**: Questions below quality threshold (6/10) are flagged and logged
 - **Question Type Support** (November 2025 Update):
   - Both MCQ and open-ended questions supported for all subjects
