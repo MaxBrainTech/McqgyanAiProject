@@ -254,6 +254,7 @@ export class MemStorage implements IStorage {
       studentName: insertEvaluation.studentName ?? null,
       classLevel: insertEvaluation.classLevel ?? null,
       subject: insertEvaluation.subject ?? null,
+      gptModel: insertEvaluation.gptModel || "gpt-4o",
       createdAt: new Date(),
     };
     this.answerSheetEvaluations.set(id, evaluation);

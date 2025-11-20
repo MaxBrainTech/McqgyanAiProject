@@ -28,9 +28,10 @@ interface HomeProps {
     teacher: () => void;
     student: () => void;
   };
+  onAnswerEvaluator?: () => void;
 }
 
-export default function Home({ onStartTest, onCustomMCQ }: HomeProps) {
+export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: HomeProps) {
   const [step, setStep] = useState<"mode" | "subject" | "class" | "difficulty" | "testType" | "testLength" | "testMode" | "chapter" | "customTopics" | "custom">("mode");
   const [selectedMode, setSelectedMode] = useState<string>("");
   const [selectedLanguage, setSelectedLanguage] = useState<string>("");
@@ -266,7 +267,7 @@ export default function Home({ onStartTest, onCustomMCQ }: HomeProps) {
                 <p className="text-base text-muted-foreground">Select between language learning or science quizzes</p>
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
                 <Card 
                   className="p-8 text-center hover-elevate cursor-pointer border-2 hover:border-primary transition-all"
                   onClick={() => handleModeSelect("language")}
@@ -310,6 +311,21 @@ export default function Home({ onStartTest, onCustomMCQ }: HomeProps) {
                     Teachers create tests, students take them
                   </p>
                   <Badge variant="secondary" className="mt-4 text-base">Teacher/Student</Badge>
+                </Card>
+
+                <Card 
+                  className="p-8 text-center hover-elevate cursor-pointer border-2 hover:border-green-500 transition-all"
+                  onClick={onAnswerEvaluator}
+                  data-testid="card-answer-evaluator"
+                >
+                  <div className="inline-flex p-4 bg-green-500/10 rounded-full mb-4">
+                    <ScrollText className="w-12 h-12 text-green-600" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Answer Sheet Evaluator</h3>
+                  <p className="text-base text-muted-foreground">
+                    AI-powered evaluation of handwritten answer sheets
+                  </p>
+                  <Badge variant="secondary" className="mt-4 text-base">Upload & Evaluate</Badge>
                 </Card>
               </div>
             </div>

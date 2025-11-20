@@ -9,9 +9,10 @@ import TestPage from "@/pages/TestPage";
 import TeacherAuth from "@/pages/TeacherAuth";
 import TeacherDashboard from "@/pages/TeacherDashboard";
 import CustomTestPage from "@/pages/CustomTestPage";
+import AnswerSheetEvaluator from "@/pages/AnswerSheetEvaluator";
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<"home" | "test" | "teacher-auth" | "teacher-dashboard" | "custom-test">("home");
+  const [currentPage, setCurrentPage] = useState<"home" | "test" | "teacher-auth" | "teacher-dashboard" | "custom-test" | "answer-evaluator">("home");
   const [testConfig, setTestConfig] = useState<any>(null);
   const [teacherData, setTeacherData] = useState<any>(null);
 
@@ -47,6 +48,10 @@ function App() {
     setCurrentPage("home");
   };
 
+  const handleAnswerEvaluator = () => {
+    setCurrentPage("answer-evaluator");
+  };
+
   const renderPage = () => {
     switch (currentPage) {
       case "home":
@@ -57,6 +62,7 @@ function App() {
               teacher: handleTeacherLogin,
               student: handleStudentTest,
             }}
+            onAnswerEvaluator={handleAnswerEvaluator}
           />
         );
       case "test":
@@ -67,8 +73,10 @@ function App() {
         return <TeacherDashboard teacherData={teacherData} onLogout={handleTeacherLogout} />;
       case "custom-test":
         return <CustomTestPage onBack={handleBackToHome} />;
+      case "answer-evaluator":
+        return <AnswerSheetEvaluator />;
       default:
-        return <Home onStartTest={handleStartTest} onCustomMCQ={{ teacher: handleTeacherLogin, student: handleStudentTest }} />;
+        return <Home onStartTest={handleStartTest} onCustomMCQ={{ teacher: handleTeacherLogin, student: handleStudentTest }} onAnswerEvaluator={handleAnswerEvaluator} />;
     }
   };
 
