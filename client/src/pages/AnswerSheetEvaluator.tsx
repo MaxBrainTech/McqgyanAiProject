@@ -104,22 +104,20 @@ export default function AnswerSheetEvaluator() {
     setEvaluationResult(null);
 
     try {
-      const response = await apiRequest("/api/evaluate-answer-sheet", {
-        method: "POST",
-        body: JSON.stringify({
-          images,
-          studentName: studentName || "Anonymous",
-          classLevel: classLevel ? parseInt(classLevel) : undefined,
-          subject: subject || undefined,
-          gptModel,
-        }),
+      const res = await apiRequest("POST", "/api/evaluate-answer-sheet", {
+        images,
+        studentName: studentName || "Anonymous",
+        classLevel: classLevel ? parseInt(classLevel) : undefined,
+        subject: subject || undefined,
+        gptModel,
       });
 
-      setEvaluationResult(response);
+      const data = await res.json();
+      setEvaluationResult(data);
       
       toast({
         title: "Evaluation Complete!",
-        description: `Evaluated ${response.totalAnswers} answer(s) with average score ${response.averageScore.toFixed(1)}/10`,
+        description: `Evaluated ${data.totalAnswers} answer(s) with average score ${data.averageScore.toFixed(1)}/10`,
       });
     } catch (error: any) {
       toast({
