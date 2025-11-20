@@ -45,15 +45,16 @@ export function cosineSimilarity(vecA: number[], vecB: number[]): number {
 
 // GPT Model Configuration - You can change these to use different models
 export const GPT_MODELS = {
-  // Best for complex reasoning, coding, and analysis
-  ADVANCED: "gpt-4o",           // GPT-4 Optimized - Most capable, balanced cost/performance
+  // OpenAI o1 series - Specialized reasoning models for math, science, and logic
+  O1_PREVIEW: "o1-preview",     // O1 Preview - Best reasoning, most expensive, for complex problems
+  O1_MINI: "o1-mini",           // O1 Mini - Strong reasoning, cost-effective, great for STEM
   
-  // Fast and cost-effective for simpler tasks
+  // GPT-4 series - General purpose advanced models
+  ADVANCED: "gpt-4o",           // GPT-4 Optimized - Most capable, balanced cost/performance
   STANDARD: "gpt-4o-mini",      // GPT-4 Mini - Faster, cheaper, still very capable
   
-  // Alternative options you can use:
-  // "gpt-4-turbo": Latest GPT-4 Turbo with vision
-  // "gpt-3.5-turbo": Fastest, cheapest, good for simple tasks
+  // Legacy models
+  GPT_35_TURBO: "gpt-3.5-turbo", // Fastest, cheapest, good for simple tasks
 } as const;
 
 // Current model in use - Change this to switch models globally
@@ -125,45 +126,81 @@ async function verifyAnswer(question: string, proposedAnswer: string, mode: stri
   isValid: boolean;
   explanation: string;
   alternativeAnswer?: string;
+  calculationSteps?: string;
 }> {
-  const modelToUse = gptModel || CURRENT_MODEL;
+  // Use o1-mini for verification when dealing with math/science - it's better at reasoning
+  const verificationModel = mode === 'science' ? "o1-mini" : (gptModel || CURRENT_MODEL);
+  
   const prompt = `You are an independent fact-checker verifying the correctness of an answer.
 
 Question: ${question}
 Proposed Correct Answer: ${proposedAnswer}
 
 Your task:
-1. Re-solve this question independently without being biased by the proposed answer
-2. Determine if the proposed answer is actually correct
-3. ${mode === 'science' ? 'For numerical answers, re-calculate step by step. For conceptual answers, verify against standard scientific knowledge.' : 'Verify the linguistic accuracy and completeness.'}
-4. If the proposed answer is WRONG or INCOMPLETE, provide the correct answer
+1. Re-solve this question COMPLETELY INDEPENDENTLY without being influenced by the proposed answer
+2. ${mode === 'science' ? 'For numerical/calculation questions: Show ALL calculation steps explicitly (e.g., Speed = Distance ÷ Time = 60 km ÷ 1.5 h = 40 km/h). Verify units are correct.' : 'Verify the linguistic accuracy and completeness.'}
+3. Compare your independent solution to the proposed answer
+4. Determine if the proposed answer is EXACTLY CORRECT (not just close)
+5. If the proposed answer is WRONG, INCOMPLETE, or has WRONG UNITS, mark isValid as false
+
+CRITICAL: For math/physics problems, you MUST show your complete calculation step-by-step.
 
 Return JSON format:
 {
-  "isValid": <true if proposed answer is correct, false if wrong>,
-  "explanation": "<explain your verification reasoning>",
-  "alternativeAnswer": "<if isValid is false, provide the correct answer here>"
+  "isValid": <true ONLY if proposed answer is completely correct, false otherwise>,
+  "explanation": "<detailed reasoning for your verification>",
+  "calculationSteps": "<for science: show complete step-by-step calculation>",
+  "alternativeAnswer": "<if isValid is false, provide the CORRECT answer here>"
 }`;
 
   try {
-    const response = await openai.chat.completions.create({
-      model: modelToUse,
+    // o1 models don't support response_format or system messages
+    const isO1Model = verificationModel.startsWith('o1');
+    
+    const requestConfig: any = {
+      model: verificationModel,
       messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
-      max_completion_tokens: 500,
-    });
+      max_completion_tokens: 1000,
+    };
+    
+    // Only add response_format for non-o1 models
+    if (!isO1Model) {
+      requestConfig.response_format = { type: "json_object" };
+    }
+
+    const response = await openai.chat.completions.create(requestConfig);
 
     const content = response.choices[0]?.message?.content?.trim();
     if (!content) {
-      console.warn(`[VERIFY ERROR] Empty response from AI - failing closed`);
+      console.warn(`[VERIFY ERROR] Empty response from verification AI`);
       return { isValid: false, explanation: "Verification failed: empty response", alternativeAnswer: "VERIFICATION_FAILED" };
     }
 
-    const result = JSON.parse(content);
+    // Extract JSON from response (o1 models might wrap it in markdown)
+    let jsonContent = content;
+    if (content.includes('```json')) {
+      const match = content.match(/```json\s*([\s\S]*?)\s*```/);
+      if (match) jsonContent = match[1];
+    } else if (content.includes('```')) {
+      const match = content.match(/```\s*([\s\S]*?)\s*```/);
+      if (match) jsonContent = match[1];
+    }
+
+    const result = JSON.parse(jsonContent);
+    
+    console.log(`[VERIFY] Question verification: isValid=${result.isValid}, Model=${verificationModel}`);
+    if (!result.isValid) {
+      console.warn(`[VERIFY WARNING] Answer FAILED verification!`);
+      console.warn(`[VERIFY] Proposed: "${proposedAnswer}"`);
+      console.warn(`[VERIFY] Correct: "${result.alternativeAnswer}"`);
+      console.warn(`[VERIFY] Reason: ${result.explanation}`);
+    }
+    
     return {
       isValid: result.isValid === true,
       explanation: result.explanation || "No explanation provided",
-      alternativeAnswer: result.alternativeAnswer
+      alternativeAnswer: result.alternativeAnswer,
+      calculationSteps: result.calculationSteps
     };
   } catch (error: any) {
     console.error(`[VERIFY ERROR]`, error.message);
@@ -910,32 +947,22 @@ Make the question challenging but fair for Class ${classLevel} CBSE students. En
       let verifiedExplanation = result.explanation;
       let verifiedOption = result.correctOption;
       
+      // STRICT VERIFICATION: If answer is wrong, reject the entire question
       if (!verification.isValid) {
+        console.error(`[AI ERROR] ❌ Science answer verification FAILED!`);
+        console.error(`[AI ERROR] Question: ${result.question.substring(0, 100)}...`);
+        console.error(`[AI ERROR] Proposed Answer: "${result.correctAnswer}"`);
+        console.error(`[AI ERROR] Verification says: ${verification.explanation}`);
         if (verification.alternativeAnswer && verification.alternativeAnswer !== "VERIFICATION_FAILED") {
-          console.warn(`[AI WARNING] Science answer verification failed! Original: "${result.correctAnswer}" | Corrected: "${verification.alternativeAnswer}"`);
-          console.warn(`[AI WARNING] Reason: ${verification.explanation}`);
-          
-          // Try to find which option matches the corrected answer
-          const matchingOptionIndex = result.options.findIndex((opt: string) => 
-            opt.toLowerCase().includes(verification.alternativeAnswer!.toLowerCase()) ||
-            verification.alternativeAnswer!.toLowerCase().includes(opt.replace(/^[A-D]\.\s*/, '').trim().toLowerCase())
-          );
-          
-          if (matchingOptionIndex >= 0) {
-            verifiedOption = String.fromCharCode(65 + matchingOptionIndex);
-            verifiedAnswer = verification.alternativeAnswer;
-            verifiedExplanation = `${result.explanation}\n\n[Verified Answer: ${verification.explanation}]`;
-            console.warn(`[AI WARNING] Updated correctOption from "${result.correctOption}" to "${verifiedOption}"`);
-          } else {
-            console.error(`[AI ERROR] Corrected answer "${verification.alternativeAnswer}" does not match any option`);
-            throw new Error(`Science MCQ verification failed: corrected answer not in options`);
-          }
-        } else {
-          console.error(`[AI ERROR] Science answer verification failed with no alternative: ${verification.explanation}`);
-          throw new Error(`Science answer verification failed: ${verification.explanation}`);
+          console.error(`[AI ERROR] Correct Answer should be: "${verification.alternativeAnswer}"`);
         }
+        console.error(`[AI ERROR] REJECTING this question - will regenerate a new one`);
+        throw new Error(`Science question verification failed - answer is incorrect. ${verification.explanation}`);
       } else {
-        console.log(`[AI] ✓ Answer verified as correct: ${verification.explanation}`);
+        console.log(`[AI] ✓ Answer verified as correct by o1-mini verification model`);
+        if (verification.calculationSteps) {
+          console.log(`[AI] ✓ Calculation steps: ${verification.calculationSteps}`);
+        }
       }
       
       // STEP 2: Assess question quality

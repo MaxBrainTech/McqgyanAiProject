@@ -539,11 +539,17 @@ export default function TeacherDashboard({ teacherData, onLogout }: TeacherDashb
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="gpt-4o-mini">
-                                GPT-4o Mini (Fast & Affordable) ⚡
+                              <SelectItem value="o1-preview">
+                                O1 Preview (Best Reasoning - Math/Science) 🧠
+                              </SelectItem>
+                              <SelectItem value="o1-mini">
+                                O1 Mini (Strong Reasoning - Recommended for STEM) ⭐
                               </SelectItem>
                               <SelectItem value="gpt-4o">
-                                GPT-4o (Best Quality) ⭐
+                                GPT-4o (Best Quality - General) ✨
+                              </SelectItem>
+                              <SelectItem value="gpt-4o-mini">
+                                GPT-4o Mini (Fast & Affordable) ⚡
                               </SelectItem>
                               <SelectItem value="gpt-3.5-turbo">
                                 GPT-3.5 Turbo (Cheapest) 💰
