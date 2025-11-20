@@ -28,7 +28,7 @@ const testSchema = z.object({
   topic4: z.string().optional(),
   numQuestions: z.number().min(5).max(50),
   testType: z.enum(["mcq", "open-ended", "mixed"]),
-  gptModel: z.enum(["o1-preview", "o1-mini", "gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"]),
+  gptModel: z.enum(["gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"]),
   instructions: z.string().optional(),
 });
 
@@ -539,17 +539,11 @@ export default function TeacherDashboard({ teacherData, onLogout }: TeacherDashb
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="o1-preview">
-                                O1 Preview (Best Reasoning - Math/Science) 🧠
-                              </SelectItem>
-                              <SelectItem value="o1-mini">
-                                O1 Mini (Strong Reasoning - Recommended for STEM) ⭐
-                              </SelectItem>
                               <SelectItem value="gpt-4o">
-                                GPT-4o (Best Quality - General) ✨
+                                GPT-4o (Best Quality) ⭐
                               </SelectItem>
                               <SelectItem value="gpt-4o-mini">
-                                GPT-4o Mini (Fast & Affordable) ⚡
+                                GPT-4o Mini (Fast & Affordable - Recommended) ⚡
                               </SelectItem>
                               <SelectItem value="gpt-3.5-turbo">
                                 GPT-3.5 Turbo (Cheapest) 💰

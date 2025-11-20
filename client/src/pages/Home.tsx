@@ -895,11 +895,9 @@ export default function Home({ onStartTest, onCustomMCQ }: HomeProps) {
                         <SelectValue placeholder="Select GPT Model" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="o1-preview">O1 Preview (Best Reasoning - Math/Science) 🧠</SelectItem>
-                        <SelectItem value="o1-mini">O1 Mini (Strong Reasoning - Recommended for STEM) ⭐</SelectItem>
-                        <SelectItem value="gpt-4o">GPT-4o (Best Quality - General)</SelectItem>
-                        <SelectItem value="gpt-4o-mini">GPT-4o Mini (Balanced - Fast)</SelectItem>
-                        <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo (Fastest - Basic)</SelectItem>
+                        <SelectItem value="gpt-4o">GPT-4o (Best Quality) ⭐</SelectItem>
+                        <SelectItem value="gpt-4o-mini">GPT-4o Mini (Fast & Affordable - Recommended) ⚡</SelectItem>
+                        <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo (Cheapest) 💰</SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground mt-1">Higher quality models generate better questions but take longer</p>

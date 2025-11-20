@@ -128,8 +128,8 @@ async function verifyAnswer(question: string, proposedAnswer: string, mode: stri
   alternativeAnswer?: string;
   calculationSteps?: string;
 }> {
-  // Use o1-mini for verification when dealing with math/science - it's better at reasoning
-  const verificationModel = mode === 'science' ? "o1-mini" : (gptModel || CURRENT_MODEL);
+  // Use gpt-4o for verification when dealing with math/science - it's reliable and accurate
+  const verificationModel = mode === 'science' ? "gpt-4o" : (gptModel || CURRENT_MODEL);
   
   const prompt = `You are an independent fact-checker verifying the correctness of an answer.
 
