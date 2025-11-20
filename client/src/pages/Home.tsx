@@ -1,13 +1,17 @@
 import { useState, useEffect } from "react";
-import { Languages, BookOpen, Sparkles, Trophy, RotateCcw, GraduationCap, Book, Library, ScrollText, Atom, Beaker, Dna, Zap } from "lucide-react";
+import { Languages, BookOpen, Sparkles, Trophy, RotateCcw, GraduationCap, Book, Library, ScrollText, Atom, Beaker, Dna, Zap, Settings2, Loader2 } from "lucide-react";
 import LanguageCard from "@/components/LanguageCard";
 import SelectionGrid from "@/components/SelectionGrid";
 import ChapterList from "@/components/ChapterList";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import LeaderboardCard from "@/components/LeaderboardCard";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 interface HomeProps {
   onStartTest: (config: {
@@ -27,7 +31,7 @@ interface HomeProps {
 }
 
 export default function Home({ onStartTest, onCustomMCQ }: HomeProps) {
-  const [step, setStep] = useState<"mode" | "subject" | "class" | "difficulty" | "testType" | "testLength" | "chapter" | "custom">("mode");
+  const [step, setStep] = useState<"mode" | "subject" | "class" | "difficulty" | "testType" | "testLength" | "testMode" | "chapter" | "customTopics" | "custom">("mode");
   const [selectedMode, setSelectedMode] = useState<string>("");
   const [selectedLanguage, setSelectedLanguage] = useState<string>("");
   const [selectedScienceCategory, setSelectedScienceCategory] = useState<string>("");
@@ -35,6 +39,14 @@ export default function Home({ onStartTest, onCustomMCQ }: HomeProps) {
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("");
   const [selectedTestType, setSelectedTestType] = useState<string>("");
   const [selectedTestLength, setSelectedTestLength] = useState<number>(0);
+  const [selectedTestMode, setSelectedTestMode] = useState<string>(""); // "predefined" or "custom"
+  const [customTopic1, setCustomTopic1] = useState<string>("");
+  const [customTopic2, setCustomTopic2] = useState<string>("");
+  const [customTopic3, setCustomTopic3] = useState<string>("");
+  const [customTopic4, setCustomTopic4] = useState<string>("");
+  const [selectedGptModel, setSelectedGptModel] = useState<string>("gpt-4o");
+  const [selectedBoard, setSelectedBoard] = useState<string>("CBSE");
+  const [isGeneratingTest, setIsGeneratingTest] = useState<boolean>(false);
   const [chapters, setChapters] = useState<Array<{ id: number; title: string; description: string }>>([]);
 
   // Load chapters when subject is selected
@@ -112,7 +124,16 @@ export default function Home({ onStartTest, onCustomMCQ }: HomeProps) {
 
   const handleTestLengthSelect = (length: string | number) => {
     setSelectedTestLength(length as number);
-    setStep("chapter");
+    setStep("testMode");
+  };
+  
+  const handleTestModeSelect = (mode: string) => {
+    setSelectedTestMode(mode);
+    if (mode === "predefined") {
+      setStep("chapter");
+    } else {
+      setStep("customTopics");
+    }
   };
 
   const handleChapterSelect = (chapterId: number) => {
@@ -643,10 +664,91 @@ export default function Home({ onStartTest, onCustomMCQ }: HomeProps) {
           </div>
         )}
 
-        {step === "chapter" && (
+        {step === "testMode" && (
           <div className="space-y-6 max-w-3xl mx-auto">
             <div className="flex items-center gap-3 sm:gap-4 mb-6">
               <Button variant="outline" onClick={() => setStep("testLength")} data-testid="button-back" size="sm">
+                ← Back
+              </Button>
+              <div>
+                <h2 className="text-lg sm:text-xl md:text-2xl font-bold capitalize">
+                  Choose Test Mode
+                </h2>
+                <p className="text-sm text-muted-foreground">Step 5 of 6</p>
+              </div>
+            </div>
+
+            <Card className="p-6">
+              <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">Select How You Want to Create Your Test</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Card
+                  className={`p-6 cursor-pointer hover-elevate active-elevate-2 ${
+                    selectedTestMode === "predefined"
+                      ? "border-primary bg-primary/5"
+                      : "border-border"
+                  }`}
+                  onClick={() => handleTestModeSelect("predefined")}
+                  data-testid="card-test-mode-predefined"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="inline-flex p-3 bg-blue-500/10 rounded-lg">
+                        <Library className="w-6 h-6 text-blue-500" />
+                      </div>
+                      {selectedTestMode === "predefined" && (
+                        <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                          <svg className="w-4 h-4 text-primary-foreground" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+                            <path d="M5 13l4 4L19 7"></path>
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg mb-1">Pre-defined Chapters</h3>
+                      <p className="text-base text-muted-foreground">Choose from curated curriculum chapters</p>
+                      <p className="text-sm text-muted-foreground mt-2">25 chapters covering the complete syllabus</p>
+                    </div>
+                  </div>
+                </Card>
+                
+                <Card
+                  className={`p-6 cursor-pointer hover-elevate active-elevate-2 ${
+                    selectedTestMode === "custom"
+                      ? "border-primary bg-primary/5"
+                      : "border-border"
+                  }`}
+                  onClick={() => handleTestModeSelect("custom")}
+                  data-testid="card-test-mode-custom"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="inline-flex p-3 bg-purple-500/10 rounded-lg">
+                        <Sparkles className="w-6 h-6 text-purple-500" />
+                      </div>
+                      {selectedTestMode === "custom" && (
+                        <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                          <svg className="w-4 h-4 text-primary-foreground" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+                            <path d="M5 13l4 4L19 7"></path>
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg mb-1">Custom Topics</h3>
+                      <p className="text-base text-muted-foreground">Create test with your own topics</p>
+                      <p className="text-sm text-muted-foreground mt-2">Enter your own topics and customize settings</p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {step === "chapter" && (
+          <div className="space-y-6 max-w-3xl mx-auto">
+            <div className="flex items-center gap-3 sm:gap-4 mb-6">
+              <Button variant="outline" onClick={() => setStep("testMode")} data-testid="button-back" size="sm">
                 ← Back
               </Button>
               <div>
