@@ -14,12 +14,25 @@ export default function TestPage() {
   const navigate = useNavigate();
   const config = location.state?.config;
   
-  // Redirect to home if no config
+  // Immediate guard: redirect if no config
   useEffect(() => {
     if (!config) {
       navigate('/');
     }
   }, [config, navigate]);
+  
+  // Return loading state while redirecting if no config
+  if (!config) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-base sm:text-lg font-semibold text-primary">Redirecting...</p>
+        </div>
+      </div>
+    );
+  }
+  
   const isCustomStudentTest = config.mode === "custom-student";
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [customQuestions, setCustomQuestions] = useState<any[]>(config.customQuestions || []);
