@@ -98,7 +98,7 @@
 
 
 // App.tsx
-import { Router, Route, Switch } from "wouter";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
@@ -109,7 +109,7 @@ import Header from "@/components/Header";
 
 // Navigation Pages
 import Home from "@/pages/Home";
-import Features from "@/pages/Feature";
+import Features from "@/pages/Features";
 import Pricing from "@/pages/Pricing";
 import Contact from "@/pages/Contact";
 import Login from "@/pages/Login";
@@ -125,28 +125,28 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Router>
+        <BrowserRouter>
           <div className="min-h-screen bg-background">
             <Header />
 
-            <Switch>
+            <Routes>
               {/* Navbar Pages */}
-              <Route path="/" component={Home} />
-              <Route path="/features" component={Features} />
-              <Route path="/pricing" component={Pricing} />
-              <Route path="/contact" component={Contact} />
-              <Route path="/login" component={Login} />
+              <Route path="/" element={<Home />} />
+              <Route path="/features" element={<Features />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/login" element={<Login />} />
 
               {/* MCQ System Pages */}
-              <Route path="/test" component={TestPage} />
-              <Route path="/teacher-auth" component={TeacherAuth} />
-              <Route path="/teacher-dashboard" component={TeacherDashboard} />
-              <Route path="/custom-test" component={CustomTestPage} />
-              <Route path="/answer-evaluator" component={AnswerSheetEvaluator} />
-            </Switch>
+              <Route path="/test" element={<TestPage />} />
+              <Route path="/teacher-auth" element={<TeacherAuth />} />
+              <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
+              <Route path="/custom-test" element={<CustomTestPage />} />
+              <Route path="/answer-evaluator" element={<AnswerSheetEvaluator />} />
+            </Routes>
           </div>
           <Toaster />
-        </Router>
+        </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
   );

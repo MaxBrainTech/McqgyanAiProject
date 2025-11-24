@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Languages, BookOpen, Sparkles, Trophy, RotateCcw, GraduationCap, Book, Library, ScrollText, Atom, Beaker, Dna, Zap, Settings2, Loader2 } from "lucide-react";
 import LanguageCard from "@/components/LanguageCard";
 import SelectionGrid from "@/components/SelectionGrid";
@@ -13,25 +14,8 @@ import LeaderboardCard from "@/components/LeaderboardCard";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
-interface HomeProps {
-  onStartTest: (config: {
-    mode?: string;
-    language?: string;
-    scienceCategory?: string;
-    class: number;
-    difficulty: string;
-    testType: string;
-    chapter: number;
-    testLength: number;
-  }) => void;
-  onCustomMCQ?: {
-    teacher: () => void;
-    student: () => void;
-  };
-  onAnswerEvaluator?: () => void;
-}
-
-export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: HomeProps) {
+export default function Home() {
+  const navigate = useNavigate();
   const [step, setStep] = useState<"mode" | "subject" | "class" | "difficulty" | "testType" | "testLength" | "testMode" | "chapter" | "customTopics" | "custom">("mode");
   const [selectedMode, setSelectedMode] = useState<string>("");
   const [selectedLanguage, setSelectedLanguage] = useState<string>("");
@@ -172,19 +156,23 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
       
       const data = await response.json();
       
-      // Start test with generated questions
-      onStartTest({
-        mode: "custom-student",
-        language: selectedMode === "language" ? selectedLanguage : undefined,
-        scienceCategory: selectedMode === "science" ? selectedScienceCategory : undefined,
-        class: selectedClass,
-        difficulty: selectedDifficulty,
-        testType: selectedTestType,
-        testLength: selectedTestLength,
-        chapter: 0, // Not used for custom tests
-        customTestId: data.testId,
-        customQuestions: data.questions,
-      } as any);
+      // Navigate to test page with generated questions
+      navigate('/test', {
+        state: {
+          config: {
+            mode: "custom-student",
+            language: selectedMode === "language" ? selectedLanguage : undefined,
+            scienceCategory: selectedMode === "science" ? selectedScienceCategory : undefined,
+            class: selectedClass,
+            difficulty: selectedDifficulty,
+            testType: selectedTestType,
+            testLength: selectedTestLength,
+            chapter: 0,
+            customTestId: data.testId,
+            customQuestions: data.questions,
+          }
+        }
+      });
       
       toast({
         title: "Test Generated!",
@@ -202,15 +190,19 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
   };
 
   const handleChapterSelect = (chapterId: number) => {
-    onStartTest({
-      mode: selectedMode,
-      language: selectedMode === "language" ? selectedLanguage : undefined,
-      scienceCategory: selectedMode === "science" ? selectedScienceCategory : undefined,
-      class: selectedClass,
-      difficulty: selectedDifficulty,
-      testType: selectedTestType,
-      testLength: selectedTestLength,
-      chapter: chapterId,
+    navigate('/test', {
+      state: {
+        config: {
+          mode: selectedMode,
+          language: selectedMode === "language" ? selectedLanguage : undefined,
+          scienceCategory: selectedMode === "science" ? selectedScienceCategory : undefined,
+          class: selectedClass,
+          difficulty: selectedDifficulty,
+          testType: selectedTestType,
+          testLength: selectedTestLength,
+          chapter: chapterId,
+        }
+      }
     });
   };
 
@@ -283,6 +275,7 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
                   <Badge variant="secondary" className="mt-4 text-base">6 Languages</Badge>
                 </Card>
 
+
                 <Card 
                   className="p-8 text-center hover-elevate cursor-pointer border-2 hover:border-accent transition-all"
                   onClick={() => handleModeSelect("science")}
@@ -298,6 +291,13 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
                   <Badge variant="secondary" className="mt-4 text-base">4 Categories</Badge>
                 </Card>
 
+
+
+
+              
+
+
+                
                 <Card 
                   className="p-8 text-center hover-elevate cursor-pointer border-2 hover:border-purple-500 transition-all"
                   onClick={() => handleModeSelect("custom")}
@@ -313,9 +313,10 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
                   <Badge variant="secondary" className="mt-4 text-base">Teacher/Student</Badge>
                 </Card>
 
+                
                 <Card 
                   className="p-8 text-center hover-elevate cursor-pointer border-2 hover:border-green-500 transition-all"
-                  onClick={onAnswerEvaluator}
+                  onClick={() => navigate('/answer-evaluator')}
                   data-testid="card-answer-evaluator"
                 >
                   <div className="inline-flex p-4 bg-green-500/10 rounded-full mb-4">
@@ -327,6 +328,7 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
                   </p>
                   <Badge variant="secondary" className="mt-4 text-base">Upload & Evaluate</Badge>
                 </Card>
+
               </div>
             </div>
 
@@ -367,7 +369,7 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
               <Card 
                 className="p-8 text-center hover-elevate cursor-pointer border-2 hover:border-primary transition-all"
-                onClick={() => onCustomMCQ?.teacher()}
+                onClick={() => navigate('/teacher-auth')}
                 data-testid="card-role-teacher"
               >
                 <div className="inline-flex p-4 bg-primary/10 rounded-full mb-4">
@@ -381,7 +383,7 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
 
               <Card 
                 className="p-8 text-center hover-elevate cursor-pointer border-2 hover:border-accent transition-all"
-                onClick={() => onCustomMCQ?.student()}
+                onClick={() => navigate('/custom-test')}
                 data-testid="card-role-student"
               >
                 <div className="inline-flex p-4 bg-accent/10 rounded-full mb-4">
@@ -398,6 +400,9 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
 
         {step === "subject" && selectedMode === "language" && (
           <div className="space-y-6 sm:space-y-8">
+            <Button variant="outline" onClick={() => setStep("mode")} className="mb-4">
+              ← Back
+            </Button>
             {/* Features Banner */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <Card className="p-4 sm:p-5 text-center hover-elevate">
@@ -407,6 +412,8 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
                 <h3 className="font-semibold text-base">Aligned</h3>
                 <p className="text-base text-muted-foreground mt-1">Official curriculum coverage</p>
               </Card>
+
+
               <Card className="p-4 sm:p-5 text-center hover-elevate">
                 <div className="inline-flex p-2 sm:p-3 bg-green-500/10 rounded-lg mb-2">
                   <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
@@ -414,6 +421,7 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
                 <h3 className="font-semibold text-base">AI Powered</h3>
                 <p className="text-base text-muted-foreground mt-1">Adaptive question generation</p>
               </Card>
+
               <Card className="p-4 sm:p-5 text-center hover-elevate">
                 <div className="inline-flex p-2 sm:p-3 bg-purple-500/10 rounded-lg mb-2">
                   <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
@@ -421,6 +429,8 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
                 <h3 className="font-semibold text-base">Track Progress</h3>
                 <p className="text-base text-muted-foreground mt-1">Monitor your improvement</p>
               </Card>
+
+
             </div>
 
             {/* Language Selection */}
@@ -553,6 +563,8 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
           </div>
         )}
 
+
+
         {step === "difficulty" && (
           <div className="space-y-6 max-w-3xl mx-auto">
             <div className="flex items-center gap-3 sm:gap-4 mb-6">
@@ -579,6 +591,7 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
             />
           </div>
         )}
+
 
         {step === "testType" && (
           <div className="space-y-6 max-w-3xl mx-auto">
@@ -677,6 +690,13 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
           </div>
         )}
 
+
+
+
+
+
+
+        
         {step === "testLength" && (
           <div className="space-y-6 max-w-4xl mx-auto">
             <div className="flex items-center gap-3 sm:gap-4 mb-6">
