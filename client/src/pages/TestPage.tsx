@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import QuestionCard from "@/components/QuestionCard";
 import FeedbackSection from "@/components/FeedbackSection";
@@ -8,23 +9,17 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
-interface TestPageProps {
-  config: {
-    mode?: string;
-    language?: string;
-    scienceCategory?: string;
-    class: number;
-    difficulty: string;
-    testType: string;
-    chapter: number;
-    testLength: number;
-    customTestId?: string;
-    customQuestions?: any[];
-  };
-  onExit: () => void;
-}
-
-export default function TestPage({ config, onExit }: TestPageProps) {
+export default function TestPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const config = location.state?.config;
+  
+  // Redirect to home if no config
+  useEffect(() => {
+    if (!config) {
+      navigate('/');
+    }
+  }, [config, navigate]);
   const isCustomStudentTest = config.mode === "custom-student";
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [customQuestions, setCustomQuestions] = useState<any[]>(config.customQuestions || []);
@@ -189,7 +184,7 @@ export default function TestPage({ config, onExit }: TestPageProps) {
   };
 
   const handleNewTest = () => {
-    onExit();
+    navigate('/');
   };
 
   if (showSummary) {
@@ -203,7 +198,7 @@ export default function TestPage({ config, onExit }: TestPageProps) {
             correctAnswers={correctAnswers}
             subject={subject || "quiz"}
             onNewTest={handleNewTest}
-            onHome={onExit}
+            onHome={() => navigate('/')}
           />
         </div>
       </div>
@@ -252,7 +247,7 @@ export default function TestPage({ config, onExit }: TestPageProps) {
             </div>
             <Button
               variant="outline"
-              onClick={onExit}
+              onClick={() => navigate('/')}
               data-testid="button-exit"
               className="h-11 text-base"
             >
