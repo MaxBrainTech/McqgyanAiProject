@@ -225,7 +225,27 @@ export default function Home() {
       </div>
 
       {/* Hero Header */}
-      <div className="relative border-b bg-white/40 dark:bg-black/20 backdrop-blur-sm">
+        <div
+          className="
+            relative 
+            border-b 
+            bg-white/40 
+            dark:bg-black/20 
+            backdrop-blur-sm
+            bg-[url('/mock.jpg')]
+            bg-cover
+            bg-center
+            bg-no-repeat
+            transition-all 
+            duration-300 
+            hover:bg-white/60 
+            dark:hover:bg-black/40 
+            hover:shadow-lg 
+            hover:shadow-blue-500/20 
+            hover:-translate-y-1
+          "
+        >
+
         <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 lg:py-16 max-w-6xl">
           <div className="text-center space-y-3 sm:space-y-4">
             <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full border border-primary/20">
@@ -261,7 +281,25 @@ export default function Home() {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
                 <Card 
-                  className="p-8 text-center hover-elevate cursor-pointer border-2 hover:border-primary transition-all"
+                  className="
+                    p-8 text-center cursor-pointer transition-all rounded-2xl
+                    border duration-300
+
+                    bg-[rgb(235,245,255)]
+                    dark:bg-[rgb(32,42,60)]
+
+                    border-[rgb(180,195,230)]
+                    dark:border-[rgb(70,85,115)]
+
+                    hover:scale-[1.06]
+                    hover:bg-[rgb(220,235,255)]
+                    dark:hover:bg-[rgb(42,55,78)]
+
+                    hover:border-primary
+                    hover:shadow-[0_0_40px_rgba(55,97,186,0.55)]
+                    dark:hover:shadow-[0_0_45px_rgba(55,97,186,0.8)]
+                  "
+
                   onClick={() => handleModeSelect("language")}
                   data-testid="card-mode-language"
                 >
@@ -277,7 +315,35 @@ export default function Home() {
 
 
                 <Card 
-                  className="p-8 text-center hover-elevate cursor-pointer border-2 hover:border-accent transition-all"
+                  className="
+                    p-8 text-center cursor-pointer transition-all rounded-2xl
+                    border-2
+
+                    /* OUTLINE COLOR */
+                    border-[rgb(245,158,11)]          /* brighter orange */
+                    dark:border-[rgb(255,180,60)]     /* darker orange for dark mode */
+
+                    /* INSIDE BG (instead of pure white) */
+                    bg-[rgb(255,243,205)]             /* soft light orange */
+                    dark:bg-[rgb(55,45,20)]           /* dark warm orange */
+
+                    /* TEXT COLOR */
+                    text-[rgb(80,40,0)]                /* dark text for light bg */
+                    dark:text-[rgb(255,220,120)]       /* light text for dark bg */
+
+                    /* HOVER EFFECT */
+                    hover:scale-[1.05]
+
+                    hover:bg-[rgb(255,229,153)]       /* slightly brighter on hover */
+                    dark:hover:bg-[rgb(70,55,25)]     /* dark mode hover */
+
+                    hover:shadow-[0_0_30px_rgba(245,158,11,0.45)]
+                    dark:hover:shadow-[0_0_40px_rgba(255,180,60,0.7)]
+
+                    duration-300
+                  "
+
+
                   onClick={() => handleModeSelect("science")}
                   data-testid="card-mode-science"
                 >
@@ -299,7 +365,28 @@ export default function Home() {
 
                 
                 <Card 
-                  className="p-8 text-center hover-elevate cursor-pointer border-2 hover:border-purple-500 transition-all"
+                  className="
+                    p-8 text-center cursor-pointer transition-all rounded-2xl
+                    border duration-300
+
+                    /* INSIDE BG */
+                    bg-[rgb(245,235,255)]
+                    dark:bg-[rgb(40,32,60)]
+
+                    /* BORDER COLOR */
+                    border-[rgb(195,180,230)]
+                    dark:border-[rgb(85,70,115)]
+
+                    /* HOVER EFFECT */
+                    hover:scale-[1.06]
+                    hover:bg-[rgb(235,220,255)]
+                    dark:hover:bg-[rgb(55,42,78)]
+
+                    hover:border-purple-500
+                    hover:shadow-[0_0_40px_rgba(128,0,128,0.55)]
+                    dark:hover:shadow-[0_0_45px_rgba(160,32,240,0.8)]
+                  "
+
                   onClick={() => handleModeSelect("custom")}
                   data-testid="card-mode-custom"
                 >
@@ -315,7 +402,33 @@ export default function Home() {
 
                 
                 <Card 
-                  className="p-8 text-center hover-elevate cursor-pointer border-2 hover:border-green-500 transition-all"
+                  className="
+                    p-8 text-center cursor-pointer transition-all rounded-2xl
+                    border-2
+
+                    /* OUTLINE COLOR */
+                    border-[rgb(52,211,153)]        
+                    dark:border-[rgb(16,185,129)]    
+
+                    /* INSIDE BG */
+                    bg-[rgb(236,253,245)]            
+                    dark:bg-[rgb(5,50,30)]           
+
+                    /* TEXT COLOR */
+                    text-[rgb(22,101,52)]           
+                    dark:text-[rgb(110,255,200)]     
+
+                    /* HOVER EFFECT */
+                    hover:scale-[1.05]
+                    hover:bg-[rgb(200,250,230)]      
+                    dark:hover:bg-[rgb(10,70,40)]    
+
+                    hover:shadow-[0_0_30px_rgba(52,211,153,0.45)]
+                    dark:hover:shadow-[0_0_40px_rgba(16,185,129,0.7)]
+
+                    duration-300
+                  "
+
                   onClick={() => navigate('/answer-evaluator')}
                   data-testid="card-answer-evaluator"
                 >
@@ -404,7 +517,7 @@ export default function Home() {
               ← Back
             </Button>
             {/* Features Banner */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            {/* <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <Card className="p-4 sm:p-5 text-center hover-elevate">
                 <div className="inline-flex p-2 sm:p-3 bg-blue-500/10 rounded-lg mb-2">
                   <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
@@ -431,7 +544,49 @@ export default function Home() {
               </Card>
 
 
+            </div> */}
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              {/* Blue Card */}
+              <Card className="
+                p-4 sm:p-5 text-center rounded-2xl
+                bg-blue-700 dark:bg-blue-800
+                text-white
+              ">
+                <div className="inline-flex p-2 sm:p-3 bg-blue-600/30 dark:bg-blue-500/50 rounded-lg mb-2">
+                  <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <h3 className="font-semibold text-base">Aligned</h3>
+                <p className="text-base text-white/80 mt-1">Official curriculum coverage</p>
+              </Card>
+
+              {/* Green Card */}
+              <Card className="
+                p-4 sm:p-5 text-center rounded-2xl
+                bg-green-700 dark:bg-green-800
+                text-white
+              ">
+                <div className="inline-flex p-2 sm:p-3 bg-green-600/30 dark:bg-green-500/50 rounded-lg mb-2">
+                  <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <h3 className="font-semibold text-base">AI Powered</h3>
+                <p className="text-base text-white/80 mt-1">Adaptive question generation</p>
+              </Card>
+
+              {/* Purple Card */}
+              <Card className="
+                p-4 sm:p-5 text-center rounded-2xl
+                bg-purple-700 dark:bg-purple-800
+                text-white
+              ">
+                <div className="inline-flex p-2 sm:p-3 bg-purple-600/30 dark:bg-purple-500/50 rounded-lg mb-2">
+                  <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <h3 className="font-semibold text-base">Track Progress</h3>
+                <p className="text-base text-white/80 mt-1">Monitor your improvement</p>
+              </Card>
             </div>
+
 
             {/* Language Selection */}
             <div className="space-y-4">
@@ -534,7 +689,7 @@ export default function Home() {
           </div>
         )}
 
-        {step === "class" && (
+        {/* {step === "class" && (
           <div className="space-y-6 max-w-3xl mx-auto">
             <div className="flex items-center gap-3 sm:gap-4 mb-6">
               <Button variant="outline" onClick={() => setStep("subject")} data-testid="button-back" size="sm">
@@ -562,10 +717,55 @@ export default function Home() {
             />
           </div>
         )}
+ */}
+        {step === "class" && (
+          <div className="space-y-6 max-w-3xl mx-auto">
+            <div className="flex items-center gap-3 sm:gap-4 mb-6">
+              <Button
+                variant="outline"
+                onClick={() => setStep("subject")}
+                data-testid="button-back"
+                size="sm"
+              >
+                ← Back
+              </Button>
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold capitalize">
+                  {selectedMode === "science" ? selectedScienceCategory : selectedLanguage}
+                </h2>
+                <p className="text-sm text-muted-foreground">Step 1 of 4</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                { label: "Class 6", value: 6, light: "from-green-400 to-green-200", dark: "from-green-700 to-green-500" },
+                { label: "Class 7", value: 7, light: "from-blue-400 to-blue-200", dark: "from-blue-700 to-blue-500" },
+                { label: "Class 8", value: 8, light: "from-purple-400 to-purple-200", dark: "from-purple-700 to-purple-500" },
+                { label: "Class 9", value: 9, light: "from-pink-400 to-pink-200", dark: "from-pink-700 to-pink-500" },
+                { label: "Class 10", value: 10, light: "from-yellow-400 to-yellow-200", dark: "from-yellow-700 to-yellow-500" },
+              ].map((item) => (
+                <div
+                  key={item.value}
+                  onClick={() => handleClassSelect(item.value)}
+                  className={`
+                    cursor-pointer p-6 rounded-2xl text-center font-semibold
+                    bg-gradient-to-br ${item.light} dark:${item.dark}
+                    text-white
+                    transition-all transform
+                    hover:shadow-xl hover:scale-105
+                    ${selectedClass === item.value ? "ring-4 ring-offset-2 ring-indigo-400 dark:ring-indigo-300" : ""}
+                  `}
+                >
+                  {item.label}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
 
-
-        {step === "difficulty" && (
+        {/* {step === "difficulty" && (
           <div className="space-y-6 max-w-3xl mx-auto">
             <div className="flex items-center gap-3 sm:gap-4 mb-6">
               <Button variant="outline" onClick={() => setStep("class")} data-testid="button-back" size="sm">
@@ -590,10 +790,57 @@ export default function Home() {
               onSelect={handleDifficultySelect}
             />
           </div>
+        )} */}
+
+        {step === "difficulty" && (
+          <div className="space-y-6 max-w-3xl mx-auto">
+            <div className="flex items-center gap-3 sm:gap-4 mb-6">
+              <Button
+                variant="outline"
+                onClick={() => setStep("class")}
+                data-testid="button-back"
+                size="sm"
+              >
+                ← Back
+              </Button>
+              <div>
+                <h2 className="text-lg sm:text-2xl font-bold capitalize">
+                  {selectedMode === "science"
+                    ? selectedScienceCategory
+                    : selectedLanguage} - Class {selectedClass}
+                </h2>
+                <p className="text-sm text-muted-foreground">Step 2 of 5</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                { label: "Easy", value: "easy", light: "from-green-400 to-green-200", dark: "from-green-700 to-green-500" },
+                { label: "Medium", value: "medium", light: "from-yellow-400 to-yellow-200", dark: "from-yellow-700 to-yellow-500" },
+                { label: "Hard", value: "hard", light: "from-red-400 to-red-200", dark: "from-red-700 to-red-500" },
+              ].map((item) => (
+                <div
+                  key={item.value}
+                  onClick={() => handleDifficultySelect(item.value)}
+                  className={`
+                    cursor-pointer p-6 rounded-2xl text-center font-semibold
+                    bg-gradient-to-br ${item.light} dark:${item.dark}
+                    text-white
+                    transition-all transform
+                    hover:shadow-xl hover:scale-105
+                    ${selectedDifficulty === item.value ? "ring-4 ring-offset-2 ring-indigo-400 dark:ring-indigo-300" : ""}
+                  `}
+                >
+                  {item.label}
+                </div>
+              ))}
+            </div>
+          </div>
         )}
 
 
-        {step === "testType" && (
+
+        {/* {step === "testType" && (
           <div className="space-y-6 max-w-3xl mx-auto">
             <div className="flex items-center gap-3 sm:gap-4 mb-6">
               <Button variant="outline" onClick={() => setStep("difficulty")} data-testid="button-back" size="sm">
@@ -688,16 +935,100 @@ export default function Home() {
               </div>
             </Card>
           </div>
+        )} */}
+
+        {step === "testType" && (
+          <div className="space-y-6 max-w-3xl mx-auto">
+            <div className="flex items-center gap-3 sm:gap-4 mb-6">
+              <Button
+                variant="outline"
+                onClick={() => setStep("difficulty")}
+                data-testid="button-back"
+                size="sm"
+              >
+                ← Back
+              </Button>
+              <div>
+                <h2 className="text-lg sm:text-2xl font-bold capitalize">
+                  {selectedLanguage} - Class {selectedClass} - {selectedDifficulty}
+                </h2>
+                <p className="text-sm text-muted-foreground">Step 3 of 5</p>
+              </div>
+            </div>
+
+            <Card  className="
+                p-4 sm:p-6 
+                bg-[hsl(200.49deg_56.52%_80.08%)]     /* Light mode */
+                dark:bg-[hsl(200.49deg_56.52%_30%)]   /* Dark mode */
+                transition-colors
+              ">
+              <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">
+                Select Test Type
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[
+                  {
+                    id: "mixed",
+                    title: "Mixed Test",
+                    description: "MCQ + Open-ended Questions",
+                    extra: "50% multiple choice, 50% written answers for comprehensive practice",
+                    bgColor: "bg-[rgb(241,234,164)] dark:bg-[rgb(126,43,17)]",
+                    icon: <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600 dark:text-yellow-400" />,
+                  },
+                  {
+                    id: "mcq-only",
+                    title: "MCQ Only Test",
+                    description: "Multiple Choice Questions Only",
+                    extra: "Fast-paced test with instant feedback on all questions",
+                    bgColor: "bg-[rgb(247,207,207)] dark:bg-[rgb(160,88,65)]",
+                    icon: <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 dark:text-red-400" />,
+                  },
+                ].map((test) => (
+                  <Card
+                    key={test.id}
+                    className={`p-5 sm:p-6 cursor-pointer transition-all border hover:shadow-lg hover:scale-105 ${test.bgColor} ${
+                      selectedTestType === test.id ? "border-primary " : "border-border"
+                    }`}
+                    onClick={() => handleTestTypeSelect(test.id)}
+                    data-testid={`card-test-type-${test.id}`}
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="inline-flex p-2 sm:p-3 rounded-lg bg-white/20 dark:bg-white/10">
+                          {test.icon}
+                        </div>
+                        {selectedTestType === test.id && (
+                          <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                            <svg
+                              className="w-4 h-4 text-primary-foreground"
+                              fill="none"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path d="M5 13l4 4L19 7"></path>
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg mb-1">{test.title}</h3>
+                        <p className="text-base text-muted-foreground">{test.description}</p>
+                        <p className="text-sm text-muted-foreground mt-2">{test.extra}</p>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </Card>
+          </div>
         )}
 
 
-
-
-
-
-
         
-        {step === "testLength" && (
+        {/* {step === "testLength" && (
           <div className="space-y-6 max-w-4xl mx-auto">
             <div className="flex items-center gap-3 sm:gap-4 mb-6">
               <Button 
@@ -762,9 +1093,80 @@ export default function Home() {
               </div>
             </Card>
           </div>
+        )} */}
+
+
+        {step === "testLength" && (
+          <div className="space-y-6 max-w-4xl mx-auto">
+            <div className="flex items-center gap-3 sm:gap-4 mb-6">
+              <Button 
+                variant="outline" 
+                onClick={() => setStep(selectedMode === "science" ? "difficulty" : "testType")} 
+                data-testid="button-back" 
+                size="sm"
+              >
+                ← Back
+              </Button>
+              <div>
+                <h2 className="text-lg sm:text-xl md:text-2xl font-bold capitalize">
+                  {selectedMode === "science" ? selectedScienceCategory : selectedLanguage} - Class {selectedClass} - {selectedDifficulty} - {selectedTestType === "mcq-only" ? "MCQ Only" : "Mixed"}
+                </h2>
+                <p className="text-sm text-muted-foreground">Step 4 of 5</p>
+              </div>
+            </div>
+
+              <Card className="p-4 sm:p-6 bg-[hsl(200.49deg_56.52%_80.08%)] dark:bg-[hsl(200.49deg_56.52%_20%)]">
+                <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">
+                  Select Test Length
+                </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                {[
+                  { label: "Quick Test", sublabel: "10 Questions", value: 10, time: "~10 mins", bg: "bg-[rgb(241,234,164)] dark:bg-[rgb(126,43,17)]" },
+                  { label: "Standard Test", sublabel: "20 Questions", value: 20, time: "~20 mins", bg: "bg-[rgb(247,207,207)] dark:bg-[rgb(160,88,65)]" },
+                  { label: "Extended Test", sublabel: "30 Questions", value: 30, time: "~30 mins", bg: "bg-[rgb(200,230,255)] dark:bg-[rgb(20,50,80)]" },
+                  { label: "Full Test", sublabel: "50 Questions", value: 50, time: "~50 mins", bg: "bg-[rgb(220,250,220)] dark:bg-[rgb(30,60,40)]" },
+                ].map((item) => (
+                  <Card
+                    key={item.value}
+                    className={`p-4 cursor-pointer transition-all hover:shadow-lg hover:scale-105 border ${
+                      selectedTestLength === item.value
+                        ? "border-primary bg-primary/10 dark:bg-primary/20"
+                        : `border-border ${item.bg}`
+                    }`}
+                    onClick={() => handleTestLengthSelect(item.value)}
+                    data-testid={`card-test-length-${item.value}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-semibold text-lg">{item.label}</h3>
+                        <p className="text-muted-foreground">{item.sublabel}</p>
+                        <p className="text-sm text-muted-foreground mt-1">{item.time}</p>
+                      </div>
+                      {selectedTestLength === item.value && (
+                        <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                          <svg
+                            className="w-4 h-4 text-primary-foreground"
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path d="M5 13l4 4L19 7"></path>
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </Card>
+          </div>
         )}
 
-        {step === "testMode" && (
+
+        {/* {step === "testMode" && (
           <div className="space-y-6 max-w-3xl mx-auto">
             <div className="flex items-center gap-3 sm:gap-4 mb-6">
               <Button variant="outline" onClick={() => setStep("testLength")} data-testid="button-back" size="sm">
@@ -843,7 +1245,116 @@ export default function Home() {
               </div>
             </Card>
           </div>
+        )} */}
+
+
+        {step === "testMode" && (
+          <div className="space-y-6 max-w-4xl mx-auto">
+            <div className="flex items-center gap-3 sm:gap-4 mb-6">
+              <Button
+                variant="outline"
+                onClick={() => setStep("testLength")}
+                data-testid="button-back"
+                size="sm"
+              >
+                ← Back
+              </Button>
+              <div>
+                <h2 className="text-lg sm:text-xl md:text-2xl font-bold capitalize">
+                  Choose Test Mode
+                </h2>
+                <p className="text-sm text-muted-foreground">Step 5 of 6</p>
+              </div>
+            </div>
+
+            <Card className="p-4 sm:p-6 bg-[hsl(200.49deg_56.52%_80.08%)] dark:bg-[hsl(200.49deg_56.52%_20%)]">
+              <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">
+                Select How You Want to Create Your Test
+              </h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[
+                  {
+                    label: "Pre-defined Chapters",
+                    description: "Choose from curated curriculum chapters",
+                    details: "25 chapters covering the complete syllabus",
+                    value: "predefined",
+                    iconBg: "bg-blue-500/10",
+                    iconColor: "text-blue-500",
+                    pastel: "bg-[rgb(74_153_255)] dark:bg-[rgb(74_153_255)]",
+                  },
+                  {
+                    label: "Custom Topics",
+                    description: "Create test with your own topics",
+                    details: "Enter your own topics and customize settings",
+                    value: "custom",
+                    iconBg: "bg-purple-500/10",
+                    iconColor: "text-purple-500",
+                    pastel: "bg-[rgb(177_118_236)] dark:bg-[rgb(177_118_236)]",
+                  },
+                ].map((item) => (
+                  <Card
+                    key={item.value}
+                    className={`
+                      p-6 cursor-pointer transition-all duration-300 rounded-2xl border shadow-sm
+                      ${item.pastel}
+                      ${
+                        selectedTestMode === item.value
+                          ? "border-orange-400 dark:border-orange-500 shadow-md scale-[1.02]"
+                          : "border-gray-200 dark:border-gray-700"
+                      }
+                      hover:shadow-md hover:scale-[1.02]
+                    `}
+                    onClick={() => handleTestModeSelect(item.value)}
+                    data-testid={`card-test-mode-${item.value}`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className={`inline-flex p-3 rounded-lg ${item.iconBg}`}>
+                          {item.value === "predefined" ? (
+                            <Library className={`w-6 h-6 ${item.iconColor}`} />
+                          ) : (
+                            <Sparkles className={`w-6 h-6 ${item.iconColor}`} />
+                          )}
+                        </div>
+
+                        <h3 className="font-semibold text-xl mt-3">{item.label}</h3>
+                        <p className="text-gray-600 dark:text-gray-300">{item.description}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{item.details}</p>
+                      </div>
+
+                      {selectedTestMode === item.value && (
+                        <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center shadow">
+                          <svg
+                            className="w-5 h-5 text-white"
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path d="M5 13l4 4L19 7"></path>
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </Card>
+          </div>
         )}
+
+
+
+
+
+
+
+
+
+        
 
         {step === "customTopics" && (
           <div className="space-y-6 max-w-3xl mx-auto">

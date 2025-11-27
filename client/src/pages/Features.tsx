@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Languages, BookOpen, Sparkles, Trophy, RotateCcw, GraduationCap, Book, Library, ScrollText, Atom, Beaker, Dna, Zap, Settings2, Loader2 } from "lucide-react";
 import LanguageCard from "@/components/LanguageCard";
 import SelectionGrid from "@/components/SelectionGrid";
@@ -13,25 +14,8 @@ import LeaderboardCard from "@/components/LeaderboardCard";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
-interface HomeProps {
-  onStartTest: (config: {
-    mode?: string;
-    language?: string;
-    scienceCategory?: string;
-    class: number;
-    difficulty: string;
-    testType: string;
-    chapter: number;
-    testLength: number;
-  }) => void;
-  onCustomMCQ?: {
-    teacher: () => void;
-    student: () => void;
-  };
-  onAnswerEvaluator?: () => void;
-}
-
-export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: HomeProps) {
+export default function Home() {
+  const navigate = useNavigate();
   const [step, setStep] = useState<"mode" | "subject" | "class" | "difficulty" | "testType" | "testLength" | "testMode" | "chapter" | "customTopics" | "custom">("mode");
   const [selectedMode, setSelectedMode] = useState<string>("");
   const [selectedLanguage, setSelectedLanguage] = useState<string>("");
@@ -172,19 +156,23 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
 
       const data = await response.json();
 
-      // Start test with generated questions
-      onStartTest({
-        mode: "custom-student",
-        language: selectedMode === "language" ? selectedLanguage : undefined,
-        scienceCategory: selectedMode === "science" ? selectedScienceCategory : undefined,
-        class: selectedClass,
-        difficulty: selectedDifficulty,
-        testType: selectedTestType,
-        testLength: selectedTestLength,
-        chapter: 0, // Not used for custom tests
-        customTestId: data.testId,
-        customQuestions: data.questions,
-      } as any);
+      // Navigate to test page with generated questions
+      navigate('/test', {
+        state: {
+          config: {
+            mode: "custom-student",
+            language: selectedMode === "language" ? selectedLanguage : undefined,
+            scienceCategory: selectedMode === "science" ? selectedScienceCategory : undefined,
+            class: selectedClass,
+            difficulty: selectedDifficulty,
+            testType: selectedTestType,
+            testLength: selectedTestLength,
+            chapter: 0,
+            customTestId: data.testId,
+            customQuestions: data.questions,
+          }
+        }
+      });
 
       toast({
         title: "Test Generated!",
@@ -202,15 +190,19 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
   };
 
   const handleChapterSelect = (chapterId: number) => {
-    onStartTest({
-      mode: selectedMode,
-      language: selectedMode === "language" ? selectedLanguage : undefined,
-      scienceCategory: selectedMode === "science" ? selectedScienceCategory : undefined,
-      class: selectedClass,
-      difficulty: selectedDifficulty,
-      testType: selectedTestType,
-      testLength: selectedTestLength,
-      chapter: chapterId,
+    navigate('/test', {
+      state: {
+        config: {
+          mode: selectedMode,
+          language: selectedMode === "language" ? selectedLanguage : undefined,
+          scienceCategory: selectedMode === "science" ? selectedScienceCategory : undefined,
+          class: selectedClass,
+          difficulty: selectedDifficulty,
+          testType: selectedTestType,
+          testLength: selectedTestLength,
+          chapter: chapterId,
+        }
+      }
     });
   };
 
@@ -224,7 +216,8 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+      <div className="min-h-screen relative overflow-hidden flex items-center justify-center ">
+      
       {/* Decorative background shapes */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
@@ -234,7 +227,7 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
 
       {/* Hero Header */}
       <div className="relative border-b bg-white/40 dark:bg-black/20 backdrop-blur-sm">
-        <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 lg:py-16 max-w-6xl">
+        {/* <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 lg:py-16 max-w-6xl">
           <div className="text-center space-y-3 sm:space-y-4">
             <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full border border-primary/20">
               <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
@@ -254,21 +247,22 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-6xl">
+        <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-6xl -mt-24 pb-44">
+
         {step === "mode" && (
           <div className="space-y-6 sm:space-y-8">
             {/* Mode Selection */}
             <div className="space-y-4">
-              <div className="text-center mb-8">
+              {/* <div className="text-center mb-8">
                 <h2 className="text-2xl sm:text-3xl font-bold mb-2">Choose Your Quiz Mode</h2>
                 <p className="text-base text-muted-foreground">Select between language learning or science quizzes</p>
-              </div>
+              </div> */}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
-                <Card 
+            
+                {/* <Card 
                   className="p-8 text-center hover-elevate cursor-pointer border-2 hover:border-primary transition-all"
                   onClick={() => handleModeSelect("language")}
                   data-testid="card-mode-language"
@@ -281,10 +275,37 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
                     Practice French, German, Spanish, Hindi, Marathi, and Kannada
                   </p>
                   <Badge variant="secondary" className="mt-4 text-base">6 Languages</Badge>
-                </Card>
+                </Card> */}
+
 
                 <Card 
-                  className="p-8 text-center hover-elevate cursor-pointer border-2 hover:border-accent transition-all"
+                  className="
+                    p-24 text-center cursor-pointer transition-all rounded-2xl
+                    border-2
+
+                    /* OUTLINE COLOR */
+                    border-[rgb(245,158,11)]          /* brighter orange */
+                    dark:border-[rgb(255,180,60)]     /* darker orange for dark mode */
+
+                    /* INSIDE BG */
+                    bg-[rgb(255,243,205)]             /* soft light orange */
+                    dark:bg-[rgb(55,45,20)]           /* dark warm orange */
+
+                    /* TEXT COLOR */
+                    text-[rgb(80,40,0)]                /* dark text for light bg */
+                    dark:text-[rgb(255,220,120)]       /* light text for dark bg */
+
+                    /* HOVER EFFECT */
+                    hover:scale-[1.05]
+                    hover:bg-[rgb(255,229,153)]       /* slightly brighter on hover */
+                    dark:hover:bg-[rgb(70,55,25)]     /* dark mode hover */
+                    hover:shadow-[0_0_30px_rgba(245,158,11,0.45)]
+                    dark:hover:shadow-[0_0_40px_rgba(255,180,60,0.7)]
+
+                    duration-300
+                  "
+
+
                   onClick={() => handleModeSelect("science")}
                   data-testid="card-mode-science"
                 >
@@ -298,7 +319,14 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
                   <Badge variant="secondary" className="mt-4 text-base">4 Categories</Badge>
                 </Card>
 
-                <Card 
+
+
+
+
+
+
+
+                {/* <Card 
                   className="p-8 text-center hover-elevate cursor-pointer border-2 hover:border-purple-500 transition-all"
                   onClick={() => handleModeSelect("custom")}
                   data-testid="card-mode-custom"
@@ -311,11 +339,12 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
                     Teachers create tests, students take them
                   </p>
                   <Badge variant="secondary" className="mt-4 text-base">Teacher/Student</Badge>
-                </Card>
+                </Card> */}
 
-                <Card 
+
+                {/* <Card 
                   className="p-8 text-center hover-elevate cursor-pointer border-2 hover:border-green-500 transition-all"
-                  onClick={onAnswerEvaluator}
+                  onClick={() => navigate('/answer-evaluator')}
                   data-testid="card-answer-evaluator"
                 >
                   <div className="inline-flex p-4 bg-green-500/10 rounded-full mb-4">
@@ -326,13 +355,14 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
                     AI-powered evaluation of handwritten answer sheets
                   </p>
                   <Badge variant="secondary" className="mt-4 text-base">Upload & Evaluate</Badge>
-                </Card>
-              </div>
+                </Card> */}
+
             </div>
 
             {/* Leaderboard Section */}
             {leaderboard.length > 0 && (
               <div className="max-w-2xl mx-auto mt-12">
+                
                 <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                   <div className="flex items-center gap-2">
                     <Trophy className="w-5 h-5 text-primary" />
@@ -367,7 +397,7 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
               <Card 
                 className="p-8 text-center hover-elevate cursor-pointer border-2 hover:border-primary transition-all"
-                onClick={() => onCustomMCQ?.teacher()}
+                onClick={() => navigate('/teacher-auth')}
                 data-testid="card-role-teacher"
               >
                 <div className="inline-flex p-4 bg-primary/10 rounded-full mb-4">
@@ -381,7 +411,7 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
 
               <Card 
                 className="p-8 text-center hover-elevate cursor-pointer border-2 hover:border-accent transition-all"
-                onClick={() => onCustomMCQ?.student()}
+                onClick={() => navigate('/custom-test')}
                 data-testid="card-role-student"
               >
                 <div className="inline-flex p-4 bg-accent/10 rounded-full mb-4">
@@ -398,6 +428,9 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
 
         {step === "subject" && selectedMode === "language" && (
           <div className="space-y-6 sm:space-y-8">
+            <Button variant="outline" onClick={() => setStep("mode")} className="mb-4">
+              ← Back
+            </Button>
             {/* Features Banner */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <Card className="p-4 sm:p-5 text-center hover-elevate">
@@ -407,6 +440,8 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
                 <h3 className="font-semibold text-base">Aligned</h3>
                 <p className="text-base text-muted-foreground mt-1">Official curriculum coverage</p>
               </Card>
+
+
               <Card className="p-4 sm:p-5 text-center hover-elevate">
                 <div className="inline-flex p-2 sm:p-3 bg-green-500/10 rounded-lg mb-2">
                   <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
@@ -414,6 +449,7 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
                 <h3 className="font-semibold text-base">AI Powered</h3>
                 <p className="text-base text-muted-foreground mt-1">Adaptive question generation</p>
               </Card>
+
               <Card className="p-4 sm:p-5 text-center hover-elevate">
                 <div className="inline-flex p-2 sm:p-3 bg-purple-500/10 rounded-lg mb-2">
                   <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
@@ -421,6 +457,8 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
                 <h3 className="font-semibold text-base">Track Progress</h3>
                 <p className="text-base text-muted-foreground mt-1">Monitor your improvement</p>
               </Card>
+
+
             </div>
 
             {/* Language Selection */}
@@ -524,7 +562,7 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
           </div>
         )}
 
-        {step === "class" && (
+        {/* {step === "class" && (
           <div className="space-y-6 max-w-3xl mx-auto">
             <div className="flex items-center gap-3 sm:gap-4 mb-6">
               <Button variant="outline" onClick={() => setStep("subject")} data-testid="button-back" size="sm">
@@ -551,9 +589,64 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
               onSelect={handleClassSelect}
             />
           </div>
-        )}
+        )} */}
 
-        {step === "difficulty" && (
+
+
+          {step === "class" && (
+            <div className="space-y-6 max-w-3xl mx-auto">
+              {/* Header with back button */}
+              <div className="flex items-center gap-3 sm:gap-4 mb-6">
+                <Button
+                  variant="outline"
+                  onClick={() => setStep("subject")}
+                  data-testid="button-back"
+                  size="sm"
+                >
+                  ← Back
+                </Button>
+                <div>
+                  {/* Heading box */}
+                    <h2 className="text-xl sm:text-2xl font-bold capitalize"> {selectedMode === "science" ? selectedScienceCategory : selectedLanguage} </h2>
+                   
+                  <p className="text-sm text-gray-700 dark:text-gray-300">Step 1 of 4</p>
+                </div>
+              </div>
+
+              {/* Class selection grid with styled labels */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {[
+                  { label: "Class 6", value: 6, light: "from-green-400 to-green-200", dark: "from-green-700 to-green-500" },
+                  { label: "Class 7", value: 7, light: "from-blue-400 to-blue-200", dark: "from-blue-700 to-blue-500" },
+                  { label: "Class 8", value: 8, light: "from-purple-400 to-purple-200", dark: "from-purple-700 to-purple-500" },
+                  { label: "Class 9", value: 9, light: "from-pink-400 to-pink-200", dark: "from-pink-700 to-pink-500" },
+                  { label: "Class 10", value: 10, light: "from-yellow-400 to-yellow-200", dark: "from-yellow-700 to-yellow-500" },
+                ].map((item) => (
+                  <div
+                    key={item.value}
+                    onClick={() => handleClassSelect(item.value)}
+                    className={`
+                      cursor-pointer p-6 rounded-2xl text-center font-semibold
+                      bg-gradient-to-br ${item.light} dark:${item.dark}
+                      text-white
+                      shadow-md dark:shadow-lg
+                      transition-all transform
+                      hover:shadow-xl hover:scale-105
+                      ${selectedClass === item.value ? "ring-4 ring-offset-2 ring-indigo-400 dark:ring-indigo-300" : ""}
+                    `}
+                  >
+                    {item.label}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+
+
+
+          
+        {/* {step === "difficulty" && (
           <div className="space-y-6 max-w-3xl mx-auto">
             <div className="flex items-center gap-3 sm:gap-4 mb-6">
               <Button variant="outline" onClick={() => setStep("class")} data-testid="button-back" size="sm">
@@ -579,7 +672,62 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
             />
           </div>
         )}
+ */}
 
+
+
+          {step === "difficulty" && (
+            <div className="space-y-6 max-w-3xl mx-auto">
+              {/* Header with back button */}
+              <div className="flex items-center gap-3 sm:gap-4 mb-6">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setStep("class")} 
+                  data-testid="button-back" 
+                  size="sm"
+                >
+                  ← Back
+                </Button>
+                <div>
+                  {/* Heading stays exactly the same */}
+                  <h2 className="text-lg sm:text-2xl font-bold capitalize">
+                    {selectedMode === "science" ? selectedScienceCategory : selectedLanguage} - Class {selectedClass}
+                  </h2>
+                  {/* Step indicator */}
+                  <p className="text-sm text-gray-700 dark:text-gray-300">Step 2 of 5</p>
+                </div>
+              </div>
+
+              {/* Difficulty selection grid with styled labels */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {[
+                  { label: "Easy", value: "easy", light: "from-green-400 to-green-200", dark: "from-green-700 to-green-500" },
+                  { label: "Medium", value: "medium", light: "from-yellow-400 to-yellow-200", dark: "from-yellow-700 to-yellow-500" },
+                  { label: "Hard", value: "hard", light: "from-red-400 to-red-200", dark: "from-red-700 to-red-500" },
+                ].map((item) => (
+                  <div
+                    key={item.value}
+                    onClick={() => handleDifficultySelect(item.value)}
+                    className={`
+                      cursor-pointer p-6 rounded-2xl text-center font-semibold
+                      bg-gradient-to-br ${item.light} dark:${item.dark}
+                      text-white dark:text-white
+                      shadow-md dark:shadow-lg
+                      transition-all transform
+                      hover:shadow-xl hover:scale-105
+                      ${selectedDifficulty === item.value ? "ring-4 ring-offset-2 ring-indigo-400 dark:ring-indigo-300" : ""}
+                    `}
+                  >
+                    {item.label}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+
+
+          
         {step === "testType" && (
           <div className="space-y-6 max-w-3xl mx-auto">
             <div className="flex items-center gap-3 sm:gap-4 mb-6">
@@ -677,7 +825,14 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
           </div>
         )}
 
-        {step === "testLength" && (
+
+
+
+
+
+
+
+        {/* {step === "testLength" && (
           <div className="space-y-6 max-w-4xl mx-auto">
             <div className="flex items-center gap-3 sm:gap-4 mb-6">
               <Button 
@@ -742,9 +897,126 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
               </div>
             </Card>
           </div>
-        )}
+        )} */}
 
-        {step === "testMode" && (
+
+
+          {step === "testLength" && (
+            <div className="space-y-6 max-w-4xl mx-auto">
+              <div className="flex items-center gap-3 sm:gap-4 mb-6">
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    setStep(selectedMode === "science" ? "difficulty" : "testType")
+                  }
+                  data-testid="button-back"
+                  size="sm"
+                >
+                  ← Back
+                </Button>
+
+                <div>
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold capitalize">
+                    {selectedMode === "science"
+                      ? selectedScienceCategory
+                      : selectedLanguage}{" "}
+                    - Class {selectedClass} - {selectedDifficulty} -{" "}
+                    {selectedTestType === "mcq-only" ? "MCQ Only" : "Mixed"}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">Step 4 of 5</p>
+                </div>
+              </div>
+
+              <Card className="p-4 sm:p-6 bg-[hsl(200.49deg_56.52%_80.08%)] dark:bg-[hsl(200.49deg_56.52%_20%)]">
+                <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">
+                  Select Test Length
+                </h2>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[
+                    { label: "Quick Test", sublabel: "10 Questions", value: 10, time: "~10 mins" },
+                    { label: "Standard Test", sublabel: "20 Questions", value: 20, time: "~20 mins" },
+                    { label: "Extended Test", sublabel: "30 Questions", value: 30, time: "~30 mins" },
+                    { label: "Full Test", sublabel: "50 Questions", value: 50, time: "~50 mins" },
+                  ].map((item, index) => {
+                    const pastel = [
+                      "bg-[rgb(74_153_255)] dark:bg-[rgb(74_153_255)]",   // Blue
+                      "bg-[rgb(160_88_65)] dark:bg-[rgb(160_88_65)]",
+   // Yellow
+                      "bg-[rgb(177_118_236)] dark:bg-[rgb(177_118_236)]", // Purple
+                      "bg-[rgb(80_230_126)] dark:bg-[rgb(80_230_126)]",   // Green
+                    ];
+
+                    return (
+                      <Card
+                        key={item.value}
+                        className={`
+                          p-6 cursor-pointer transition-all duration-300 
+                          rounded-2xl border shadow-sm
+                          ${pastel[index]}
+                          ${
+                            selectedTestLength === item.value
+                              ? "border-orange-400 dark:border-orange-500 shadow-md scale-[1.02]"
+                              : "border-gray-200 dark:border-gray-700"
+                          }
+                          hover:shadow-md hover:scale-[1.02]
+                        `}
+                        onClick={() => handleTestLengthSelect(item.value)}
+                        data-testid={`card-test-length-${item.value}`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h3 className="font-semibold text-xl">{item.label}</h3>
+                            <p className="text-gray-600 dark:text-gray-300">{item.sublabel}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{item.time}</p>
+
+                            <span
+                              className="
+                                inline-block mt-3
+                                bg-yellow-400 dark:bg-yellow-500 
+                                text-black dark:text-gray-900  
+                                text-xs font-semibold
+                                px-3 py-1 rounded-md
+                              "
+                            >
+                              {item.value} Questions
+                            </span>
+                          </div>
+
+                          {selectedTestLength === item.value && (
+                            <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center shadow">
+                              <svg
+                                className="w-5 h-5 text-white"
+                                fill="none"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path d="M5 13l4 4L19 7"></path>
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </Card>
+            </div>
+          )}
+
+
+
+
+
+          
+
+
+          
+
+        {/* {step === "testMode" && (
           <div className="space-y-6 max-w-3xl mx-auto">
             <div className="flex items-center gap-3 sm:gap-4 mb-6">
               <Button variant="outline" onClick={() => setStep("testLength")} data-testid="button-back" size="sm">
@@ -823,7 +1095,112 @@ export default function Home({ onStartTest, onCustomMCQ, onAnswerEvaluator }: Ho
               </div>
             </Card>
           </div>
-        )}
+        )} */}
+
+
+          {step === "testMode" && (
+            <div className="space-y-6 max-w-4xl mx-auto">
+              <div className="flex items-center gap-3 sm:gap-4 mb-6">
+                <Button
+                  variant="outline"
+                  onClick={() => setStep("testLength")}
+                  data-testid="button-back"
+                  size="sm"
+                >
+                  ← Back
+                </Button>
+                <div>
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold capitalize">
+                    Choose Test Mode
+                  </h2>
+                  <p className="text-sm text-muted-foreground">Step 5 of 6</p>
+                </div>
+              </div>
+
+              <Card className="p-4 sm:p-6 bg-[hsl(200.49deg_56.52%_80.08%)] dark:bg-[hsl(200.49deg_56.52%_20%)]">
+                <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">
+                  Select How You Want to Create Your Test
+                </h2>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[
+                    {
+                      label: "Pre-defined Chapters",
+                      description: "Choose from curated curriculum chapters",
+                      details: "25 chapters covering the complete syllabus",
+                      value: "predefined",
+                      iconBg: "bg-blue-500/10",
+                      iconColor: "text-blue-500",
+                      pastel: "bg-[rgb(74_153_255)] dark:bg-[rgb(74_153_255)]",
+                    },
+                    {
+                      label: "Custom Topics",
+                      description: "Create test with your own topics",
+                      details: "Enter your own topics and customize settings",
+                      value: "custom",
+                      iconBg: "bg-purple-500/10",
+                      iconColor: "text-purple-500",
+                      pastel: "bg-[rgb(177_118_236)] dark:bg-[rgb(177_118_236)]",
+                    },
+                  ].map((item) => (
+                    <Card
+                      key={item.value}
+                      className={`
+                        p-6 cursor-pointer transition-all duration-300 rounded-2xl border shadow-sm
+                        ${item.pastel}
+                        ${
+                          selectedTestMode === item.value
+                            ? "border-orange-400 dark:border-orange-500 shadow-md scale-[1.02]"
+                            : "border-gray-200 dark:border-gray-700"
+                        }
+                        hover:shadow-md hover:scale-[1.02]
+                      `}
+                      onClick={() => handleTestModeSelect(item.value)}
+                      data-testid={`card-test-mode-${item.value}`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className={`inline-flex p-3 rounded-lg ${item.iconBg}`}>
+                            {item.value === "predefined" ? (
+                              <Library className={`w-6 h-6 ${item.iconColor}`} />
+                            ) : (
+                              <Sparkles className={`w-6 h-6 ${item.iconColor}`} />
+                            )}
+                          </div>
+
+                          <h3 className="font-semibold text-xl mt-3">{item.label}</h3>
+                          <p className="text-gray-600 dark:text-gray-300">{item.description}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{item.details}</p>
+                        </div>
+
+                        {selectedTestMode === item.value && (
+                          <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center shadow">
+                            <svg
+                              className="w-5 h-5 text-white"
+                              fill="none"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path d="M5 13l4 4L19 7"></path>
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </Card>
+            </div>
+          )}
+
+
+
+
+
+          
 
         {step === "customTopics" && (
           <div className="space-y-6 max-w-3xl mx-auto">
