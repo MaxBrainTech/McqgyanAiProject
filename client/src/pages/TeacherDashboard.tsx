@@ -223,141 +223,151 @@ export default function TeacherDashboard() {
       const response = await fetch(`/api/teacher/${teacherData.id}/tests/${testId}`);
       const data = await response.json();
       
-      // Create a printable HTML view
-      const printWindow = window.open('', '', 'width=800,height=600');
-      if (!printWindow) {
-        throw new Error("Please allow popups to download PDF");
+      // Create PDF with jsPDF for professional formatting
+      const pdf = new (jsPDF as any)({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margins = { top: 15, bottom: 15, left: 15, right: 15 };
+      const contentWidth = pageWidth - margins.left - margins.right;
+      let yPosition = margins.top;
+      
+      // Helper function to add text with wrapping
+      const addWrappedText = (text: string, x: number, maxWidth: number, fontSize: number, isBold: boolean = false) => {
+        pdf.setFontSize(fontSize);
+        if (isBold) pdf.setFont(undefined, 'bold');
+        else pdf.setFont(undefined, 'normal');
+        
+        const lines = pdf.splitTextToSize(text, maxWidth);
+        pdf.text(lines, x, yPosition);
+        yPosition += lines.length * (fontSize * 0.35) + 2;
+        return lines.length;
+      };
+      
+      // Header with test title
+      pdf.setFillColor(51, 65, 85);
+      pdf.rect(0, 0, pageWidth, 30, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(18);
+      pdf.setFont(undefined, 'bold');
+      pdf.text(data.test.title, margins.left, 12);
+      
+      // Reset text color
+      pdf.setTextColor(0, 0, 0);
+      yPosition = 40;
+      
+      // Test Info Section
+      pdf.setFontSize(10);
+      pdf.setFont(undefined, 'bold');
+      pdf.text('Test Information', margins.left, yPosition);
+      yPosition += 8;
+      
+      pdf.setFont(undefined, 'normal');
+      pdf.setFontSize(9);
+      const testInfo = [
+        `Subject: ${data.test.subject}`,
+        `Class: ${data.test.classLevel}`,
+        `Difficulty: ${data.test.difficulty}`,
+        `Total Questions: ${data.questions.length}`,
+        `Share Code: ${data.test.shareCode}`
+      ];
+      
+      testInfo.forEach(info => {
+        pdf.text(info, margins.left, yPosition);
+        yPosition += 5;
+      });
+      
+      yPosition += 3;
+      
+      // Instructions section if present
+      if (data.test.instructions) {
+        pdf.setFillColor(240, 240, 240);
+        pdf.rect(margins.left, yPosition - 2, contentWidth, 20, 'F');
+        pdf.setFont(undefined, 'bold');
+        pdf.setFontSize(10);
+        pdf.text('Instructions:', margins.left + 3, yPosition + 2);
+        yPosition += 6;
+        
+        pdf.setFont(undefined, 'normal');
+        pdf.setFontSize(9);
+        const instructionLines = pdf.splitTextToSize(data.test.instructions, contentWidth - 6);
+        pdf.text(instructionLines, margins.left + 3, yPosition);
+        yPosition += instructionLines.length * 4 + 3;
       }
       
-      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <title>${data.test.title}</title>
-          <link rel="preconnect" href="https://fonts.googleapis.com">
-          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-          <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&family=Noto+Sans+Devanagari:wght@400;700&display=swap" rel="stylesheet">
-          <style>
-            @page { 
-              margin: 1.5cm;
-              size: A4;
+      // Questions section
+      pdf.setFont(undefined, 'bold');
+      pdf.setFontSize(10);
+      pdf.text('Questions', margins.left, yPosition + 5);
+      yPosition += 10;
+      
+      // Add questions
+      data.questions.forEach((q: any, idx: number) => {
+        // Check if we need a new page
+        if (yPosition > pageHeight - margins.bottom - 20) {
+          pdf.addPage();
+          yPosition = margins.top;
+        }
+        
+        // Question number and text
+        pdf.setFont(undefined, 'bold');
+        pdf.setFontSize(10);
+        pdf.text(`Q${idx + 1}.`, margins.left, yPosition);
+        yPosition += 5;
+        
+        pdf.setFont(undefined, 'normal');
+        pdf.setFontSize(9);
+        const questionLines = pdf.splitTextToSize(q.question, contentWidth - 5);
+        pdf.text(questionLines, margins.left + 5, yPosition);
+        yPosition += questionLines.length * 3.5 + 2;
+        
+        // Options for MCQ
+        if (q.questionType === 'mcq' && q.options) {
+          pdf.setFontSize(8.5);
+          q.options.forEach((opt: string, optIdx: number) => {
+            if (yPosition > pageHeight - margins.bottom - 10) {
+              pdf.addPage();
+              yPosition = margins.top;
             }
-            * { 
-              margin: 0; 
-              padding: 0; 
-              box-sizing: border-box; 
-            }
-            body {
-              font-family: 'Noto Sans', 'Noto Sans Devanagari', Arial, sans-serif;
-              font-size: 12pt;
-              line-height: 1.6;
-              color: #000;
-              padding: 20px;
-            }
-            .header {
-              border-bottom: 2px solid #333;
-              padding-bottom: 15px;
-              margin-bottom: 20px;
-            }
-            h1 {
-              font-size: 20pt;
-              font-weight: bold;
-              margin-bottom: 10px;
-            }
-            .test-info {
-              font-size: 11pt;
-              line-height: 1.8;
-            }
-            .instructions {
-              background: #f5f5f5;
-              padding: 12px;
-              border-left: 4px solid #666;
-              margin: 15px 0;
-              page-break-inside: avoid;
-            }
-            .instructions strong {
-              display: block;
-              margin-bottom: 5px;
-            }
-            .question {
-              margin: 20px 0;
-              page-break-inside: avoid;
-            }
-            .question-number {
-              font-weight: bold;
-              font-size: 13pt;
-              margin-bottom: 8px;
-            }
-            .question-text {
-              margin-bottom: 12px;
-              font-size: 12pt;
-              line-height: 1.8;
-            }
-            .options {
-              margin-left: 20px;
-            }
-            .option {
-              margin: 8px 0;
-              line-height: 1.8;
-            }
-            @media print {
-              body { padding: 0; }
-              .no-print { display: none; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>${data.test.title}</h1>
-            <div class="test-info">
-              <div><strong>Subject:</strong> ${data.test.subject}</div>
-              <div><strong>Class:</strong> ${data.test.classLevel}</div>
-              <div><strong>Difficulty:</strong> ${data.test.difficulty}</div>
-              <div><strong>Total Questions:</strong> ${data.questions.length}</div>
-              <div><strong>Share Code:</strong> ${data.test.shareCode}</div>
-            </div>
-          </div>
-          
-          ${data.test.instructions ? `
-            <div class="instructions">
-              <strong>Instructions:</strong>
-              ${data.test.instructions}
-            </div>
-          ` : ''}
-          
-          ${data.questions.map((q: any, idx: number) => `
-            <div class="question">
-              <div class="question-number">Question ${idx + 1}:</div>
-              <div class="question-text">${q.question}</div>
-              ${q.questionType === 'mcq' && q.options ? `
-                <div class="options">
-                  ${q.options.map((opt: string, optIdx: number) => `
-                    <div class="option">
-                      <strong>${String.fromCharCode(65 + optIdx)}.</strong> ${opt}
-                    </div>
-                  `).join('')}
-                </div>
-              ` : ''}
-            </div>
-          `).join('')}
-          
-          <script>
-            window.onload = function() {
-              setTimeout(function() {
-                window.print();
-                setTimeout(function() { window.close(); }, 100);
-              }, 500);
-            };
-          </script>
-        </body>
-        </html>
-      `);
-      printWindow.document.close();
+            
+            const optionLetter = String.fromCharCode(65 + optIdx);
+            const optionLines = pdf.splitTextToSize(`${optionLetter}. ${opt}`, contentWidth - 8);
+            pdf.text(optionLines, margins.left + 8, yPosition);
+            yPosition += optionLines.length * 3.2 + 1;
+          });
+        }
+        
+        // Model answer for open-ended
+        if (q.questionType === 'open-ended') {
+          pdf.setFont(undefined, 'bold');
+          pdf.setFontSize(8);
+          pdf.text('Answer: _____________________________________', margins.left + 5, yPosition);
+          yPosition += 4;
+        }
+        
+        yPosition += 4;
+      });
+      
+      // Footer on each page
+      const totalPages = pdf.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(8);
+        pdf.setFont(undefined, 'normal');
+        pdf.setTextColor(128, 128, 128);
+        pdf.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 8, { align: 'center' });
+      }
+      
+      // Save the PDF
+      pdf.save(`${data.test.title}_${data.test.shareCode}.pdf`);
       
       toast({
-        title: "Print Dialog Opened",
-        description: "Choose 'Save as PDF' to download the question paper",
+        title: "Success!",
+        description: "Question paper downloaded as PDF",
       });
     } catch (error: any) {
       toast({
