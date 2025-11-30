@@ -135,6 +135,22 @@ interface AnswerEvaluationParams {
   difficulty: string;
 }
 
+// Helper function to check if two numerical values are approximately equal
+function areNumericallyClose(value1: string, value2: string): boolean {
+  // Extract numbers from strings (e.g., "20.4 m" -> "20.4")
+  const num1Match = value1.match(/[-+]?\d*\.?\d+/);
+  const num2Match = value2.match(/[-+]?\d*\.?\d+/);
+  
+  if (!num1Match || !num2Match) return false;
+  
+  const num1 = parseFloat(num1Match[0]);
+  const num2 = parseFloat(num2Match[0]);
+  
+  // Allow 2% tolerance for numerical answers
+  const tolerance = Math.max(Math.abs(num1) * 0.02, 0.05);
+  return Math.abs(num1 - num2) <= tolerance;
+}
+
 // Helper function to verify answer correctness independently
 async function verifyAnswer(question: string, proposedAnswer: string, mode: string, gptModel?: string): Promise<{
   isValid: boolean;
@@ -152,16 +168,16 @@ Proposed Correct Answer: ${proposedAnswer}
 
 Your task:
 1. Re-solve this question COMPLETELY INDEPENDENTLY without being influenced by the proposed answer
-2. ${mode === 'science' ? 'For numerical/calculation questions: Show ALL calculation steps explicitly (e.g., Speed = Distance ÷ Time = 60 km ÷ 1.5 h = 40 km/h). Verify units are correct.' : 'Verify the linguistic accuracy and completeness.'}
+2. ${mode === 'science' ? 'For numerical/calculation questions: Show ALL calculation steps explicitly (e.g., Speed = Distance ÷ Time = 60 km ÷ 1.5 h = 40 km/h). Verify units are correct. Allow 2% tolerance for numerical answers due to rounding.' : 'Verify the linguistic accuracy and completeness.'}
 3. Compare your independent solution to the proposed answer
-4. Determine if the proposed answer is EXACTLY CORRECT (not just close)
-5. If the proposed answer is WRONG, INCOMPLETE, or has WRONG UNITS, mark isValid as false
+4. Mark isValid as false ONLY if the answer is fundamentally WRONG, INCOMPLETE, or has WRONG UNITS - NOT for minor rounding differences
+5. Accept answers within 2% tolerance for numerical values (e.g., 20.4 vs 20.41 is ACCEPTABLE)
 
 CRITICAL: For math/physics problems, you MUST show your complete calculation step-by-step.
 
 Return JSON format:
 {
-  "isValid": <true ONLY if proposed answer is completely correct, false otherwise>,
+  "isValid": <true if proposed answer is essentially correct (allowing for rounding tolerance), false only if fundamentally wrong>,
   "explanation": "<detailed reasoning for your verification>",
   "calculationSteps": "<for science: show complete step-by-step calculation>",
   "alternativeAnswer": "<if isValid is false, provide the CORRECT answer here>"
@@ -202,8 +218,18 @@ Return JSON format:
 
     const result = JSON.parse(jsonContent);
     
-    console.log(`[VERIFY] Question verification: isValid=${result.isValid}, Model=${verificationModel}`);
-    if (!result.isValid) {
+    // Additional check: if AI says invalid but values are numerically close, accept it
+    let isValid = result.isValid === true;
+    if (!isValid && result.alternativeAnswer && mode === 'science') {
+      // Check if proposed and alternative answers are numerically close
+      if (areNumericallyClose(proposedAnswer, result.alternativeAnswer)) {
+        isValid = true;
+        console.log(`[VERIFY] Accepting answer due to numerical tolerance (within 2%)`);
+      }
+    }
+    
+    console.log(`[VERIFY] Question verification: isValid=${isValid}, Model=${verificationModel}`);
+    if (!isValid) {
       console.warn(`[VERIFY WARNING] Answer FAILED verification!`);
       console.warn(`[VERIFY] Proposed: "${proposedAnswer}"`);
       console.warn(`[VERIFY] Correct: "${result.alternativeAnswer}"`);
@@ -211,7 +237,7 @@ Return JSON format:
     }
     
     return {
-      isValid: result.isValid === true,
+      isValid: isValid,
       explanation: result.explanation || "No explanation provided",
       alternativeAnswer: result.alternativeAnswer,
       calculationSteps: result.calculationSteps
