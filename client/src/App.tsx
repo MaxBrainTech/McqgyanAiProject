@@ -1,221 +1,93 @@
-// import { useState } from "react";
-// import { QueryClientProvider } from "@tanstack/react-query";
-// import { queryClient } from "./lib/queryClient";
-// import { Toaster } from "@/components/ui/toaster";
-// import { TooltipProvider } from "@/components/ui/tooltip";
-// import Header from "@/components/Header";
-// import Home from "@/pages/Home";
-// import TestPage from "@/pages/TestPage";
-// import TeacherAuth from "@/pages/TeacherAuth";
-// import TeacherDashboard from "@/pages/TeacherDashboard";
-// import CustomTestPage from "@/pages/CustomTestPage";
-// import AnswerSheetEvaluator from "@/pages/AnswerSheetEvaluator";
+import { Link } from "react-router-dom";
+import { Languages, Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Youtube } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-// function App() {
-//   const [currentPage, setCurrentPage] = useState<"home" | "test" | "teacher-auth" | "teacher-dashboard" | "custom-test" | "answer-evaluator">("home");
-//   const [testConfig, setTestConfig] = useState<any>(null);
-//   const [teacherData, setTeacherData] = useState<any>(null);
+export default function Footer() {
+  const currentYear = new Date().getFullYear();
 
-//   const handleStartTest = (config: any) => {
-//     setTestConfig(config);
-//     setCurrentPage("test");
-//   };
-
-//   const handleExitTest = () => {
-//     setCurrentPage("home");
-//     setTestConfig(null);
-//   };
-
-//   const handleTeacherLogin = () => {
-//     setCurrentPage("teacher-auth");
-//   };
-
-//   const handleTeacherSuccess = (data: any) => {
-//     setTeacherData(data);
-//     setCurrentPage("teacher-dashboard");
-//   };
-
-//   const handleTeacherLogout = () => {
-//     setTeacherData(null);
-//     setCurrentPage("home");
-//   };
-
-//   const handleStudentTest = () => {
-//     setCurrentPage("custom-test");
-//   };
-
-//   const handleBackToHome = () => {
-//     setCurrentPage("home");
-//   };
-
-//   const handleAnswerEvaluator = () => {
-//     setCurrentPage("answer-evaluator");
-//   };
-
-//   const renderPage = () => {
-//     switch (currentPage) {
-//       case "home":
-//         return (
-//           <Home
-//             onStartTest={handleStartTest}
-//             onCustomMCQ={{
-//               teacher: handleTeacherLogin,
-//               student: handleStudentTest,
-//             }}
-//             onAnswerEvaluator={handleAnswerEvaluator}
-//           />
-//         );
-//       case "test":
-//         return <TestPage config={testConfig} onExit={handleExitTest} />;
-//       case "teacher-auth":
-//         return <TeacherAuth onSuccess={handleTeacherSuccess} />;
-//       case "teacher-dashboard":
-//         return <TeacherDashboard teacherData={teacherData} onLogout={handleTeacherLogout} />;
-//       case "custom-test":
-//         return <CustomTestPage onBack={handleBackToHome} />;
-//       case "answer-evaluator":
-//         return <AnswerSheetEvaluator />;
-//       default:
-//         return <Home onStartTest={handleStartTest} onCustomMCQ={{ teacher: handleTeacherLogin, student: handleStudentTest }} onAnswerEvaluator={handleAnswerEvaluator} />;
-//     }
-//   };
-
-//   return (
-//     <QueryClientProvider client={queryClient}>
-//       <TooltipProvider>
-//         <div className="min-h-screen bg-background">
-//           {currentPage === "home" && <Header />}
-//           {renderPage()}
-//         </div>
-//         <Toaster />
-//       </TooltipProvider>
-//     </QueryClientProvider>
-//   );
-// }
-
-// export default App;
-
-
-
-// App.tsx
-// import { BrowserRouter, Routes, Route } from "react-router-dom";
-
-// import { QueryClientProvider } from "@tanstack/react-query";
-// import { queryClient } from "./lib/queryClient";
-// import { Toaster } from "@/components/ui/toaster";
-// import { TooltipProvider } from "@/components/ui/tooltip";
-
-
-// import Header from "@/components/Header";
-
-// // Navigation Pages
-// import Home from "@/pages/Home";
-// import Features from "@/pages/Features";
-// import Pricing from "@/pages/Pricing";
-// import Contact from "@/pages/Contact";
-// import Login from "@/pages/Login";
-// import Footer from "@/components/Footer";
-
-
-// // MCQ System Pages
-// import TestPage from "@/pages/TestPage";
-// import TeacherAuth from "@/pages/TeacherAuth";
-// import TeacherDashboard from "@/pages/TeacherDashboard";
-// import CustomTestPage from "@/pages/CustomTestPage";
-// import AnswerSheetEvaluator from "@/pages/AnswerSheetEvaluator";
-// import PricingPage from "@/pages/PricingPage";
-
-// export default function App() {
-//   return (
-//     <QueryClientProvider client={queryClient}>
-//       <TooltipProvider>
-//         <BrowserRouter>
-//           <div className="min-h-screen bg-background">
-//             <Header />
-
-//             <Routes>
-//               {/* Navbar Pages */}
-//               <Route path="/" element={<Home />} />
-//               <Route path="/features" element={<Features />} />
-//               <Route path="/pricing" element={<Pricing />} />
-//               <Route path="/contact" element={<Contact />} />
-//               <Route path="/login" element={<Login />} />
-//               <Route path="/footer" element={<Footer />} />
-
-//               {/* MCQ System Pages */}
-//               <Route path="/test" element={<TestPage />} />
-//               <Route path="/teacher-auth" element={<TeacherAuth />} />
-//               <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
-//               <Route path="/custom-test" element={<CustomTestPage />} />
-//               <Route path="/answer-evaluator" element={<AnswerSheetEvaluator />} />
-//             </Routes>
-//             <Footer />
-//           </div>
-//           <Toaster />
-//         </BrowserRouter>
-//       </TooltipProvider>
-//     </QueryClientProvider>
-//   );
-// }
-
-
-
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "./lib/queryClient";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import ScrollToTop from "@/components/ScrollToTop";
-
-// Navigation Pages
-import Home from "@/pages/Home";
-import Features from "@/pages/Features";
-import PricingPage from "@/pages/PricingPage";
-import Contact from "@/pages/Contact";
-import Login from "@/pages/Login";
-
-// MCQ System Pages
-import TestPage from "@/pages/TestPage";
-import TeacherAuth from "@/pages/TeacherAuth";
-import TeacherDashboard from "@/pages/TeacherDashboard";
-import CustomTestPage from "@/pages/CustomTestPage";
-import AnswerSheetEvaluator from "@/pages/AnswerSheetEvaluator";
-
-export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <BrowserRouter>
-          <ScrollToTop />
-          <div className="min-h-screen flex flex-col bg-background">
-            <Header />
-
-            <main className="flex-1">
-              <Routes>
-                {/* Navbar Pages */}
-                <Route path="/" element={<Home />} />
-                <Route path="/features" element={<Features />} />
-                <Route path="/pricing" element={<PricingPage />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/login" element={<Login />} />
-
-                {/* MCQ System Pages */}
-                <Route path="/test" element={<TestPage />} />
-                <Route path="/teacher-auth" element={<TeacherAuth />} />
-                <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
-                <Route path="/custom-test" element={<CustomTestPage />} />
-                <Route path="/answer-evaluator" element={<AnswerSheetEvaluator />} />
-              </Routes>
-            </main>
-
-            <Footer />
+    <footer className="bg-gray-900 dark:bg-black text-gray-300 py-12 sm:py-16 mt-20">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 mb-12 pb-12 border-b border-gray-800">
+          <div className="lg:col-span-1">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-2 rounded-lg">
+                <Languages className="w-5 h-5 text-white" />
+              </div>
+              <h3 className="text-lg font-bold text-white">MCQGyaan AI</h3>
+            </div>
+            <p className="text-sm text-gray-400 mb-4">
+              Empowering students with AI-powered learning for CBSE education.
+            </p>
+            <p className="text-xs text-gray-500">© {currentYear} MaxBrain Technologies. All rights reserved.</p>
           </div>
-          <Toaster />
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+
+          <div>
+            <h4 className="font-bold text-white mb-4">Product</h4>
+            <ul className="space-y-2 text-sm">
+              <li><Link to="/" className="hover:text-blue-400 transition">Home</Link></li>
+              <li><Link to="/features" className="hover:text-blue-400 transition">Features</Link></li>
+              <li><Link to="/pricing" className="hover:text-blue-400 transition">Pricing</Link></li>
+              <li><Link to="/about-us" className="hover:text-blue-400 transition">About Us</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-bold text-white mb-4">Support</h4>
+            <ul className="space-y-2 text-sm">
+              <li><Link to="/contact" className="hover:text-blue-400 transition">Contact Us</Link></li>
+              <li><a href="mailto:support@mcqgyaan.com" className="hover:text-blue-400 transition">Email Support</a></li>
+              <li><a href="tel:+919950143179" className="hover:text-blue-400 transition">Call Us</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-bold text-white mb-4">Legal</h4>
+            <ul className="space-y-2 text-sm">
+              <li><Link to="/terms" className="hover:text-blue-400 transition">Terms</Link></li>
+              <li><Link to="/privacy" className="hover:text-blue-400 transition">Privacy</Link></li>
+              <li><Link to="/refund-policy" className="hover:text-blue-400 transition">Refund</Link></li>
+              <li><Link to="/disclaimer" className="hover:text-blue-400 transition">Disclaimer</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-bold text-white mb-4">Contact</h4>
+            <ul className="space-y-3 text-sm">
+              <li className="flex items-start gap-2">
+                <Mail className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-400" />
+                <a href="mailto:support@mcqgyaan.com" className="hover:text-blue-400 transition">support@mcqgyaan.com</a>
+              </li>
+              <li className="flex items-start gap-2">
+                <Phone className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-400" />
+                <a href="tel:+919950143179" className="hover:text-blue-400 transition">+91 99501 43179</a>
+              </li>
+              <li className="flex items-start gap-2">
+                <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-400" />
+                <span>Jaipur, India</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <p className="text-sm text-gray-500">Free until Dec 31, 2025 • Made with passion for education</p>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-blue-400" data-testid="button-facebook">
+              <Facebook className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-blue-400" data-testid="button-twitter">
+              <Twitter className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-blue-400" data-testid="button-linkedin">
+              <Linkedin className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-blue-400" data-testid="button-youtube">
+              <Youtube className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </footer>
   );
 }
