@@ -123,6 +123,7 @@
 // import TeacherDashboard from "@/pages/TeacherDashboard";
 // import CustomTestPage from "@/pages/CustomTestPage";
 // import AnswerSheetEvaluator from "@/pages/AnswerSheetEvaluator";
+// import PricingPage from "@/pages/PricingPage";
 
 // export default function App() {
 //   return (
@@ -171,7 +172,7 @@ import Footer from "@/components/Footer";
 // Navigation Pages
 import Home from "@/pages/Home";
 import Features from "@/pages/Features";
-import Pricing from "@/pages/Pricing";
+import PricingPage from "@/pages/PricingPage";
 import Contact from "@/pages/Contact";
 import Login from "@/pages/Login";
 
@@ -195,7 +196,7 @@ export default function App() {
                 {/* Navbar Pages */}
                 <Route path="/" element={<Home />} />
                 <Route path="/features" element={<Features />} />
-                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/login" element={<Login />} />
 
