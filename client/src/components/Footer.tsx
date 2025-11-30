@@ -1,9 +1,14 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Languages, Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Youtube } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const navigate = useNavigate();
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+  };
 
   return (
     <footer className="bg-gray-900 dark:bg-black text-gray-300 py-12 sm:py-16 mt-20">
@@ -25,17 +30,17 @@ export default function Footer() {
           <div>
             <h4 className="font-bold text-white mb-4">Product</h4>
             <ul className="space-y-2 text-sm">
-              <li><Link to="/" className="hover:text-blue-400 transition">Home</Link></li>
-              <li><Link to="/features" className="hover:text-blue-400 transition">Features</Link></li>
-              <li><Link to="/pricing" className="hover:text-blue-400 transition">Pricing</Link></li>
-              <li><Link to="/about-us" className="hover:text-blue-400 transition">About Us</Link></li>
+              <li><button onClick={() => handleNavigation("/")} className="hover:text-blue-400 transition">Home</button></li>
+              <li><button onClick={() => handleNavigation("/features")} className="hover:text-blue-400 transition">Features</button></li>
+              <li><button onClick={() => handleNavigation("/pricing")} className="hover:text-blue-400 transition">Pricing</button></li>
+              <li><button onClick={() => handleNavigation("/about-us")} className="hover:text-blue-400 transition">About Us</button></li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-bold text-white mb-4">Support</h4>
             <ul className="space-y-2 text-sm">
-              <li><Link to="/contact" className="hover:text-blue-400 transition">Contact Us</Link></li>
+              <li><button onClick={() => handleNavigation("/contact")} className="hover:text-blue-400 transition">Contact Us</button></li>
               <li><a href="mailto:support@mcqgyaan.com" className="hover:text-blue-400 transition">Email Support</a></li>
               <li><a href="tel:+919950143179" className="hover:text-blue-400 transition">Call Us</a></li>
             </ul>
@@ -44,10 +49,10 @@ export default function Footer() {
           <div>
             <h4 className="font-bold text-white mb-4">Legal</h4>
             <ul className="space-y-2 text-sm">
-              <li><Link to="/terms" className="hover:text-blue-400 transition">Terms</Link></li>
-              <li><Link to="/privacy" className="hover:text-blue-400 transition">Privacy</Link></li>
-              <li><Link to="/refund-policy" className="hover:text-blue-400 transition">Refund</Link></li>
-              <li><Link to="/disclaimer" className="hover:text-blue-400 transition">Disclaimer</Link></li>
+              <li><button onClick={() => handleNavigation("/terms")} className="hover:text-blue-400 transition">Terms</button></li>
+              <li><button onClick={() => handleNavigation("/privacy")} className="hover:text-blue-400 transition">Privacy</button></li>
+              <li><button onClick={() => handleNavigation("/refund-policy")} className="hover:text-blue-400 transition">Refund</button></li>
+              <li><button onClick={() => handleNavigation("/disclaimer")} className="hover:text-blue-400 transition">Disclaimer</button></li>
             </ul>
           </div>
 
