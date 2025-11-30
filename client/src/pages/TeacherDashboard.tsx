@@ -21,7 +21,7 @@ import autoTable from "jspdf-autotable";
 const testSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
   subject: z.string().min(1, "Subject is required"),
-  classLevel: z.number().min(6).max(10),
+  classLevel: z.number().min(6).max(12),
   difficulty: z.enum(["easy", "medium", "hard"]),
   topic1: z.string().min(3, "Topic 1 is required (minimum 3 characters)"),
   topic2: z.string().optional(),
@@ -29,7 +29,7 @@ const testSchema = z.object({
   topic4: z.string().optional(),
   numQuestions: z.number().min(5).max(50),
   testType: z.enum(["mcq", "open-ended", "mixed"]),
-  gptModel: z.enum(["gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"]),
+  gptModel: z.enum(["gpt-4o", "gpt-4o-mini"]),
   instructions: z.string().optional(),
 });
 
@@ -39,13 +39,17 @@ const SUBJECTS = [
   { value: "Physics", label: "Physics" },
   { value: "Chemistry", label: "Chemistry" },
   { value: "Biology", label: "Biology" },
+  { value: "English", label: "English" },
   { value: "Hindi", label: "Hindi" },
   { value: "Marathi", label: "Marathi" },
   { value: "Kannada", label: "Kannada" },
+  { value: "Sanskrit", label: "Sanskrit" },
+  { value: "Mathematics", label: "Mathematics" },
   { value: "French", label: "French" },
   { value: "German", label: "German" },
   { value: "Spanish", label: "Spanish" },
   { value: "General", label: "General Science" },
+  { value: "Social Studies", label: "Social Studies" },
 ];
 
 export default function TeacherDashboard() {
@@ -89,7 +93,7 @@ export default function TeacherDashboard() {
     defaultValues: {
       title: "",
       subject: "",
-      classLevel: 7,
+      classLevel: 9,
       difficulty: "medium",
       topic1: "",
       topic2: "",
@@ -97,7 +101,7 @@ export default function TeacherDashboard() {
       topic4: "",
       numQuestions: 10,
       testType: "mcq",
-      gptModel: "gpt-4o",
+      gptModel: "gpt-4o-mini",
       instructions: "",
     },
   });
@@ -469,7 +473,7 @@ export default function TeacherDashboard() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {[6, 7, 8, 9, 10].map((cls) => (
+                              {[6, 7, 8, 9, 10, 11, 12].map((cls) => (
                                 <SelectItem key={cls} value={cls.toString()}>
                                   Class {cls}
                                 </SelectItem>
@@ -562,13 +566,10 @@ export default function TeacherDashboard() {
                             </FormControl>
                             <SelectContent>
                               <SelectItem value="gpt-4o">
-                                GPT-4o (Best Quality) ⭐
+                                GPT-4o (Best Quality - Premium) ⭐
                               </SelectItem>
                               <SelectItem value="gpt-4o-mini">
                                 GPT-4o Mini (Fast & Affordable - Recommended) ⚡
-                              </SelectItem>
-                              <SelectItem value="gpt-3.5-turbo">
-                                GPT-3.5 Turbo (Cheapest) 💰
                               </SelectItem>
                             </SelectContent>
                           </Select>

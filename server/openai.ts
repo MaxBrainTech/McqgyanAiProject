@@ -96,6 +96,20 @@ const CBSE_CLASS_GUIDELINES = {
     cognitiveLevel: "synthesis, creative problem-solving",
     marks: "4-5 marks per question",
     examples: "design, formulate, construct, hypothesize"
+  },
+  11: {
+    vocabulary: "specialized technical vocabulary, formal academic language",
+    bloomLevel: "Evaluate, Create, Synthesize (advanced higher-order thinking)",
+    cognitiveLevel: "complex problem-solving, research-level analysis, interdisciplinary connections",
+    marks: "5-6 marks per question, Board Exams format",
+    examples: "synthesize, integrate, critique, formulate hypothesis"
+  },
+  12: {
+    vocabulary: "advanced technical and domain-specific terminology",
+    bloomLevel: "Create, Synthesize, Evaluate (expert-level thinking)",
+    cognitiveLevel: "comprehensive analysis, theoretical framework application, original thinking",
+    marks: "5-6 marks per question, Board Exams & competitive exam format",
+    examples: "design experiment, formulate theory, evaluate paradigm, construct framework"
   }
 };
 
