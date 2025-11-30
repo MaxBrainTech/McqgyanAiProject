@@ -1,4 +1,4 @@
-import { Check, Zap, Brain, Users, Sparkles, Award, BookOpen, BarChart3, Target, Shield, Lightbulb, Settings } from "lucide-react";
+import { Check, Zap, Brain, Users, Sparkles, Award, BookOpen, BarChart3, Target, Shield, Lightbulb, Settings, Languages, Atom, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
