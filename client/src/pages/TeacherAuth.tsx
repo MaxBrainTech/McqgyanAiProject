@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -26,11 +27,8 @@ const registerSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>;
 type RegisterForm = z.infer<typeof registerSchema>;
 
-interface TeacherAuthProps {
-  onSuccess: (teacherData: any) => void;
-}
-
-export default function TeacherAuth({ onSuccess }: TeacherAuthProps) {
+export default function TeacherAuth() {
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const { toast } = useToast();
 
@@ -63,7 +61,7 @@ export default function TeacherAuth({ onSuccess }: TeacherAuthProps) {
         description: "Welcome back, teacher!",
       });
 
-      onSuccess(response);
+      navigate('/teacher-dashboard', { state: { teacherData: response } });
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -83,7 +81,7 @@ export default function TeacherAuth({ onSuccess }: TeacherAuthProps) {
         description: "Account created successfully!",
       });
 
-      onSuccess(response);
+      navigate('/teacher-dashboard', { state: { teacherData: response } });
     } catch (error: any) {
       toast({
         variant: "destructive",

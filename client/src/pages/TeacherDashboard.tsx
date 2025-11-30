@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -34,11 +35,6 @@ const testSchema = z.object({
 
 type TestForm = z.infer<typeof testSchema>;
 
-interface TeacherDashboardProps {
-  teacherData: any;
-  onLogout: () => void;
-}
-
 const SUBJECTS = [
   { value: "Physics", label: "Physics" },
   { value: "Chemistry", label: "Chemistry" },
@@ -52,7 +48,33 @@ const SUBJECTS = [
   { value: "General", label: "General Science" },
 ];
 
-export default function TeacherDashboard({ teacherData, onLogout }: TeacherDashboardProps) {
+export default function TeacherDashboard() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const teacherData = location.state?.teacherData;
+  
+  // Redirect to teacher auth if no teacher data
+  useEffect(() => {
+    if (!teacherData) {
+      navigate('/teacher-auth');
+    }
+  }, [teacherData, navigate]);
+  
+  // Return loading state while redirecting if no teacher data
+  if (!teacherData) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-base sm:text-lg font-semibold text-primary">Redirecting to login...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  const handleLogout = () => {
+    navigate('/custom-mcq');
+  };
   const [showForm, setShowForm] = useState(false);
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
   const [showQuestionsDialog, setShowQuestionsDialog] = useState(false);
@@ -357,7 +379,7 @@ export default function TeacherDashboard({ teacherData, onLogout }: TeacherDashb
           </div>
           <Button 
             variant="outline" 
-            onClick={onLogout}
+            onClick={handleLogout}
             data-testid="button-logout"
           >
             <LogOut className="h-4 w-4 mr-2" />

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,11 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-interface CustomTestPageProps {
-  onBack: () => void;
-}
-
-export default function CustomTestPage({ onBack }: CustomTestPageProps) {
+export default function CustomTestPage() {
+  const navigate = useNavigate();
   const [shareCode, setShareCode] = useState("");
   const [testStarted, setTestStarted] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -424,7 +422,7 @@ export default function CustomTestPage({ onBack }: CustomTestPageProps) {
               >
                 {isLoading ? "Loading..." : "Start Test"}
               </Button>
-              <Button variant="outline" onClick={onBack} data-testid="button-back">
+              <Button variant="outline" onClick={() => navigate('/')} data-testid="button-back">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>
