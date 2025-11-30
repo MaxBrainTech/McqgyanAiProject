@@ -14,6 +14,11 @@ export default function TestPage() {
   const navigate = useNavigate();
   const config = location.state?.config;
   
+  // Scroll to top when page loads
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+  
   // Immediate guard: redirect if no config
   useEffect(() => {
     if (!config) {

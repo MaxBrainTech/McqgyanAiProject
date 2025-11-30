@@ -91,6 +91,13 @@ export default function Home() {
     });
   };
 
+  // Helper function to scroll to top smoothly
+  const scrollToTop = () => {
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 50);
+  };
+
   const handleModeSelect = (mode: string) => {
     setSelectedMode(mode);
     if (mode === "custom") {
@@ -98,21 +105,25 @@ export default function Home() {
     } else {
       setStep("subject");
     }
+    scrollToTop();
   };
 
   const handleLanguageSelect = (language: string) => {
     setSelectedLanguage(language);
     setStep("class");
+    scrollToTop();
   };
 
   const handleScienceCategorySelect = (category: string) => {
     setSelectedScienceCategory(category);
     setStep("class");
+    scrollToTop();
   };
 
   const handleClassSelect = (classNum: string | number) => {
     setSelectedClass(classNum as number);
     setStep("difficulty");
+    scrollToTop();
   };
 
   const handleDifficultySelect = (difficulty: string | number) => {
@@ -124,16 +135,19 @@ export default function Home() {
     } else {
       setStep("testType");
     }
+    scrollToTop();
   };
 
   const handleTestTypeSelect = (testType: string) => {
     setSelectedTestType(testType);
     setStep("testLength");
+    scrollToTop();
   };
 
   const handleTestLengthSelect = (length: string | number) => {
     setSelectedTestLength(length as number);
     setStep("testMode");
+    scrollToTop();
   };
   
   const handleTestModeSelect = (mode: string) => {
@@ -143,6 +157,7 @@ export default function Home() {
     } else {
       setStep("customTopics");
     }
+    scrollToTop();
   };
   
   const handleCustomTestGenerate = async () => {
@@ -237,6 +252,7 @@ export default function Home() {
     setSelectedScienceCategory("");
     setSelectedClass(0);
     setSelectedDifficulty("");
+    scrollToTop();
   };
 
   return (
