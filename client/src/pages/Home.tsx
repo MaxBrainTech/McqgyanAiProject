@@ -224,46 +224,77 @@ export default function Home() {
         <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-secondary/5 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2"></div>
       </div>
 
-      {/* Hero Header */}
-        <div
-          className="
-            relative 
-            border-b 
-            bg-white/40 
-            dark:bg-black/20 
-            backdrop-blur-sm
-            bg-[url('/mock.jpg')]
-            bg-cover
-            bg-center
-            bg-no-repeat
-            transition-all 
-            duration-300 
-            hover:bg-white/60 
-            dark:hover:bg-black/40 
-            hover:shadow-lg 
-            hover:shadow-blue-500/20 
-            hover:-translate-y-1
-          "
-        >
+      {/* Hero Header - Premium Design */}
+      <div className="relative bg-gradient-to-br from-blue-600 via-purple-600 to-blue-700 dark:from-gray-900 dark:via-gray-800 dark:to-black overflow-hidden">
+        {/* Animated background shapes */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full blur-3xl transform translate-x-1/4 -translate-y-1/4"></div>
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-white/5 rounded-full blur-3xl transform -translate-x-1/4 translate-y-1/4"></div>
+        </div>
 
-        <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 lg:py-16 max-w-6xl">
-          <div className="text-center space-y-3 sm:space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full border border-primary/20">
-              <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-              <span className="text-base font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Language Learning Platform</span>
-            </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold">
-              <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-                MCQGyaan AI
-              </span>
-            </h1>
-            <div className="text-base sm:text-lg md:text-xl text-foreground/80 max-w-3xl mx-auto px-4">
-              <p className="mb-3">Master French, German, Spanish, Hindi, Marathi, and Kannada with AI-powered adaptive testing</p>
-              <div className="font-semibold text-foreground text-base flex flex-wrap items-center justify-center gap-3">
-                <Badge variant="secondary" className="text-base">6 Languages</Badge>
-                <Badge variant="secondary" className="text-base">25 chapters each</Badge>
-                <Badge variant="secondary" className="text-base">Real-time AI feedback</Badge>
+        <div className="relative container mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-24 max-w-7xl">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Left Content */}
+            <div className="text-white space-y-6 sm:space-y-8">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full border border-white/30">
+                <GraduationCap className="w-5 h-5" />
+                <span className="text-sm font-semibold">AI-Powered Learning Platform</span>
               </div>
+
+              <div className="space-y-3 sm:space-y-4">
+                <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold leading-tight">
+                  Master Languages & Ace Science
+                </h1>
+                <p className="text-lg sm:text-xl text-white/90 max-w-xl">
+                  Free AI-powered mock tests for CBSE students. Learn 6 languages, master 4 science subjects, and achieve your academic goals.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <Badge variant="secondary" className="text-sm font-semibold bg-white/20 text-white border-white/30 hover:bg-white/30">✓ 6 Languages</Badge>
+                <Badge variant="secondary" className="text-sm font-semibold bg-white/20 text-white border-white/30 hover:bg-white/30">✓ 4 Science Subjects</Badge>
+                <Badge variant="secondary" className="text-sm font-semibold bg-white/20 text-white border-white/30 hover:bg-white/30">✓ Free Until Dec 31</Badge>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                <Button 
+                  onClick={() => handleModeSelect("language")}
+                  className="bg-white text-blue-600 hover:bg-blue-50 font-bold py-6 px-8 text-lg rounded-lg transition-all transform hover:scale-105"
+                >
+                  Start Learning Now
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => navigate("/features")}
+                  className="border-white text-white hover:bg-white/10 font-bold py-6 px-8 text-lg rounded-lg"
+                >
+                  Explore Features
+                </Button>
+              </div>
+            </div>
+
+            {/* Right Stats */}
+            <div className="hidden lg:grid grid-cols-2 gap-6">
+              <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6 text-white text-center hover:bg-white/20 transition">
+                <Sparkles className="w-10 h-10 mx-auto mb-2 text-yellow-300" />
+                <p className="text-3xl font-bold">10,000+</p>
+                <p className="text-white/80">AI-Generated Questions</p>
+              </Card>
+              <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6 text-white text-center hover:bg-white/20 transition">
+                <Trophy className="w-10 h-10 mx-auto mb-2 text-orange-300" />
+                <p className="text-3xl font-bold">5,000+</p>
+                <p className="text-white/80">Active Students</p>
+              </Card>
+              <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6 text-white text-center hover:bg-white/20 transition">
+                <BookOpen className="w-10 h-10 mx-auto mb-2 text-green-300" />
+                <p className="text-3xl font-bold">150+</p>
+                <p className="text-white/80">Chapters & Topics</p>
+              </Card>
+              <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6 text-white text-center hover:bg-white/20 transition">
+                <Zap className="w-10 h-10 mx-auto mb-2 text-blue-300" />
+                <p className="text-3xl font-bold">Real-Time</p>
+                <p className="text-white/80">AI Feedback</p>
+              </Card>
             </div>
           </div>
         </div>
