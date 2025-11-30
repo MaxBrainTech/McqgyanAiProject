@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Languages, BookOpen, Sparkles, Trophy, RotateCcw, GraduationCap, Book, Library, ScrollText, Atom, Beaker, Dna, Zap, Settings2, Loader2 } from "lucide-react";
 import LanguageCard from "@/components/LanguageCard";
 import SelectionGrid from "@/components/SelectionGrid";
@@ -16,6 +16,7 @@ import { apiRequest } from "@/lib/queryClient";
 
 export default function Home() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [step, setStep] = useState<"mode" | "subject" | "class" | "difficulty" | "testType" | "testLength" | "testMode" | "chapter" | "customTopics" | "custom">("mode");
   const [selectedMode, setSelectedMode] = useState<string>("");
   const [selectedLanguage, setSelectedLanguage] = useState<string>("");
@@ -33,6 +34,19 @@ export default function Home() {
   const [selectedBoard, setSelectedBoard] = useState<string>("CBSE");
   const [isGeneratingTest, setIsGeneratingTest] = useState<boolean>(false);
   const [chapters, setChapters] = useState<Array<{ id: number; title: string; description: string }>>([]);
+
+  // Reset to mode screen when component mounts/location changes to home
+  useEffect(() => {
+    setStep("mode");
+    setSelectedMode("");
+    setSelectedLanguage("");
+    setSelectedScienceCategory("");
+    setSelectedClass(0);
+    setSelectedDifficulty("");
+    setSelectedTestType("");
+    setSelectedTestLength(0);
+    setSelectedTestMode("");
+  }, [location.pathname]);
 
   // Load chapters when subject is selected
   useEffect(() => {
