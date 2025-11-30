@@ -46,6 +46,16 @@ export default function Home() {
     setSelectedTestType("");
     setSelectedTestLength(0);
     setSelectedTestMode("");
+    
+    // Scroll to the mode selection section after state updates
+    setTimeout(() => {
+      const modeSection = document.querySelector('[data-section="mode-selection"]');
+      if (modeSection) {
+        modeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 100);
   }, [location.pathname]);
 
   // Load chapters when subject is selected
@@ -314,7 +324,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-6xl">
+      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-6xl" data-section="mode-selection">
         {step === "mode" && (
           <div className="space-y-6 sm:space-y-8">
             {/* Mode Selection */}
