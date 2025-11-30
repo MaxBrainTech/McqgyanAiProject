@@ -1,92 +1,93 @@
 import { Link } from "react-router-dom";
-
-
+import { Languages, Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Youtube } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function Footer() {
+  const currentYear = new Date().getFullYear();
+
   return (
-    <footer className="
-      bg-gradient-to-br from-blue-600 to-purple-700
-      dark:from-gray-900 dark:to-black
-      text-white pt-16 pb-10
-    ">
-      <div className="max-w-7xl mx-auto px-6 md:px-10 grid grid-cols-1 md:grid-cols-4 gap-10">
+    <footer className="bg-gray-900 dark:bg-black text-gray-300 py-12 sm:py-16 mt-20">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 mb-12 pb-12 border-b border-gray-800">
+          <div className="lg:col-span-1">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-2 rounded-lg">
+                <Languages className="w-5 h-5 text-white" />
+              </div>
+              <h3 className="text-lg font-bold text-white">MCQGyaan AI</h3>
+            </div>
+            <p className="text-sm text-gray-400 mb-4">
+              Empowering students with AI-powered learning for CBSE education.
+            </p>
+            <p className="text-xs text-gray-500">© {currentYear} MaxBrain Technologies. All rights reserved.</p>
+          </div>
 
-        {/* Logo + About */}
-        <div>
-          <h2 className="text-2xl font-bold mb-3">MaxBrain</h2>
-          <p className="text-white/80 leading-relaxed">
-            Blending innovation with technology — delivering digital solutions 
-            that transform your ideas into high-impact products.
-          </p>
+          <div>
+            <h4 className="font-bold text-white mb-4">Product</h4>
+            <ul className="space-y-2 text-sm">
+              <li><Link to="/" className="hover:text-blue-400 transition">Home</Link></li>
+              <li><Link to="/features" className="hover:text-blue-400 transition">Features</Link></li>
+              <li><Link to="/pricing" className="hover:text-blue-400 transition">Pricing</Link></li>
+              <li><Link to="/about-us" className="hover:text-blue-400 transition">About Us</Link></li>
+            </ul>
+          </div>
 
-          <div className="flex gap-4 mt-4">
-            <a href="#" className="text-white/70 hover:text-yellow-300 text-xl">🌐</a>
-            <a href="#" className="text-white/70 hover:text-yellow-300 text-xl">📘</a>
-            <a href="#" className="text-white/70 hover:text-yellow-300 text-xl">🐦</a>
-            <a href="#" className="text-white/70 hover:text-yellow-300 text-xl">📸</a>
+          <div>
+            <h4 className="font-bold text-white mb-4">Support</h4>
+            <ul className="space-y-2 text-sm">
+              <li><Link to="/contact" className="hover:text-blue-400 transition">Contact Us</Link></li>
+              <li><a href="mailto:support@mcqgyaan.com" className="hover:text-blue-400 transition">Email Support</a></li>
+              <li><a href="tel:+919950143179" className="hover:text-blue-400 transition">Call Us</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-bold text-white mb-4">Legal</h4>
+            <ul className="space-y-2 text-sm">
+              <li><Link to="/terms" className="hover:text-blue-400 transition">Terms</Link></li>
+              <li><Link to="/privacy" className="hover:text-blue-400 transition">Privacy</Link></li>
+              <li><Link to="/refund-policy" className="hover:text-blue-400 transition">Refund</Link></li>
+              <li><Link to="/disclaimer" className="hover:text-blue-400 transition">Disclaimer</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-bold text-white mb-4">Contact</h4>
+            <ul className="space-y-3 text-sm">
+              <li className="flex items-start gap-2">
+                <Mail className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-400" />
+                <a href="mailto:support@mcqgyaan.com" className="hover:text-blue-400 transition">support@mcqgyaan.com</a>
+              </li>
+              <li className="flex items-start gap-2">
+                <Phone className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-400" />
+                <a href="tel:+919950143179" className="hover:text-blue-400 transition">+91 99501 43179</a>
+              </li>
+              <li className="flex items-start gap-2">
+                <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-400" />
+                <span>Jaipur, India</span>
+              </li>
+            </ul>
           </div>
         </div>
 
-        {/* Quick Links */}
-        <div>
-          <h3 className="text-xl font-semibold mb-4 text-yellow-300">Quick Links</h3>
-          <ul className="space-y-3 text-white/80">
-            <li><a href="#" className="hover:text-yellow-300">Home</a></li>
-            <li><a href="#" className="hover:text-yellow-300">Features</a></li>
-            {/* <li><a href="#" className="hover:text-yellow-300">Services</a></li> */}
-            <li><a href="#" className="hover:text-yellow-300">Pricing</a></li>
-            <li><a href="#" className="hover:text-yellow-300">Contact</a></li>
-          </ul>
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <p className="text-sm text-gray-500">Free until Dec 31, 2025 • Made with passion for education</p>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-blue-400" data-testid="button-facebook">
+              <Facebook className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-blue-400" data-testid="button-twitter">
+              <Twitter className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-blue-400" data-testid="button-linkedin">
+              <Linkedin className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-blue-400" data-testid="button-youtube">
+              <Youtube className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
-
-        {/* Support */}
-        <div>
-          <h3 className="text-xl font-semibold mb-4 text-yellow-300">Support</h3>
-          <ul className="space-y-3 text-white/80">
-            <li>
-              <Link to="/Homepage" className="hover:text-yellow-300 font-medium">
-                Home
-              </Link>
-            </li>
-            <li>
-              <Link to="/features" className="hover:text-yellow-300">Features</Link>
-            </li>
-            <li>
-              {/* <Link to="/services" className="hover:text-yellow-300">Services</Link> */}
-            </li>
-            <li>
-              <Link to="/pricing" className="hover:text-yellow-300">Pricing</Link>
-            </li>
-            <li>
-              <Link to="/contact" className="hover:text-yellow-300">Contact</Link>
-            </li>
-          </ul>
-        </div>
-
-        {/* Contact info */}
-        <div>
-          <h3 className="text-xl font-semibold mb-4 text-yellow-300">Contact</h3>
-          <ul className="space-y-3 text-white/80">
-            <li>📍 Jaipur, Rajasthan, India</li>
-            <li>📧 support@themaxbrain.com</li>
-            <li>📧 info@themaxbrain.com</li>
-            <li>📞 +91 9950143179</li>
-            <li>📞 +91 7597493655</li>
-          </ul>
-        </div>
-      </div>
-
-      {/* Bottom Section */}
-      <div className="border-t border-white/20 mt-10 pt-6 text-center text-white/70">
-        <p>© {new Date().getFullYear()} MaxBrain Technologies Pvt. Ltd. All rights reserved.</p>
       </div>
     </footer>
   );
 }
-
-
-
-
-// export default function Footer() {
-//   return <div className="p-10 text-3xl font-bold">Contact Page</div>;
-// }
