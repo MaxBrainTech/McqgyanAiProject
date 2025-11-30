@@ -168,6 +168,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ScrollToTop from "@/components/ScrollToTop";
 
 // Navigation Pages
 import Home from "@/pages/Home";
@@ -188,6 +189,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <BrowserRouter>
+          <ScrollToTop />
           <div className="min-h-screen flex flex-col bg-background">
             <Header />
 
