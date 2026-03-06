@@ -61,9 +61,11 @@ export default function FeedbackSection({
   // Map language to proper language code for text-to-speech
   const getLanguageCode = (lang: string) => {
     const languageMap: Record<string, string> = {
+      'hindi': 'hi-IN',      // ✅ ADD THIS
       'french': 'fr-FR',
       'german': 'de-DE',
       'spanish': 'es-ES',
+      'english': 'en-US'
     };
     return languageMap[lang.toLowerCase()] || 'en-US';
   };

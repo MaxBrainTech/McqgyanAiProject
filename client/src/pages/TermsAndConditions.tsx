@@ -82,3 +82,6 @@ export default function TermsAndConditions() {
     </div>
   );
 }
+
+
+                        

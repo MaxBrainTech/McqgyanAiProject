@@ -1,11 +1,79 @@
 import OpenAI from "openai";
+import "dotenv/config";
+import { generateFromHF } from "./services/huggingface";
+// import { GPT_MODELS } from "./gptModels";
 
+
+
+interface MCQ {
+  question: string;
+  options: string[];
+  correctAnswer: string;
+}
+
+export const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY!,
+});
 // OpenAI Configuration
 // Priority: Use your own OPENAI_API_KEY if provided, otherwise fall back to Replit's AI Integrations
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.OPENAI_API_KEY ? undefined : process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-});
+
+export const AI_CONFIG = {
+  temperature: 0.7,
+  max_tokens: 2500,
+};
+
+// export async function generateMCQs(
+//   prompt: string,
+//   modelToUse: string
+// ) {
+//   // ✅ model safety yahin decide hogi
+//     const SAFE_MODEL =
+//       modelToUse.startsWith("gpt-5")
+//         ? "gpt-4o"
+//         : modelToUse;
+
+//     const response = await openai.chat.completions.create({
+//       model: SAFE_MODEL,
+//       messages: [{ role: "user", content: prompt }],
+//       temperature: AI_CONFIG.temperature,
+//       max_tokens: AI_CONFIG.max_tokens,
+//     });
+
+//       return response.choices[0]?.message?.content;
+//   }
+
+// export async function generateMCQs(
+//   prompt: string,
+//   model: string
+// ): Promise<string | null> {
+//   try {
+//     const response = await openai.responses.create({
+//       model: model || "gpt-3.5-turbo",
+//       input: prompt,
+//       max_output_tokens: 2500,
+//       temperature: 0.7, 
+//     });
+
+//     return response.output_text;
+//   } catch (error) {
+//     console.error("OpenAI error:", error);
+//     return null;
+//   }
+// }
+
+// const openai = new OpenAI({
+//   apiKey: process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+//   baseURL: process.env.OPENAI_API_KEY ? undefined : process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+// });
+
+// export async function generateMCQs(prompt: string) {
+//   const response = await openai.responses.create({
+//     model: GPT_MODELS.GPT_5_2, // 👈 YAHAN MODEL USE HOTA HAI
+//     input: prompt,
+//   });
+
+//   return response.output_text;
+// }
 
 // Embedding model for semantic similarity detection
 const EMBEDDING_MODEL = "text-embedding-3-small";
@@ -45,6 +113,17 @@ export function cosineSimilarity(vecA: number[], vecB: number[]): number {
 
 // GPT Model Configuration - You can change these to use different models
 export const GPT_MODELS = {
+
+  // 🔥 my Fine-Tuned Model
+  FT_PRICER: "ft:gpt-4.1-nano-2025-04-14:maxbrain-technologies:pricer:DD6LfCqA",
+
+  // 🤗 HuggingFace Model
+  HF_MCQGYAAN: "hf-mcqgyaan",
+
+  // 🔥 GPT-5 Series (Latest – High intelligence & reasoning)
+  GPT_5_2: "gpt-5.2",          // Latest & most capable (best quality)
+  GPT_5_1: "gpt-5.1",         // Slightly faster, near-same quality
+
   // OpenAI o1 series - Specialized reasoning models for math, science, and logic
   O1_PREVIEW: "o1-preview",     // O1 Preview - Best reasoning, most expensive, for complex problems
   O1_MINI: "o1-mini",           // O1 Mini - Strong reasoning, cost-effective, great for STEM
@@ -55,7 +134,13 @@ export const GPT_MODELS = {
   
   // Legacy models
   GPT_35_TURBO: "gpt-3.5-turbo", // Fastest, cheapest, good for simple tasks
+
 } as const;
+
+// const response = await openai.chat.completions.create({
+//   model: GPT_MODELS.GPT_5_2,
+//   messages: []
+// });
 
 // Current model in use - Change this to switch models globally  
 const CURRENT_MODEL = GPT_MODELS.STANDARD;  // Using gpt-4o-mini as default (o1 models used for verification)
@@ -115,6 +200,7 @@ const CBSE_CLASS_GUIDELINES = {
 
 interface QuestionGenerationParams {
   mode?: string;
+  medium?: string;
   language?: string;
   scienceCategory?: string;
   classLevel: number;
@@ -152,7 +238,7 @@ function areNumericallyClose(value1: string, value2: string): boolean {
 }
 
 // Helper function to verify answer correctness independently
-async function verifyAnswer(question: string, proposedAnswer: string, mode: string, gptModel?: string): Promise<{
+export async function verifyAnswer(question: string, proposedAnswer: string, mode: string, gptModel?: string): Promise<{
   isValid: boolean;
   explanation: string;
   alternativeAnswer?: string;
@@ -186,12 +272,27 @@ Return JSON format:
   try {
     // o1 models don't support response_format or system messages
     const isO1Model = verificationModel.startsWith('o1');
-    
-    const requestConfig: any = {
-      model: verificationModel,
+
+    const SAFE_MODEL =
+    verificationModel.startsWith("gpt-5")
+    ? "gpt-4o"
+    : verificationModel;
+
+    // const requestConfig: any = {
+    //   model: verificationModel,
+    //   messages: [{ role: "user", content: prompt }],
+    //   max_completion_tokens: 1000,
+    // };
+
+      // ✅ ONE requestConfig only
+      const requestConfig: any = {
+      model: SAFE_MODEL,
       messages: [{ role: "user", content: prompt }],
-      max_completion_tokens: 1000,
+      temperature: AI_CONFIG.temperature,
+      max_tokens: AI_CONFIG.max_tokens,
     };
+
+
     
     // Only add response_format for non-o1 models
     if (!isO1Model) {
@@ -259,13 +360,23 @@ async function assessQuestionQuality(
   const modelToUse = gptModel || CURRENT_MODEL;
   const guidelines = CBSE_CLASS_GUIDELINES[classLevel as keyof typeof CBSE_CLASS_GUIDELINES];
   
-  const prompt = `You are a CBSE curriculum expert evaluating question quality for Class ${classLevel}.
+const language = "English";
+
+const prompt = `
+You are a CBSE curriculum expert evaluating question quality for Class ${classLevel}.
 
 Question: ${question}
 Expected Difficulty: ${difficulty}
 Expected Bloom's Level: ${guidelines.bloomLevel}
 Expected Vocabulary: ${guidelines.vocabulary}
 Expected Cognitive Level: ${guidelines.cognitiveLevel}
+
+Generate a ${difficulty} level ${language} MCQ question.
+
+The question, options, explanation and answer must be in ${language} language.
+
+Return in JSON format.
+
 
 Evaluate on these criteria (score 0-10 for each):
 1. Age-appropriateness: Is vocabulary suitable for Class ${classLevel}?
@@ -282,12 +393,19 @@ Return JSON:
 }`;
 
   try {
-    const isO1Model = modelToUse.startsWith('o1');
+    const isO1Model = modelToUse.startsWith("o1");
+      const SAFE_MODEL =
+    modelToUse && modelToUse.startsWith("gpt-5")
+    ? "gpt-4o"
+    : modelToUse;
+// ✅ ONE requestConfig only
     const requestConfig: any = {
-      model: modelToUse,
+      model: SAFE_MODEL,
       messages: [{ role: "user", content: prompt }],
-      max_completion_tokens: 400,
+      temperature: AI_CONFIG.temperature,
+      max_tokens: AI_CONFIG.max_tokens,
     };
+
     
     if (!isO1Model) {
       requestConfig.response_format = { type: "json_object" };
@@ -321,6 +439,200 @@ Return JSON:
   }
 }
 
+// export async function generateQuestion(params: QuestionGenerationParams & { isMcq?: boolean }): Promise<{
+//   question: string;
+//   correctAnswer: string;
+//   questionType: string;
+//   options?: string[];
+//   correctOption?: string;
+//   explanation?: string;
+// }>
+
+
+export async function generateMCQs(
+  basePrompt: string,
+  totalQuestions: number,
+  model: string = GPT_MODELS.GPT_35_TURBO
+): Promise<MCQ[]> {
+
+  const BATCH_SIZE = 10;
+  const MAX_TOKENS = 800;
+  const TEMPERATURE = 0.6;
+
+  let allQuestions: MCQ[] = [];
+  let attempts = 0;
+
+  while (allQuestions.length < totalQuestions && attempts < 5) {
+    attempts++;
+    const remaining = totalQuestions - allQuestions.length;
+    const currentBatch = Math.min(BATCH_SIZE, remaining);
+
+    const prompt = `
+${basePrompt}
+
+Generate ${currentBatch} MCQs only.
+Rules:
+- Each MCQ must have:
+  - question
+  - 4 options
+  - correctAnswer
+- Output STRICT JSON only
+
+{
+  "questions": [
+    {
+      "question": "",
+      "options": ["", "", "", ""],
+      "correctAnswer": ""
+    }
+  ]
+}
+  IMPORTANT:
+- Respond ONLY with JSON
+- No extra text
+- No markdown
+`;
+
+//     try {
+//       const response = await openai.chat.completions.create({
+//         model,
+//         messages: [{ role: "user", content: prompt }],
+//         temperature: TEMPERATURE,
+//         max_tokens: MAX_TOKENS,
+//       });
+
+//       const content = response.choices[0]?.message?.content;
+//       if (!content) continue;
+
+//       const parsed = JSON.parse(content);
+//         if (
+//         parsed &&
+//         Array.isArray(parsed.questions) &&
+//         parsed.questions.length > 0
+//       ) {
+//         allQuestions.push(...parsed.questions);
+//       } else {
+//         console.warn("No valid questions in batch:", parsed);
+//       }
+//     } catch (error: any) {
+//       console.error(`[MCQ BATCH ERROR] Failed to generate MCQ batch:`, error.message || error);
+//       continue;
+//     }
+//   }
+
+//   return allQuestions.slice(0, totalQuestions);
+// }
+
+//  try {
+//       console.log(`AI attempt ${attempts} | generating ${currentBatch}`);
+
+//       // const response = await openai.chat.completions.create({
+//       //   model,
+//       //   messages: [{ role: "user", content: prompt }],
+//       //   temperature: TEMPERATURE,
+//       //   max_tokens: MAX_TOKENS,
+//       // });
+
+
+//       let content: string | undefined;
+
+// if (model.startsWith("hf-")) {
+//   // HuggingFace Model
+//   content = await generateFromHF(prompt);
+// } else {
+//   const response = await openai.chat.completions.create({
+//     model,
+//     messages: [{ role: "user", content: prompt }],
+//     temperature: TEMPERATURE,
+//     max_tokens: MAX_TOKENS,
+//   });
+
+//   content = response.choices[0]?.message?.content;
+// }
+
+// if (!content) continue;
+
+// let parsed;
+// try {
+//   parsed = JSON.parse(content);
+// } catch (err) {
+//   console.error("Invalid JSON, retrying...", err);
+//   continue;
+// }
+
+//       // const content = response.choices[0]?.message?.content;
+//       if (!content) continue;
+
+//       let parsed;
+      
+//       try {
+//         parsed = JSON.parse(content);
+//       } catch (err) {
+//         console.error("Invalid JSON, retrying...", err);
+//         continue;
+//       }
+
+//       if (Array.isArray(parsed.questions)) {
+//         allQuestions.push(...parsed.questions);
+//       }
+
+//     } catch (err) {
+//       console.error("AI failed:", err);
+//       continue;
+//     }
+//   }
+
+  try {
+    console.log(`AI attempt ${attempts} | generating ${currentBatch}`);
+
+    let content: string | undefined;
+
+    if (model.startsWith("hf-")) {
+      // 🔹 HuggingFace Model
+      content = await generateFromHF(prompt);
+    } else {
+      // 🔹 OpenAI Model
+      const response = await openai.chat.completions.create({
+        model,
+        messages: [{ role: "user", content: prompt }],
+        temperature: TEMPERATURE,
+        max_tokens: MAX_TOKENS,
+      });
+
+      content = response.choices[0]?.message?.content ?? undefined;
+    }
+
+    if (!content) {
+      console.error("Empty response, retrying...");
+      continue;
+    }
+
+    let parsed: any;
+
+    try {
+      parsed = JSON.parse(content);
+    } catch (err) {
+      console.error("Invalid JSON, retrying...", err);
+      continue;
+    }
+
+    // Ensure expected format
+    if (Array.isArray(parsed?.questions)) {
+      allQuestions.push(...parsed.questions);
+    } else {
+      console.error("Invalid question format, retrying...");
+      continue;
+    }
+
+  } catch (err) {
+    console.error("AI failed:", err);
+    continue;
+  }
+}
+
+  return allQuestions.slice(0, totalQuestions);
+}
+
 export async function generateQuestion(params: QuestionGenerationParams & { isMcq?: boolean }): Promise<{
   question: string;
   correctAnswer: string;
@@ -339,7 +651,7 @@ export async function generateQuestion(params: QuestionGenerationParams & { isMc
   // For science mode, use different generation logic
   if (mode === 'science') {
     console.log(`[generateQuestion] Calling generateScienceQuestion with category=${scienceCategory}, model=${modelToUse}`);
-    return generateScienceQuestion({ scienceCategory, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance, previousQuestions, isMcq, gptModel: modelToUse });
+    return generateScienceQuestion({ scienceCategory, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance, previousQuestions, isMcq, gptModel: modelToUse, language  });
   }
   
   console.log(`[AI] Generating ${isMcq ? 'MCQ' : 'open-ended'} question #${questionNumber} for ${language} - ${difficulty} difficulty using ${modelToUse}`);
@@ -418,6 +730,22 @@ VALIDATION CHECKLIST before responding:
   const guidelines = CBSE_CLASS_GUIDELINES[classLevel as keyof typeof CBSE_CLASS_GUIDELINES];
 
   const prompt = `You are a strict CBSE ${language} teacher for Class ${classLevel} following the official CBSE curriculum.
+Generate a ${difficulty} level ${language} MCQ question.
+
+The question, options, explanation and answer must be in ${language} language.
+
+Return in JSON format.
+Return in JSON format.
+  Language Selected: ${language}
+  IMPORTANT LANGUAGE RULE:
+  - If language is Hindi, generate question, options, correct answer and explanation ONLY in Hindi.
+  - Do NOT use English words when language is Hindi.
+  - If language is English, generate everything strictly in English.
+
+  Chapter: ${chapterTitle}
+  Difficulty: ${difficulty}
+  IMPORTANT: Return ONLY valid JSON. Do not include explanations or text like "I'm sorry".
+
 
 🎯 CBSE CLASS ${classLevel} BLUEPRINT REQUIREMENTS:
 - Bloom's Taxonomy Level: ${guidelines.bloomLevel}
@@ -474,12 +802,20 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
   const startTime = Date.now();
   
   try {
-    const response = await openai.chat.completions.create({
-      model: modelToUse,
+    const isO1Model = modelToUse.startsWith("o1");
+      const SAFE_MODEL =
+    modelToUse && modelToUse.startsWith("gpt-5")
+    ? "gpt-4o"
+    : modelToUse;
+    // ✅ ONE requestConfig only
+    const requestConfig: any = {
+      model: SAFE_MODEL,
       messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
-      max_completion_tokens: 500,
-    });
+      temperature: AI_CONFIG.temperature,
+      max_tokens: AI_CONFIG.max_tokens,
+    };
+    
+    const response = await openai.chat.completions.create(requestConfig);
     
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     const content = response.choices[0]?.message?.content?.trim();
@@ -488,7 +824,15 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
       throw new Error("AI returned empty response");
     }
     
-    const result = JSON.parse(content);
+    let cleanContent = content;
+
+    let jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
+
+    if (!jsonMatch) {
+      throw new Error("AI returned non-JSON response");
+    }
+
+    const result = JSON.parse(jsonMatch[0]);
     console.log(`[AI] Question generated in ${elapsed}s using ${modelToUse}: ${result.question.substring(0, 50)}...`);
     
     // Validate question completeness for Indian languages
@@ -526,12 +870,13 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
         }
       }
     }
-    
+   
     // STEP 1: Verify answer correctness for open-ended language questions
     console.log(`[AI] Verifying answer correctness for ${language} open-ended question...`);
     const verification = await verifyAnswer(
       result.question,
       result.correctAnswer,
+      // result.options ,
       'language',
       modelToUse
     );
@@ -558,8 +903,7 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
       difficulty,
       'language',
       modelToUse
-    );
-    
+    );   
     console.log(`[AI] Quality Score: ${quality.score}/10`);
     if (quality.issues.length > 0) {
       console.log(`[AI] Quality Issues: ${quality.issues.join(', ')}`);
@@ -699,21 +1043,34 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
   const startTime = Date.now();
   
   try {
-    const response = await openai.chat.completions.create({
-      model: modelToUse,
+    const isO1Model = modelToUse.startsWith("o1");
+      const SAFE_MODEL =
+    modelToUse && modelToUse.startsWith("gpt-5")
+    ? "gpt-4o"
+    : modelToUse;
+    // ✅ ONE requestConfig only
+    const requestConfig: any = {
+      model: SAFE_MODEL,
       messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
-      max_completion_tokens: 800,
-    });
+      temperature: AI_CONFIG.temperature,
+      max_tokens: AI_CONFIG.max_tokens,
+    };
     
+    const response = await openai.chat.completions.create(requestConfig);
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     const content = response.choices[0]?.message?.content?.trim();
     
     if (!content) {
       throw new Error("AI returned empty response");
     }
+
+    let cleanContent = content
+    .replace(/```json/g, "")
+    .replace(/```/g, "")
+    .trim();
     
-    const result = JSON.parse(content);
+    const result = JSON.parse(cleanContent);
+    console.log("RAW AI RESPONSE:", content);
     console.log(`[AI] MCQ generated in ${elapsed}s using ${modelToUse}: ${result.question.substring(0, 50)}...`);
     
     // Validate MCQ response
@@ -851,6 +1208,7 @@ async function generateScienceQuestion(params: {
   previousQuestions?: string[];
   isMcq?: boolean;
   gptModel?: string;
+  language?: string; 
 }): Promise<{
   question: string;
   correctAnswer: string;
@@ -860,10 +1218,12 @@ async function generateScienceQuestion(params: {
   explanation?: string;
 }> {
   const { scienceCategory, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance, previousQuestions, isMcq = true, gptModel } = params;
+  const category = scienceCategory || chapterTitle || "general science";
   const modelToUse = gptModel || CURRENT_MODEL;
   
   const questionTypeText = isMcq ? 'MCQ' : 'open-ended';
-  console.log(`[AI] Generating science ${questionTypeText} question #${questionNumber} for ${scienceCategory} - ${difficulty} difficulty`);
+  // console.log(`[AI] Generating science ${questionTypeText} question #${questionNumber} for ${scienceCategory} - ${difficulty} difficulty`);
+  console.log(`[AI] Generating science ${questionTypeText} question #${questionNumber} for ${category} - ${difficulty} difficulty`);
   
   const guidelines = CBSE_CLASS_GUIDELINES[classLevel as keyof typeof CBSE_CLASS_GUIDELINES];
   
@@ -889,6 +1249,11 @@ async function generateScienceQuestion(params: {
     : "Generate an open-ended question that requires a detailed written answer";
 
   const prompt = `You are a strict CBSE General Science teacher for Class ${classLevel} following the official NCERT curriculum.
+      if (language && language.toLowerCase() === "hindi") {
+
+    IMPORTANT LANGUAGE RULE:
+    Generate question, options, correct answer and explanation ONLY in Hindi.
+    Do NOT use English words.
 
 🎯 CBSE CLASS ${classLevel} BLUEPRINT REQUIREMENTS:
 - Bloom's Taxonomy Level: ${guidelines.bloomLevel}
@@ -958,22 +1323,41 @@ Make the question challenging but fair for Class ${classLevel} CBSE students. En
   const startTime = Date.now();
   
   try {
-    const response = await openai.chat.completions.create({
-      model: modelToUse,
+    const isO1Model = modelToUse.startsWith("o1");
+    const SAFE_MODEL =
+    modelToUse && modelToUse.startsWith("gpt-5")
+    ? "gpt-4o"
+    : modelToUse;
+    // ✅ ONE requestConfig only
+    const requestConfig: any = {
+      model: SAFE_MODEL,
       messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
-      max_completion_tokens: 800,
-    });
+      temperature: AI_CONFIG.temperature,
+      max_tokens: AI_CONFIG.max_tokens,
+    };
     
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    const response = await openai.chat.completions.create(requestConfig);
     const content = response.choices[0]?.message?.content?.trim();
     
     if (!content) {
       throw new Error("AI returned empty response");
     }
     
-    const result = JSON.parse(content);
-    console.log(`[AI] Science ${isMcq ? 'MCQ' : 'open-ended'} generated in ${elapsed}s using ${modelToUse}: ${result.question.substring(0, 50)}...`);
+    let cleanContent = content;
+
+    if (cleanContent.includes("```json")) {
+      const match = cleanContent.match(/```json\s*([\s\S]*?)\s*```/);
+      if (match) cleanContent = match[1];
+    } else if (cleanContent.includes("```")) {
+      const match = cleanContent.match(/```\s*([\s\S]*?)\s*```/);
+      if (match) cleanContent = match[1];
+    }
+
+    const result = JSON.parse(cleanContent);
+    // console.log(`[AI] Science ${isMcq ? 'MCQ' : 'open-ended'} generated in ${elapsed}s using ${modelToUse}: ${result.question.substring(0, 50)}...`);
+    const { difficulty, questionNumber, scienceCategory, chapterTitle } = params;
+    const category = scienceCategory || chapterTitle || "general science";
     
     if (isMcq) {
       // Validate MCQ format
@@ -1151,12 +1535,20 @@ Return in this exact JSON format:
   const startTime = Date.now();
   
   try {
-    const response = await openai.chat.completions.create({
-      model: modelToUse,
+    const isO1Model = modelToUse.startsWith("o1");
+    const SAFE_MODEL =
+    modelToUse && modelToUse.startsWith("gpt-5")
+    ? "gpt-4o"
+    : modelToUse;
+    // ✅ ONE requestConfig only
+    const requestConfig: any = {
+      model: SAFE_MODEL,
       messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
-      max_completion_tokens: 1000,
-    });
+      temperature: AI_CONFIG.temperature,
+      max_tokens: AI_CONFIG.max_tokens,
+    };
+
+    const response = await openai.chat.completions.create(requestConfig);
 
     const content = response.choices[0]?.message?.content || "{}";
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -1242,12 +1634,20 @@ ${isMCQ ? `{
   const startTime = Date.now();
   
   try {
-    const response = await openai.chat.completions.create({
-      model: modelToUse,
+    const isO1Model = modelToUse.startsWith("o1");
+      const SAFE_MODEL =
+      modelToUse && modelToUse.startsWith("gpt-5")
+      ? "gpt-4o"
+      : modelToUse;
+    // ✅ ONE requestConfig only
+    const requestConfig: any = {
+      model: SAFE_MODEL,
       messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
-      max_completion_tokens: 2000,
-    });
+      temperature: AI_CONFIG.temperature,
+      max_tokens: AI_CONFIG.max_tokens,
+    };
+
+    const response = await openai.chat.completions.create(requestConfig);
 
     const content = response.choices[0]?.message?.content || "{}";
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);

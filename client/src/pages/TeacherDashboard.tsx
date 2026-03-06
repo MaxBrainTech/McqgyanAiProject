@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
+
 const testSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
   subject: z.string().min(1, "Subject is required"),
@@ -77,7 +78,7 @@ export default function TeacherDashboard() {
   }
   
   const handleLogout = () => {
-    navigate('/custom-mcq');
+    navigate('/');
   };
   const [showForm, setShowForm] = useState(false);
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
@@ -248,17 +249,97 @@ export default function TeacherDashboard() {
         return lines.length;
       };
       
-      // Header with test title
-      pdf.setFillColor(51, 65, 85);
-      pdf.rect(0, 0, pageWidth, 30, 'F');
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(18);
-      pdf.setFont(undefined, 'bold');
-      pdf.text(data.test.title, margins.left, 12);
+      // // Header with test title
+      // pdf.setFillColor(51, 65, 85);
+      // pdf.rect(0, 0, pageWidth, 30, 'F');
+      // pdf.setTextColor(255, 255, 255);
+      // // pdf.setFontSize(18);
+      // // pdf.setFont(undefined, 'bold');
+      // // pdf.text(data.test.title, margins.left, 12);
+      // pdf.setFontSize(20);
+      // pdf.setFont(undefined, 'bold');
+      // pdf.text(data.test.title, pageWidth / 2, 15, { align: "center" });
       
-      // Reset text color
-      pdf.setTextColor(0, 0, 0);
-      yPosition = 40;
+      // // Reset text color
+      // pdf.setTextColor(0, 0, 0);
+      // yPosition = 40;
+
+      // ======= PROFESSIONAL HEADER =======
+
+      // Dark header background
+     // ===== HEADER BACKGROUND =====
+// ======= HEADER SECTION =======
+pdf.setFillColor(30, 41, 59); // dark navy background
+pdf.rect(0, 0, pageWidth, 32, 'F');
+
+// ---- Test Title (Left side) ----
+pdf.setTextColor(255, 255, 255);
+pdf.setFontSize(18);
+pdf.setFont(undefined, "bold");
+pdf.text(data.test.title, margins.left, 14);
+
+// ---- LOGO + NAME (Right side, slightly lower) ----
+const logoSize = 8; // smaller logo
+const rightMargin = 15;
+
+const logoX = pageWidth - rightMargin - logoSize - 40;
+const logoY = 16;
+
+// Total text width calculate
+const fullText = "MCQGyaan AI";
+const textWidth = pdf.getTextWidth(fullText);
+
+
+// Total brand width (logo + small gap + text)
+const totalBrandWidth = logoSize + 2 + textWidth;
+
+// Start position so that it aligns right properly
+const brandStartX = pageWidth - margins.right - totalBrandWidth;
+
+
+// ===== RIGHT SIDE BRAND =====
+const brandY = 24;
+// const brandStartX = pageWidth - margins.right - 55; 
+// Logo
+pdf.addImage("/logo.png", "PNG", brandStartX, 16,logoSize, logoSize);
+
+
+// Gradient style text manually (3 parts, no extra space)
+pdf.setFontSize(12);
+pdf.setFont("helvetica", "bold");
+
+// ===== LOGO + BRAND (Right Side, Bottom Alignment) =====
+const logoWidth = 10;   // thoda aur chhota
+const logoHeight = 10;
+
+// let textX = logoX + logoWidth + 2;
+let textY = logoY + 8;
+// 2️⃣ Gradient Text (exactly logo ke saath chipka hua)
+let textX = brandStartX + logoSize + 3;
+
+// MCQ (Blue)
+pdf.setTextColor(37, 99, 235);
+pdf.text("MCQ", textX, brandY);
+textX += pdf.getTextWidth("MCQ");
+
+// Gyaan (Green)
+pdf.setTextColor(16, 185, 129);
+pdf.text("Gyaan", textX, brandY);
+textX += pdf.getTextWidth("Gyaan");
+
+// AI (Gold)
+pdf.setTextColor(234, 179, 8);
+pdf.text(" AI", textX, brandY);
+
+// Reset color
+pdf.setTextColor(0, 0, 0);
+
+yPosition = 42;
+
+
+      pdf.setDrawColor(200);
+      pdf.line(margins.left, 30, pageWidth - margins.right, 30);
+
       
       // Test Info Section
       pdf.setFontSize(10);
@@ -299,11 +380,22 @@ export default function TeacherDashboard() {
         yPosition += instructionLines.length * 4 + 3;
       }
       
+      
+
       // Questions section
-      pdf.setFont(undefined, 'bold');
-      pdf.setFontSize(10);
       pdf.text('Questions', margins.left, yPosition + 5);
-      yPosition += 10;
+      pdf.setFillColor(240, 240, 240);
+      pdf.rect(margins.left, yPosition, contentWidth, 8, 'F');
+
+      pdf.setFontSize(11);
+      pdf.setFont(undefined, "bold");
+      pdf.text("Questions", pageWidth / 2, yPosition + 6, { align: "center" });
+
+      yPosition += 12;
+      // pdf.setFont(undefined, 'bold');
+      // pdf.setFontSize(10);
+      // pdf.text('Questions', margins.left, yPosition + 5);
+      // yPosition += 10;
       
       // Add questions
       data.questions.forEach((q: any, idx: number) => {

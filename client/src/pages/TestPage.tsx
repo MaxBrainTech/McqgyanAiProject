@@ -9,6 +9,13 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
+const normalizeAnswer = (text?: string) =>
+  text
+    ?.normalize("NFKC")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+
 export default function TestPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -146,10 +153,17 @@ export default function TestPage() {
       
       // Local evaluation for custom tests
       const currentQ = customQuestions[currentQuestionIndex];
-      const isCorrect = currentQ.questionType === "mcq"
-        ? answer === currentQ.correctOption
-        : answer.trim().toLowerCase() === (currentQ.correctAnswer || "").trim().toLowerCase();
-      
+      // const isCorrect = currentQ.questionType === "mcq"
+      //   ? answer === currentQ.correctOption
+      //   // : answer.trim().toLowerCase() === (currentQ.correctAnswer || "").trim().toLowerCase();
+      //   : normalizeAnswer(answer) === normalizeAnswer(currentQ.correctAnswer);
+      //   currentQ.correctAnswer || currentQ.correctOption
+          
+      const correctAnswer =
+      currentQ.correctAnswer || currentQ.correctOption;
+
+      const isCorrect = normalizeAnswer(answer) === normalizeAnswer(correctAnswer);
+
       const pointsEarned = isCorrect ? 10 : 0;
       const newScore = totalScore + pointsEarned;
       const newCorrect = correctAnswers + (isCorrect ? 1 : 0);

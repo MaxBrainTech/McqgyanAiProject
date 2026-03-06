@@ -1,21 +1,35 @@
-import { Languages, Sun, Moon } from "lucide-react";
+import { Languages, Sun, Moon, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { onAuthStateChanged, signOut, User } from "firebase/auth";
+import { auth } from "@/pages/firebase";
 
 export default function Header() {
   const [isDark, setIsDark] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
 
-  // Toggle Dark Mode
+  // 🌙 Dark mode toggle
   useEffect(() => {
     const root = document.documentElement;
     if (isDark) root.classList.add("dark");
     else root.classList.remove("dark");
   }, [isDark]);
 
-  const handleHomeClick = () => {
-    navigate("/", { replace: true });
+  // 🔐 Firebase auth listener
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // 🚪 Logout
+  const handleLogout = async () => {
+    await signOut(auth);
+    navigate("/login");
   };
 
   return (
@@ -26,7 +40,10 @@ export default function Header() {
       <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
 
         {/* LEFT — LOGO */}
-        <button onClick={handleHomeClick} className="flex items-center gap-3 hover:opacity-80 transition-opacity" data-testid="button-home">
+        <button
+          onClick={() => navigate("/", { replace: true })}
+          className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+        >
           <div className="bg-primary text-primary-foreground p-2 rounded-xl">
             <Languages className="w-6 h-6" />
           </div>
@@ -35,36 +52,60 @@ export default function Header() {
           </h1>
         </button>
 
-        {/* CENTER — NAVIGATION */}
+        {/* CENTER — NAV */}
         <nav className="hidden sm:flex items-center gap-8 text-sm font-medium">
-          <button onClick={handleHomeClick} className="hover:text-yellow-300 transition-colors" data-testid="nav-home">Home</button>
-          <Link to="/features" className="hover:text-yellow-300 transition-colors">Features</Link>
-          <Link to="/pricing" className="hover:text-yellow-300 transition-colors">Pricing</Link>
-          <Link to="/contact" className="hover:text-yellow-300 transition-colors">Contact</Link>
+          <button onClick={() => navigate("/")} className="hover:text-yellow-300">
+            Home
+          </button>
+          <Link to="/features" className="hover:text-yellow-300">Features</Link>
+          <Link to="/pricing" className="hover:text-yellow-300">Pricing</Link>
+          <Link to="/contact" className="hover:text-yellow-300">Contact</Link>
         </nav>
 
-        {/* RIGHT — LOGIN + THEME TOGGLE */}
+        {/* RIGHT — AUTH + THEME */}
         <div className="flex items-center gap-4">
 
-          {/* LOGIN BUTTON */}
-          <Link to="/login">
-            <button className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/80 transition" data-testid="button-login">
-              Login
-            </button>
-          </Link>
+          {/* 🔐 AUTH SECTION */}
+          {user ? (
+            <div className="flex items-center gap-3">
 
-          {/* THEME TOGGLE */}
+              {/* 👤 Google Photo */}
+              {user.photoURL && (
+                <img
+                  src={user.photoURL}
+                  alt="profile"
+                  className="w-9 h-9 rounded-full border"
+                />
+              )}
+
+              {/* 🚪 Logout */}
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleLogout}
+                className="flex items-center gap-1"
+              >
+                <LogOut className="w-4 h-4" />
+                Logout
+              </Button>
+            </div>
+          ) : (
+            <Link to="/login">
+              <button className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/80 transition">
+                Login
+              </button>
+            </Link>
+          )}
+
+          {/* 🌗 Theme toggle */}
           <Button
             variant="ghost"
             onClick={() => setIsDark(!isDark)}
-            data-testid="button-theme-toggle"
-            className="hover-elevate h-11 w-11 p-0"
+            className="h-11 w-11 p-0"
           >
             {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </Button>
-
         </div>
-
       </div>
     </header>
   );
