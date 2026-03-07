@@ -33,7 +33,7 @@ export default function QuestionCard({
   const [selectedOption, setSelectedOption] = useState("");
   const [transliterationEnabled, setTransliterationEnabled] = useState(false);
   const [englishInput, setEnglishInput] = useState("");
-  
+
   const isMcq = questionType === "mcq";
   const showTransliteration = !isMcq && isTransliterationAvailable(language);
 
@@ -117,7 +117,7 @@ export default function QuestionCard({
             </div>
             <RadioGroup value={selectedOption} onValueChange={setSelectedOption}>
               <div className="space-y-3">
-                {options.map((option) => {
+                {/* {options.map((option) => {
                   const optionKey = option.charAt(0);
                   return (
                     <div
@@ -135,7 +135,28 @@ export default function QuestionCard({
                       </Label>
                     </div>
                   );
-                })}
+                })} */}
+                {options.map((option, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center space-x-3 p-3 sm:p-4 rounded-lg border-2 hover-elevate active-elevate-2 cursor-pointer"
+                    onClick={() => setSelectedOption(option)}
+                    data-testid={`option-${index}`}
+                    >
+                    <RadioGroupItem
+                      value={option}
+                      id={`option-${index}`}
+                      className="h-5 w-5"
+                    />
+
+                    <Label
+                      htmlFor={`option-${index}`}
+                      className="flex-1 text-base sm:text-lg cursor-pointer"
+                    >
+                      {option}
+                    </Label>
+                  </div>
+                ))}
               </div>
             </RadioGroup>
             <p className="text-base text-muted-foreground">

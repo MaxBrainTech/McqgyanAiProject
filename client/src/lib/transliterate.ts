@@ -10,21 +10,21 @@ import Sanscript from '@indic-transliteration/sanscript';
  */
 export function transliterate(text: string, language: string): string {
   const lang = language.toLowerCase();
-  
+
   // Only transliterate for Indian languages
   if (!['hindi', 'marathi', 'kannada'].includes(lang)) {
     return text;
   }
-  
+
   // Map language to script
   const scriptMap: Record<string, string> = {
     'hindi': 'devanagari',
     'marathi': 'devanagari',
     'kannada': 'kannada'
   };
-  
+
   const targetScript = scriptMap[lang];
-  
+
   try {
     // Use Sanscript to transliterate from ITRANS to target script
     // syncope: true helps with Hindi-style transliteration

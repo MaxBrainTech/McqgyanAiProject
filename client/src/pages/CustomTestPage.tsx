@@ -115,7 +115,7 @@ export default function CustomTestPage() {
       });
       return;
     }
-    
+
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -186,7 +186,7 @@ export default function CustomTestPage() {
             <div><strong>Share Code:</strong> ${shareCode}</div>
           </div>
         </div>
-        
+
         ${testData?.questions.map((q: any, idx: number) => `
           <div class="question">
             <div class="question-number">Question ${idx + 1}:</div>
@@ -202,7 +202,7 @@ export default function CustomTestPage() {
             ` : ''}
           </div>
         `).join('')}
-        
+
         <script>
           window.onload = function() {
             setTimeout(function() {
@@ -215,7 +215,7 @@ export default function CustomTestPage() {
       </html>
     `);
     printWindow.document.close();
-    
+
     toast({
       title: "Print Dialog Opened",
       description: "Choose 'Save as PDF' to download",
@@ -225,7 +225,7 @@ export default function CustomTestPage() {
   function downloadAnswerSheet() {
     const stats = calculateStats();
     const percentage = Math.round((stats.totalScore / stats.maxScore) * 100);
-    
+
     const printWindow = window.open('', '', 'width=800,height=600');
     if (!printWindow) {
       toast({
@@ -235,7 +235,7 @@ export default function CustomTestPage() {
       });
       return;
     }
-    
+
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -336,12 +336,12 @@ export default function CustomTestPage() {
             <div><strong>Subject:</strong> ${testData?.test?.subject} | <strong>Class:</strong> ${testData?.test?.classLevel}</div>
           </div>
         </div>
-        
+
         <div class="score-summary">
           <div style="font-size: 14pt; font-weight: bold; margin-bottom: 5px;">Score: ${stats.totalScore}/${stats.maxScore} (${percentage}%)</div>
           <div>Correct Answers: ${stats.correct} out of ${stats.total}</div>
         </div>
-        
+
         ${testData?.questions.map((q: any, idx: number) => {
           const result = results[q.id];
           const isCorrect = result?.isCorrect;
@@ -349,7 +349,7 @@ export default function CustomTestPage() {
             <div class="question-block">
               <div class="question-header">Question ${idx + 1}:</div>
               <div class="question-text">${q.question}</div>
-              
+
               <div class="answer-section">
                 <div class="your-answer">
                   <span class="label">Your Answer:</span> ${answers[q.id] || "Not answered"}
@@ -360,21 +360,21 @@ export default function CustomTestPage() {
                   </div>
                 ` : ''}
               </div>
-              
+
               ${result?.explanation ? `
                 <div class="explanation">
                   <strong>Explanation:</strong><br/>
                   ${result.explanation}
                 </div>
               ` : ''}
-              
+
               <div class="${isCorrect ? 'result-correct' : 'result-incorrect'}">
                 ${isCorrect ? '✓ Correct' : '✗ Incorrect'}
               </div>
             </div>
           `;
         }).join('')}
-        
+
         <script>
           window.onload = function() {
             setTimeout(function() {
@@ -387,7 +387,7 @@ export default function CustomTestPage() {
       </html>
     `);
     printWindow.document.close();
-    
+
     toast({
       title: "Print Dialog Opened",
       description: "Choose 'Save as PDF' to download answer sheet",

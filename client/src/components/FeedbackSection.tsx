@@ -61,9 +61,11 @@ export default function FeedbackSection({
   // Map language to proper language code for text-to-speech
   const getLanguageCode = (lang: string) => {
     const languageMap: Record<string, string> = {
+      'hindi': 'hi-IN',      // ✅ ADD THIS
       'french': 'fr-FR',
       'german': 'de-DE',
       'spanish': 'es-ES',
+      'english': 'en-US'
     };
     return languageMap[lang.toLowerCase()] || 'en-US';
   };
@@ -73,7 +75,7 @@ export default function FeedbackSection({
     console.log('=== AUDIO BUTTON CLICKED ===');
     console.log('🔊 Attempting to speak:', correctAnswer);
     console.log('🌍 Language:', language);
-    
+
     if (!('speechSynthesis' in window)) {
       console.error('❌ Speech synthesis not supported');
       alert('Sorry, your browser does not support text-to-speech. Please try Chrome, Safari, or Edge.');
@@ -88,21 +90,21 @@ export default function FeedbackSection({
     try {
       // Cancel any ongoing speech
       window.speechSynthesis.cancel();
-      
+
       // Small delay to ensure cancel completes
       setTimeout(() => {
         setIsPlaying(true);
         const utterance = new SpeechSynthesisUtterance(correctAnswer);
-        
+
         // Set correct language for proper pronunciation
         const langCode = getLanguageCode(language);
         console.log('🗣️ Using language code:', langCode);
-        
+
         utterance.lang = langCode;
         utterance.rate = 0.85; // Slightly slower for better learning
         utterance.pitch = 1.0;
         utterance.volume = 1.0;
-        
+
         // Try to find a matching voice for better quality
         const voices = window.speechSynthesis.getVoices();
         const matchingVoice = voices.find(voice => voice.lang.startsWith(langCode.split('-')[0]));
@@ -112,17 +114,17 @@ export default function FeedbackSection({
         } else {
           console.log('⚠️ No matching voice found, using default');
         }
-        
+
         utterance.onstart = () => {
           console.log('▶️ Speech started');
           setIsPlaying(true);
         };
-        
+
         utterance.onend = () => {
           console.log('⏹️ Speech ended');
           setIsPlaying(false);
         };
-        
+
         utterance.onerror = (event) => {
           console.error('❌ Speech error:', event);
           console.error('Error details:', {
@@ -133,10 +135,10 @@ export default function FeedbackSection({
           setIsPlaying(false);
           alert(`Audio playback failed: ${event.error}. Try refreshing the page or using Chrome/Safari.`);
         };
-        
+
         console.log('🎤 Starting speech...');
         window.speechSynthesis.speak(utterance);
-        
+
         // Fallback: Check if speech started after 1 second
         setTimeout(() => {
           if (window.speechSynthesis.speaking) {

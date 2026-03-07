@@ -28,18 +28,18 @@ export default function TestSummary({
   useEffect(() => {
     const savedScores = localStorage.getItem("langbuddy_scores");
     const scores = savedScores ? JSON.parse(savedScores) : [];
-    
+
     const newEntry = {
       language: subject ? subject.charAt(0).toUpperCase() + subject.slice(1) : "Unknown",
       score: totalScore,
       totalQuestions,
       date: new Date().toLocaleString(),
     };
-    
+
     scores.unshift(newEntry);
     scores.sort((a: any, b: any) => b.score - a.score);
     const topScores = scores.slice(0, 5);
-    
+
     localStorage.setItem("langbuddy_scores", JSON.stringify(topScores));
   }, [totalScore, totalQuestions, subject]);
 

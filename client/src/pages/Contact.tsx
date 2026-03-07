@@ -44,7 +44,7 @@ export default function Contact() {
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
       console.log("Form submitted:", data);
-      
+
       toast({
         title: "Message Sent!",
         description: "Thank you for reaching out. We'll get back to you within 24 hours.",

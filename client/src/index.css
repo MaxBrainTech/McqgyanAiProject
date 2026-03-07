@@ -165,16 +165,21 @@
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
   --radius: 1.3rem;
   --spacing: 0.25rem;
-  --font-mono: Menlo, monospace;
+  /* --font-mono: Menlo, monospace;
   --font-sans: Open Sans, sans-serif;
-  --font-serif: Georgia, serif;
+  --font-serif: Georgia, serif; */
+    --font-sans: 'Inter', sans-serif;
+  --font-serif: 'Source Serif Pro', serif;
+  --font-mono: 'IBM Plex Mono', monospace;
   --tracking-normal: 0em;
 }
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
+}
+
 
   body {
     @apply font-sans antialiased text-foreground;
@@ -184,7 +189,7 @@
       hsl(190, 100%, 96%) 50%,
       hsl(180, 100%, 97%) 75%,
       hsl(170, 80%, 96%) 100%);
-    background-attachment: fixed;
+    background-attachment: fixed; 
     min-height: 100vh;
   }
 
@@ -197,7 +202,7 @@
       hsl(260, 30%, 14%) 100%);
     background-attachment: fixed;
   }
-}
+
 
 /**
  * Using the elevate system.
@@ -309,4 +314,11 @@
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
   }
+}
+.continue-p{
+  font-size: 12px;
+  color: #b2b2b2;
+  font-weight: 600;
+  margin-top: 1rem;
+  text-align: center;
 }

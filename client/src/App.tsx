@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import ScrollToTop from "@/components/ScrollToTop";
+import ScrollRestoration from "@/components/ScrollRestoration";
 
 // Navigation Pages
 import Home from "@/pages/Home";
@@ -26,13 +26,19 @@ import TeacherAuth from "@/pages/TeacherAuth";
 import TeacherDashboard from "@/pages/TeacherDashboard";
 import CustomTestPage from "@/pages/CustomTestPage";
 import AnswerSheetEvaluator from "@/pages/AnswerSheetEvaluator";
+import Signup from "@/pages/Signup";
+
+
+// <Route path="/signup" element={<Signup />} />
+
 
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <BrowserRouter>
-          <ScrollToTop />
+          <ScrollRestoration />
+
           <div className="min-h-screen flex flex-col bg-background">
             <Header />
 
@@ -44,6 +50,7 @@ export default function App() {
                 <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
                 <Route path="/about-us" element={<AboutUs />} />
 
                 {/* Legal Pages */}
@@ -56,13 +63,14 @@ export default function App() {
                 <Route path="/test" element={<TestPage />} />
                 <Route path="/teacher-auth" element={<TeacherAuth />} />
                 <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
-                <Route path="/custom-mcq" element={<CustomTestPage />} />
+                <Route path="/custom-test" element={<CustomTestPage />} />
                 <Route path="/answer-evaluator" element={<AnswerSheetEvaluator />} />
               </Routes>
             </main>
 
             <Footer />
           </div>
+
           <Toaster />
         </BrowserRouter>
       </TooltipProvider>

@@ -2,19 +2,31 @@ import { useState, ChangeEvent, FormEvent } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import SignInWithGoogle from "../pages/signInWithGoogle";
+import { useNavigate } from "react-router-dom";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/pages/firebase";
+import { Eye, EyeOff } from "lucide-react";
 
 interface LoginForm {
-  id: string;
+  id: string;       // email
   password: string;
 }
 
 export default function LoginPage() {
-  const [form, setForm] = useState<LoginForm>({ id: "", password: "" });
+  const navigate = useNavigate();
+
+  const [form, setForm] = useState<LoginForm>({
+    id: "",
+    password: "",
+  });
+
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // 👈 NEW
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -22,15 +34,17 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        form.id,
+        form.password
+      );
 
-      console.log("ID:", form.id);
-      console.log("Password:", form.password);
-
-      // TODO: Replace with actual API login logic
-    } catch (err) {
+      console.log("Login success:", userCredential.user);
+      navigate("/");
+    } catch (err: any) {
       console.error("Login failed:", err);
+      alert(err.message || "Invalid email or password");
     } finally {
       setLoading(false);
     }
@@ -40,36 +54,70 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-sm shadow-xl">
         <CardHeader>
-          <CardTitle className="text-center text-xl font-semibold">Login</CardTitle>
+          <CardTitle className="text-center text-xl font-semibold">
+            Login
+          </CardTitle>
         </CardHeader>
+
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Email */}
             <div>
-              <label htmlFor="id" className="text-sm font-medium">User ID</label>
+              <label htmlFor="email">Email</label>
               <Input
-                id="id"
                 name="id"
-                placeholder="Enter your ID"
+                type="email"
+                placeholder="Enter your email"
                 value={form.id}
                 onChange={handleChange}
                 required
               />
             </div>
+
+            {/* Password with Eye */}
             <div>
-              <label htmlFor="password" className="text-sm font-medium">Password</label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="Enter your password"
-                value={form.password}
-                onChange={handleChange}
-                required
-              />
+              <label htmlFor="password">Password</label>
+
+              <div className="relative">
+                <Input
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={form.password}
+                  onChange={handleChange}
+                  required
+                  className="pr-10"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
             </div>
+
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Logging in..." : "Login"}
             </Button>
+
+            <p className="text-sm text-center">
+              Don't have an account?{" "}
+              <span
+                className="text-blue-500 cursor-pointer hover:underline"
+                onClick={() => navigate("/signup")}
+              >
+                Sign Up
+              </span>
+            </p>
+
+            <SignInWithGoogle />
           </form>
         </CardContent>
       </Card>

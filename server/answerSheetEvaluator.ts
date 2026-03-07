@@ -31,9 +31,9 @@ interface EvaluationResult {
 
 export async function evaluateAnswerSheet(params: EvaluationParams): Promise<EvaluationResult> {
   const { images, studentName, classLevel, subject, gptModel = "gpt-4o" } = params;
-  
+
   console.log(`[EVAL] Starting evaluation of ${images.length} images using ${gptModel}`);
-  
+
   // Prepare messages with all images
   const imageMessages: any[] = images.map((imageData) => ({
     type: "image_url",
@@ -42,9 +42,9 @@ export async function evaluateAnswerSheet(params: EvaluationParams): Promise<Eva
       detail: "high" // High detail for better text recognition
     }
   }));
-  
+
   const prompt = `You are an expert teacher evaluating a student's answer sheet. 
-  
+
 Student Name: ${studentName}
 ${classLevel ? `Class Level: ${classLevel}` : ''}
 ${subject ? `Subject: ${subject}` : ''}
@@ -122,13 +122,13 @@ IMPORTANT GUIDELINES:
       max_tokens: 4000,
       temperature: 0.3, // Lower temperature for more consistent evaluation
     });
-    
+
     const content = response.choices[0]?.message?.content?.trim();
-    
+
     if (!content) {
       throw new Error("No response from AI");
     }
-    
+
     // Extract JSON from response (might be wrapped in markdown)
     let jsonContent = content;
     if (content.includes('```json')) {
@@ -138,15 +138,178 @@ IMPORTANT GUIDELINES:
       const match = content.match(/```\s*([\s\S]*?)\s*```/);
       if (match) jsonContent = match[1];
     }
-    
+
     const result = JSON.parse(jsonContent);
-    
+
     console.log(`[EVAL] ✓ Evaluated ${result.totalAnswers} answers. Average score: ${result.averageScore}/10`);
-    
+
     return result;
-    
+
   } catch (error: any) {
     console.error("[EVAL ERROR]", error.message);
     throw new Error(`Failed to evaluate answer sheet: ${error.message}`);
   }
+}
+
+
+import PDFDocument from "pdfkit";
+import { Request, Response } from "express";
+
+export function generateEvaluationPDF(req: Request, res: Response) {
+
+  const {
+    studentName,
+    classLevel,
+    subject,
+    totalAnswers,
+    averageScore,
+    overallFeedback,
+    answerEvaluations
+  } = req.body;
+
+  const doc = new PDFDocument({
+    size: "A4",
+    margin: 40
+  });
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader(
+    "Content-Disposition",
+    "attachment; filename=evaluation-report.pdf"
+  );
+
+  doc.pipe(res);
+
+  /* ================= HEADER ================= */
+
+  doc
+    .rect(0, 0, 612, 80)
+    .fill("#3c4b63");
+
+  doc
+    .fillColor("white")
+    .fontSize(20)
+    .text("Answer Sheet Evaluation Report", 40, 30);
+
+  doc
+    .fontSize(14)
+    .text("MCQGyaan AI", 450, 35);
+
+  doc.fillColor("black");
+
+  doc.moveDown(3);
+
+  /* ================= STUDENT INFO ================= */
+
+  doc
+  .fontSize(12)
+  .text(`Student Name: ${studentName || "N/A"}`, 40, 110)
+  .text(`Class: ${classLevel || "N/A"}`)
+  .text(`Subject: ${subject || "N/A"}`);
+
+  doc.moveDown(2);
+
+  /* cursor reset */
+
+  doc.y = 190;
+  doc.x = 40;
+
+  /* ================= SUMMARY ================= */
+
+  doc
+    .fontSize(14)
+    .text(`Total Answers: ${totalAnswers}`);
+
+  doc
+    .text(`Average Score: ${averageScore}/10`);
+
+  doc.moveDown();
+
+  doc
+    .fontSize(14)
+    .text("Overall Feedback:", { underline: true });
+
+  doc
+    .fontSize(12)
+    .text(overallFeedback);
+
+  doc.moveDown(2);
+
+  /* ================= ANSWER DETAILS ================= */
+
+  answerEvaluations.forEach((ans: any) => {
+
+    doc
+      .fontSize(16)
+      .fillColor("#333333")
+      .text(`Answer ${ans.questionNumber}   (${ans.qualityScore}/10)`);
+
+    doc.moveDown();
+
+    doc
+      .fontSize(12)
+      .fillColor("black")
+      .text("Student Answer:");
+
+    doc
+      .text(ans.extractedAnswer);
+
+    doc.moveDown();
+
+    if (ans.strengths?.length) {
+
+      doc
+        .fontSize(12)
+        .fillColor("#2e7d32")
+        .text("Strengths:");
+
+      ans.strengths.forEach((s: string) =>
+        doc.text(`• ${s}`)
+      );
+
+      doc.moveDown();
+
+    }
+
+    if (ans.improvements?.length) {
+
+      doc
+        .fillColor("#f9a825")
+        .text("Areas for Improvement:");
+
+      ans.improvements.forEach((i: string) =>
+        doc.text(`• ${i}`)
+      );
+
+      doc.moveDown();
+
+    }
+
+    if (ans.correctAnswer) {
+
+      doc
+        .fillColor("#1565c0")
+        .text("Correct Answer:");
+
+      doc
+        .fillColor("black")
+        .text(ans.correctAnswer);
+
+      doc.moveDown();
+
+    }
+
+    doc
+      .fillColor("#333333")
+      .text("Detailed Feedback:");
+
+    doc
+      .fillColor("black")
+      .text(ans.detailedFeedback);
+
+    doc.moveDown(2);
+
+  });
+
+  doc.end();
 }

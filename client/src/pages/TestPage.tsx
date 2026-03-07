@@ -9,23 +9,30 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
+const normalizeAnswer = (text?: string) =>
+  text
+    ?.normalize("NFKC")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+
 export default function TestPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const config = location.state?.config;
-  
+
   // Scroll to top when page loads
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
-  
+
   // Immediate guard: redirect if no config
   useEffect(() => {
     if (!config) {
       navigate('/');
     }
   }, [config, navigate]);
-  
+
   // Return loading state while redirecting if no config
   if (!config) {
     return (
@@ -37,7 +44,7 @@ export default function TestPage() {
       </div>
     );
   }
-  
+
   const isCustomStudentTest = config.mode === "custom-student";
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [customQuestions, setCustomQuestions] = useState<any[]>(config.customQuestions || []);
@@ -68,7 +75,7 @@ export default function TestPage() {
       }
       return;
     }
-    
+
     const startSession = async () => {
       try {
         const response = await apiRequest("POST", "/api/test/start", config);
@@ -143,20 +150,27 @@ export default function TestPage() {
       if (showFeedback) {
         return;
       }
-      
+
       // Local evaluation for custom tests
       const currentQ = customQuestions[currentQuestionIndex];
-      const isCorrect = currentQ.questionType === "mcq"
-        ? answer === currentQ.correctOption
-        : answer.trim().toLowerCase() === (currentQ.correctAnswer || "").trim().toLowerCase();
-      
+      // const isCorrect = currentQ.questionType === "mcq"
+      //   ? answer === currentQ.correctOption
+      //   // : answer.trim().toLowerCase() === (currentQ.correctAnswer || "").trim().toLowerCase();
+      //   : normalizeAnswer(answer) === normalizeAnswer(currentQ.correctAnswer);
+      //   currentQ.correctAnswer || currentQ.correctOption
+
+      const correctAnswer =
+      currentQ.correctAnswer || currentQ.correctOption;
+
+      const isCorrect = normalizeAnswer(answer) === normalizeAnswer(correctAnswer);
+
       const pointsEarned = isCorrect ? 10 : 0;
       const newScore = totalScore + pointsEarned;
       const newCorrect = correctAnswers + (isCorrect ? 1 : 0);
-      
+
       setTotalScore(newScore);
       setCorrectAnswers(newCorrect);
-      
+
       // Build feedback data matching the API response shape
       setFeedbackData({
         isCorrect,

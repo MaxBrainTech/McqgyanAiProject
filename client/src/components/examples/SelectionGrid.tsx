@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 export default function SelectionGridExample() {
   const [selected, setSelected] = useState<number>(8);
-  
+
   const classes = [
     { label: 'Class 6', value: 6 },
     { label: 'Class 7', value: 7 },

@@ -1,11 +1,79 @@
 import OpenAI from "openai";
+import "dotenv/config";
+import { generateFromHF } from "./services/huggingface";
+// import { GPT_MODELS } from "./gptModels";
 
+
+
+interface MCQ {
+  question: string;
+  options: string[];
+  correctAnswer: string;
+}
+
+export const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY!,
+});
 // OpenAI Configuration
 // Priority: Use your own OPENAI_API_KEY if provided, otherwise fall back to Replit's AI Integrations
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.OPENAI_API_KEY ? undefined : process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-});
+
+export const AI_CONFIG = {
+  temperature: 0.7,
+  max_tokens: 2500,
+};
+
+// export async function generateMCQs(
+//   prompt: string,
+//   modelToUse: string
+// ) {
+//   // ✅ model safety yahin decide hogi
+//     const SAFE_MODEL =
+//       modelToUse.startsWith("gpt-5")
+//         ? "gpt-4o"
+//         : modelToUse;
+
+//     const response = await openai.chat.completions.create({
+//       model: SAFE_MODEL,
+//       messages: [{ role: "user", content: prompt }],
+//       temperature: AI_CONFIG.temperature,
+//       max_tokens: AI_CONFIG.max_tokens,
+//     });
+
+//       return response.choices[0]?.message?.content;
+//   }
+
+// export async function generateMCQs(
+//   prompt: string,
+//   model: string
+// ): Promise<string | null> {
+//   try {
+//     const response = await openai.responses.create({
+//       model: model || "gpt-3.5-turbo",
+//       input: prompt,
+//       max_output_tokens: 2500,
+//       temperature: 0.7, 
+//     });
+
+//     return response.output_text;
+//   } catch (error) {
+//     console.error("OpenAI error:", error);
+//     return null;
+//   }
+// }
+
+// const openai = new OpenAI({
+//   apiKey: process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+//   baseURL: process.env.OPENAI_API_KEY ? undefined : process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+// });
+
+// export async function generateMCQs(prompt: string) {
+//   const response = await openai.responses.create({
+//     model: GPT_MODELS.GPT_5_2, // 👈 YAHAN MODEL USE HOTA HAI
+//     input: prompt,
+//   });
+
+//   return response.output_text;
+// }
 
 // Embedding model for semantic similarity detection
 const EMBEDDING_MODEL = "text-embedding-3-small";
@@ -29,33 +97,50 @@ export function cosineSimilarity(vecA: number[], vecB: number[]): number {
   if (vecA.length !== vecB.length) {
     throw new Error("Vectors must have the same length");
   }
-  
+
   let dotProduct = 0;
   let normA = 0;
   let normB = 0;
-  
+
   for (let i = 0; i < vecA.length; i++) {
     dotProduct += vecA[i] * vecB[i];
     normA += vecA[i] * vecA[i];
     normB += vecB[i] * vecB[i];
   }
-  
+
   return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
 // GPT Model Configuration - You can change these to use different models
 export const GPT_MODELS = {
+
+  // 🔥 my Fine-Tuned Model
+  FT_PRICER: "ft:gpt-4.1-nano-2025-04-14:maxbrain-technologies:pricer:DD6LfCqA",
+
+  // 🤗 HuggingFace Model
+  HF_MCQGYAAN: "hf-mcqgyaan",
+
+  // 🔥 GPT-5 Series (Latest – High intelligence & reasoning)
+  GPT_5_2: "gpt-5.2",          // Latest & most capable (best quality)
+  GPT_5_1: "gpt-5.1",         // Slightly faster, near-same quality
+
   // OpenAI o1 series - Specialized reasoning models for math, science, and logic
   O1_PREVIEW: "o1-preview",     // O1 Preview - Best reasoning, most expensive, for complex problems
   O1_MINI: "o1-mini",           // O1 Mini - Strong reasoning, cost-effective, great for STEM
-  
+
   // GPT-4 series - General purpose advanced models
   ADVANCED: "gpt-4o",           // GPT-4 Optimized - Most capable, balanced cost/performance
   STANDARD: "gpt-4o-mini",      // GPT-4 Mini - Faster, cheaper, still very capable
-  
+
   // Legacy models
   GPT_35_TURBO: "gpt-3.5-turbo", // Fastest, cheapest, good for simple tasks
+
 } as const;
+
+// const response = await openai.chat.completions.create({
+//   model: GPT_MODELS.GPT_5_2,
+//   messages: []
+// });
 
 // Current model in use - Change this to switch models globally  
 const CURRENT_MODEL = GPT_MODELS.STANDARD;  // Using gpt-4o-mini as default (o1 models used for verification)
@@ -115,6 +200,7 @@ const CBSE_CLASS_GUIDELINES = {
 
 interface QuestionGenerationParams {
   mode?: string;
+  medium?: string;
   language?: string;
   scienceCategory?: string;
   classLevel: number;
@@ -140,19 +226,19 @@ function areNumericallyClose(value1: string, value2: string): boolean {
   // Extract numbers from strings (e.g., "20.4 m" -> "20.4")
   const num1Match = value1.match(/[-+]?\d*\.?\d+/);
   const num2Match = value2.match(/[-+]?\d*\.?\d+/);
-  
+
   if (!num1Match || !num2Match) return false;
-  
+
   const num1 = parseFloat(num1Match[0]);
   const num2 = parseFloat(num2Match[0]);
-  
+
   // Allow 2% tolerance for numerical answers
   const tolerance = Math.max(Math.abs(num1) * 0.02, 0.05);
   return Math.abs(num1 - num2) <= tolerance;
 }
 
 // Helper function to verify answer correctness independently
-async function verifyAnswer(question: string, proposedAnswer: string, mode: string, gptModel?: string): Promise<{
+export async function verifyAnswer(question: string, proposedAnswer: string, mode: string, gptModel?: string): Promise<{
   isValid: boolean;
   explanation: string;
   alternativeAnswer?: string;
@@ -160,7 +246,7 @@ async function verifyAnswer(question: string, proposedAnswer: string, mode: stri
 }> {
   // Use gpt-4o for verification when dealing with math/science - it's reliable and accurate
   const verificationModel = mode === 'science' ? "gpt-4o" : (gptModel || CURRENT_MODEL);
-  
+
   const prompt = `You are an independent fact-checker verifying the correctness of an answer.
 
 Question: ${question}
@@ -186,13 +272,28 @@ Return JSON format:
   try {
     // o1 models don't support response_format or system messages
     const isO1Model = verificationModel.startsWith('o1');
-    
-    const requestConfig: any = {
-      model: verificationModel,
+
+    const SAFE_MODEL =
+    verificationModel.startsWith("gpt-5")
+    ? "gpt-4o"
+    : verificationModel;
+
+    // const requestConfig: any = {
+    //   model: verificationModel,
+    //   messages: [{ role: "user", content: prompt }],
+    //   max_completion_tokens: 1000,
+    // };
+
+      // ✅ ONE requestConfig only
+      const requestConfig: any = {
+      model: SAFE_MODEL,
       messages: [{ role: "user", content: prompt }],
-      max_completion_tokens: 1000,
+      temperature: AI_CONFIG.temperature,
+      max_tokens: AI_CONFIG.max_tokens,
     };
-    
+
+
+
     // Only add response_format for non-o1 models
     if (!isO1Model) {
       requestConfig.response_format = { type: "json_object" };
@@ -217,7 +318,7 @@ Return JSON format:
     }
 
     const result = JSON.parse(jsonContent);
-    
+
     // Additional check: if AI says invalid but values are numerically close, accept it
     let isValid = result.isValid === true;
     if (!isValid && result.alternativeAnswer && mode === 'science') {
@@ -227,7 +328,7 @@ Return JSON format:
         console.log(`[VERIFY] Accepting answer due to numerical tolerance (within 2%)`);
       }
     }
-    
+
     console.log(`[VERIFY] Question verification: isValid=${isValid}, Model=${verificationModel}`);
     if (!isValid) {
       console.warn(`[VERIFY WARNING] Answer FAILED verification!`);
@@ -235,7 +336,7 @@ Return JSON format:
       console.warn(`[VERIFY] Correct: "${result.alternativeAnswer}"`);
       console.warn(`[VERIFY] Reason: ${result.explanation}`);
     }
-    
+
     return {
       isValid: isValid,
       explanation: result.explanation || "No explanation provided",
@@ -258,14 +359,24 @@ async function assessQuestionQuality(
 ): Promise<{ score: number; issues: string[] }> {
   const modelToUse = gptModel || CURRENT_MODEL;
   const guidelines = CBSE_CLASS_GUIDELINES[classLevel as keyof typeof CBSE_CLASS_GUIDELINES];
-  
-  const prompt = `You are a CBSE curriculum expert evaluating question quality for Class ${classLevel}.
+
+const language = "English";
+
+const prompt = `
+You are a CBSE curriculum expert evaluating question quality for Class ${classLevel}.
 
 Question: ${question}
 Expected Difficulty: ${difficulty}
 Expected Bloom's Level: ${guidelines.bloomLevel}
 Expected Vocabulary: ${guidelines.vocabulary}
 Expected Cognitive Level: ${guidelines.cognitiveLevel}
+
+Generate a ${difficulty} level ${language} MCQ question.
+
+The question, options, explanation and answer must be in ${language} language.
+
+Return in JSON format.
+
 
 Evaluate on these criteria (score 0-10 for each):
 1. Age-appropriateness: Is vocabulary suitable for Class ${classLevel}?
@@ -282,17 +393,24 @@ Return JSON:
 }`;
 
   try {
-    const isO1Model = modelToUse.startsWith('o1');
+    const isO1Model = modelToUse.startsWith("o1");
+      const SAFE_MODEL =
+    modelToUse && modelToUse.startsWith("gpt-5")
+    ? "gpt-4o"
+    : modelToUse;
+// ✅ ONE requestConfig only
     const requestConfig: any = {
-      model: modelToUse,
+      model: SAFE_MODEL,
       messages: [{ role: "user", content: prompt }],
-      max_completion_tokens: 400,
+      temperature: AI_CONFIG.temperature,
+      max_tokens: AI_CONFIG.max_tokens,
     };
-    
+
+
     if (!isO1Model) {
       requestConfig.response_format = { type: "json_object" };
     }
-    
+
     const response = await openai.chat.completions.create(requestConfig);
 
     const content = response.choices[0]?.message?.content?.trim();
@@ -309,7 +427,7 @@ Return JSON:
       const match = content.match(/```\s*([\s\S]*?)\s*```/);
       if (match) jsonContent = match[1];
     }
-    
+
     const result = JSON.parse(jsonContent);
     return {
       score: result.overallScore || 5,
@@ -321,6 +439,200 @@ Return JSON:
   }
 }
 
+// export async function generateQuestion(params: QuestionGenerationParams & { isMcq?: boolean }): Promise<{
+//   question: string;
+//   correctAnswer: string;
+//   questionType: string;
+//   options?: string[];
+//   correctOption?: string;
+//   explanation?: string;
+// }>
+
+
+export async function generateMCQs(
+  basePrompt: string,
+  totalQuestions: number,
+  model: string = GPT_MODELS.GPT_35_TURBO
+): Promise<MCQ[]> {
+
+  const BATCH_SIZE = 10;
+  const MAX_TOKENS = 800;
+  const TEMPERATURE = 0.6;
+
+  let allQuestions: MCQ[] = [];
+  let attempts = 0;
+
+  while (allQuestions.length < totalQuestions && attempts < 5) {
+    attempts++;
+    const remaining = totalQuestions - allQuestions.length;
+    const currentBatch = Math.min(BATCH_SIZE, remaining);
+
+    const prompt = `
+${basePrompt}
+
+Generate ${currentBatch} MCQs only.
+Rules:
+- Each MCQ must have:
+  - question
+  - 4 options
+  - correctAnswer
+- Output STRICT JSON only
+
+{
+  "questions": [
+    {
+      "question": "",
+      "options": ["", "", "", ""],
+      "correctAnswer": ""
+    }
+  ]
+}
+  IMPORTANT:
+- Respond ONLY with JSON
+- No extra text
+- No markdown
+`;
+
+//     try {
+//       const response = await openai.chat.completions.create({
+//         model,
+//         messages: [{ role: "user", content: prompt }],
+//         temperature: TEMPERATURE,
+//         max_tokens: MAX_TOKENS,
+//       });
+
+//       const content = response.choices[0]?.message?.content;
+//       if (!content) continue;
+
+//       const parsed = JSON.parse(content);
+//         if (
+//         parsed &&
+//         Array.isArray(parsed.questions) &&
+//         parsed.questions.length > 0
+//       ) {
+//         allQuestions.push(...parsed.questions);
+//       } else {
+//         console.warn("No valid questions in batch:", parsed);
+//       }
+//     } catch (error: any) {
+//       console.error(`[MCQ BATCH ERROR] Failed to generate MCQ batch:`, error.message || error);
+//       continue;
+//     }
+//   }
+
+//   return allQuestions.slice(0, totalQuestions);
+// }
+
+//  try {
+//       console.log(`AI attempt ${attempts} | generating ${currentBatch}`);
+
+//       // const response = await openai.chat.completions.create({
+//       //   model,
+//       //   messages: [{ role: "user", content: prompt }],
+//       //   temperature: TEMPERATURE,
+//       //   max_tokens: MAX_TOKENS,
+//       // });
+
+
+//       let content: string | undefined;
+
+// if (model.startsWith("hf-")) {
+//   // HuggingFace Model
+//   content = await generateFromHF(prompt);
+// } else {
+//   const response = await openai.chat.completions.create({
+//     model,
+//     messages: [{ role: "user", content: prompt }],
+//     temperature: TEMPERATURE,
+//     max_tokens: MAX_TOKENS,
+//   });
+
+//   content = response.choices[0]?.message?.content;
+// }
+
+// if (!content) continue;
+
+// let parsed;
+// try {
+//   parsed = JSON.parse(content);
+// } catch (err) {
+//   console.error("Invalid JSON, retrying...", err);
+//   continue;
+// }
+
+//       // const content = response.choices[0]?.message?.content;
+//       if (!content) continue;
+
+//       let parsed;
+
+//       try {
+//         parsed = JSON.parse(content);
+//       } catch (err) {
+//         console.error("Invalid JSON, retrying...", err);
+//         continue;
+//       }
+
+//       if (Array.isArray(parsed.questions)) {
+//         allQuestions.push(...parsed.questions);
+//       }
+
+//     } catch (err) {
+//       console.error("AI failed:", err);
+//       continue;
+//     }
+//   }
+
+  try {
+    console.log(`AI attempt ${attempts} | generating ${currentBatch}`);
+
+    let content: string | undefined;
+
+    if (model.startsWith("hf-")) {
+      // 🔹 HuggingFace Model
+      content = await generateFromHF(prompt);
+    } else {
+      // 🔹 OpenAI Model
+      const response = await openai.chat.completions.create({
+        model,
+        messages: [{ role: "user", content: prompt }],
+        temperature: TEMPERATURE,
+        max_tokens: MAX_TOKENS,
+      });
+
+      content = response.choices[0]?.message?.content ?? undefined;
+    }
+
+    if (!content) {
+      console.error("Empty response, retrying...");
+      continue;
+    }
+
+    let parsed: any;
+
+    try {
+      parsed = JSON.parse(content);
+    } catch (err) {
+      console.error("Invalid JSON, retrying...", err);
+      continue;
+    }
+
+    // Ensure expected format
+    if (Array.isArray(parsed?.questions)) {
+      allQuestions.push(...parsed.questions);
+    } else {
+      console.error("Invalid question format, retrying...");
+      continue;
+    }
+
+  } catch (err) {
+    console.error("AI failed:", err);
+    continue;
+  }
+}
+
+  return allQuestions.slice(0, totalQuestions);
+}
+
 export async function generateQuestion(params: QuestionGenerationParams & { isMcq?: boolean }): Promise<{
   question: string;
   correctAnswer: string;
@@ -328,22 +640,22 @@ export async function generateQuestion(params: QuestionGenerationParams & { isMc
   options?: string[];
   correctOption?: string;
   explanation?: string;
-}> {
+}| null> {
   const { mode, language, scienceCategory, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance, previousQuestions, isMcq, gptModel } = params;
-  
+
   // Use the specified model or fall back to CURRENT_MODEL
   const modelToUse = gptModel || CURRENT_MODEL;
-  
+
   console.log(`[generateQuestion] mode=${mode}, language=${language}, scienceCategory=${scienceCategory}, isMcq=${isMcq}`);
-  
+
   // For science mode, use different generation logic
   if (mode === 'science') {
     console.log(`[generateQuestion] Calling generateScienceQuestion with category=${scienceCategory}, model=${modelToUse}`);
-    return generateScienceQuestion({ scienceCategory, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance, previousQuestions, isMcq, gptModel: modelToUse });
+    return generateScienceQuestion({ scienceCategory, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance, previousQuestions, isMcq, gptModel: modelToUse, language  });
   }
-  
+
   console.log(`[AI] Generating ${isMcq ? 'MCQ' : 'open-ended'} question #${questionNumber} for ${language} - ${difficulty} difficulty using ${modelToUse}`);
-  
+
   const adaptiveContext = previousPerformance 
     ? `\nThe student's previous performance: ${previousPerformance}. Adjust the difficulty accordingly.`
     : '';
@@ -358,7 +670,7 @@ export async function generateQuestion(params: QuestionGenerationParams & { isMc
 
   const languageLower = language?.toLowerCase() || "";
   const isIndianLanguage = ['hindi', 'marathi', 'kannada'].includes(languageLower);
-  
+
   // Determine script type and examples based on language
   const scriptInfo = languageLower === 'kannada' 
     ? {
@@ -377,7 +689,7 @@ export async function generateQuestion(params: QuestionGenerationParams & { isMc
         exampleWord: "किताब",
         exampleSentence: "मैं एक किताब पढ़ रहा हूँ।"
       };
-  
+
   const indianLanguageGuidelines = isIndianLanguage ? `
 
 📝 CRITICAL - ${language} Language Quality Requirements:
@@ -418,6 +730,22 @@ VALIDATION CHECKLIST before responding:
   const guidelines = CBSE_CLASS_GUIDELINES[classLevel as keyof typeof CBSE_CLASS_GUIDELINES];
 
   const prompt = `You are a strict CBSE ${language} teacher for Class ${classLevel} following the official CBSE curriculum.
+Generate a ${difficulty} level ${language} MCQ question.
+
+The question, options, explanation and answer must be in ${language} language.
+
+Return in JSON format.
+Return in JSON format.
+  Language Selected: ${language}
+  IMPORTANT LANGUAGE RULE:
+  - If language is Hindi, generate question, options, correct answer and explanation ONLY in Hindi.
+  - Do NOT use English words when language is Hindi.
+  - If language is English, generate everything strictly in English.
+
+  Chapter: ${chapterTitle}
+  Difficulty: ${difficulty}
+  IMPORTANT: Return ONLY valid JSON. Do not include explanations or text like "I'm sorry".
+
 
 🎯 CBSE CLASS ${classLevel} BLUEPRINT REQUIREMENTS:
 - Bloom's Taxonomy Level: ${guidelines.bloomLevel}
@@ -472,25 +800,41 @@ Return your response in this exact JSON format:
 Make the question challenging but fair for Class ${classLevel} CBSE level (age ${classLevel + 10}-${classLevel + 11}). Ensure all ${language} text is COMPLETE and PROPERLY FORMATTED.`;
 
   const startTime = Date.now();
-  
+
   try {
-    const response = await openai.chat.completions.create({
-      model: modelToUse,
+    const isO1Model = modelToUse.startsWith("o1");
+      const SAFE_MODEL =
+    modelToUse && modelToUse.startsWith("gpt-5")
+    ? "gpt-4o"
+    : modelToUse;
+    // ✅ ONE requestConfig only
+    const requestConfig: any = {
+      model: SAFE_MODEL,
       messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
-      max_completion_tokens: 500,
-    });
-    
+      temperature: AI_CONFIG.temperature,
+      max_tokens: AI_CONFIG.max_tokens,
+    };
+
+    const response = await openai.chat.completions.create(requestConfig);
+
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     const content = response.choices[0]?.message?.content?.trim();
-    
+
     if (!content) {
       throw new Error("AI returned empty response");
     }
-    
-    const result = JSON.parse(content);
+
+    let cleanContent = content;
+
+    let jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
+
+    if (!jsonMatch) {
+      throw new Error("AI returned non-JSON response");
+    }
+
+    const result = JSON.parse(jsonMatch[0]);
     console.log(`[AI] Question generated in ${elapsed}s using ${modelToUse}: ${result.question.substring(0, 50)}...`);
-    
+
     // Validate question completeness for Indian languages
     if (isIndianLanguage) {
       if (!result.question || result.question.length < 30) {
@@ -506,15 +850,15 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
       if (hasPlaceholders || endsIncomplete) {
         throw new Error("Generated question contains placeholders or ends incompletely");
       }
-      
+
       // Validate correct script usage (only if answer should be in the native language)
       const answerLanguage = (result.answerLanguage || '').trim().toLowerCase();
       const shouldBeNativeLanguage = answerLanguage !== 'english';
-      
+
       if (shouldBeNativeLanguage) {
         const devanagariRegex = /[\u0900-\u097F]/;  // Devanagari Unicode range
         const kannadaRegex = /[\u0C80-\u0CFF]/;     // Kannada Unicode range
-        
+
         if (languageLower === 'kannada') {
           if (!kannadaRegex.test(result.correctAnswer)) {
             throw new Error("Answer must contain Kannada script characters, not romanized text");
@@ -526,16 +870,17 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
         }
       }
     }
-    
+
     // STEP 1: Verify answer correctness for open-ended language questions
     console.log(`[AI] Verifying answer correctness for ${language} open-ended question...`);
     const verification = await verifyAnswer(
       result.question,
       result.correctAnswer,
+      // result.options ,
       'language',
       modelToUse
     );
-    
+
     let verifiedAnswer = result.correctAnswer;
     if (!verification.isValid) {
       if (verification.alternativeAnswer && verification.alternativeAnswer !== "VERIFICATION_FAILED") {
@@ -549,7 +894,7 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
     } else {
       console.log(`[AI] ✓ Answer verified as correct`);
     }
-    
+
     // STEP 2: Assess question quality
     console.log(`[AI] Assessing ${language} open-ended question quality...`);
     const quality = await assessQuestionQuality(
@@ -558,17 +903,16 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
       difficulty,
       'language',
       modelToUse
-    );
-    
+    );   
     console.log(`[AI] Quality Score: ${quality.score}/10`);
     if (quality.issues.length > 0) {
       console.log(`[AI] Quality Issues: ${quality.issues.join(', ')}`);
     }
-    
+
     if (quality.score < 6) {
       console.warn(`[AI WARNING] Question quality below threshold (${quality.score}/10). Consider manual review.`);
     }
-    
+
     // Only return verified data
     return {
       question: result.question || "Error generating question",
@@ -603,7 +947,7 @@ async function generateMcqQuestion(params: {
 
   const languageLower = language?.toLowerCase() || "";
   const isIndianLanguage = ['hindi', 'marathi', 'kannada'].includes(languageLower);
-  
+
   // Determine script type and MCQ examples based on language
   const mcqScriptInfo = languageLower === 'kannada'
     ? {
@@ -622,7 +966,7 @@ async function generateMcqQuestion(params: {
         exampleOptions2: ["A. शुभ रात्रि", "B. नमस्ते", "C. सुप्रभात", "D. धन्यवाद"],
         exampleExplanation2: "सुप्रभात means Good morning."
       };
-  
+
   const indianLanguageMcqGuidelines = isIndianLanguage ? `
 
 📝 CRITICAL - ${language} MCQ Quality Requirements:
@@ -697,41 +1041,54 @@ Return your response in this exact JSON format:
 Make the question challenging but fair for Class ${classLevel} CBSE level (age ${classLevel + 10}-${classLevel + 11}) with clear, COMPLETE, distinct options in proper script.`;
 
   const startTime = Date.now();
-  
+
   try {
-    const response = await openai.chat.completions.create({
-      model: modelToUse,
+    const isO1Model = modelToUse.startsWith("o1");
+      const SAFE_MODEL =
+    modelToUse && modelToUse.startsWith("gpt-5")
+    ? "gpt-4o"
+    : modelToUse;
+    // ✅ ONE requestConfig only
+    const requestConfig: any = {
+      model: SAFE_MODEL,
       messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
-      max_completion_tokens: 800,
-    });
-    
+      temperature: AI_CONFIG.temperature,
+      max_tokens: AI_CONFIG.max_tokens,
+    };
+
+    const response = await openai.chat.completions.create(requestConfig);
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     const content = response.choices[0]?.message?.content?.trim();
-    
+
     if (!content) {
       throw new Error("AI returned empty response");
     }
-    
-    const result = JSON.parse(content);
+
+    let cleanContent = content
+    .replace(/```json/g, "")
+    .replace(/```/g, "")
+    .trim();
+
+    const result = JSON.parse(cleanContent);
+    console.log("RAW AI RESPONSE:", content);
     console.log(`[AI] MCQ generated in ${elapsed}s using ${modelToUse}: ${result.question.substring(0, 50)}...`);
-    
+
     // Validate MCQ response
     if (!Array.isArray(result.options) || result.options.length !== 4) {
       console.error("[AI ERROR] MCQ must have exactly 4 options, got:", result.options?.length);
       throw new Error("Invalid MCQ format: must have 4 options");
     }
-    
+
     if (!["A", "B", "C", "D"].includes(result.correctOption)) {
       console.error("[AI ERROR] Invalid correctOption:", result.correctOption);
       throw new Error("Invalid MCQ format: correctOption must be A, B, C, or D");
     }
-    
+
     if (!result.explanation || result.explanation.trim().length === 0) {
       console.error("[AI ERROR] MCQ missing explanation");
       result.explanation = "No explanation provided";
     }
-    
+
     // Additional validation for Indian languages
     if (isIndianLanguage) {
       // Check that all options have meaningful content (not just "A. ", "B. ", etc.)
@@ -739,20 +1096,20 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
         const content = opt.replace(/^[A-D]\.\s*/, '').trim();
         return content.length < 2; // Option content too short
       });
-      
+
       if (hasIncompleteOptions) {
         throw new Error("MCQ options are incomplete or missing content");
       }
-      
+
       // Check question completeness
       if (!result.question || result.question.length < 20) {
         throw new Error("MCQ question is too short or incomplete");
       }
-      
+
       // Validate correct script usage in options
       const devanagariRegex = /[\u0900-\u097F]/;  // Devanagari Unicode range
       const kannadaRegex = /[\u0C80-\u0CFF]/;     // Kannada Unicode range
-      
+
       // Check if at least one option contains the correct script
       const optionsText = result.options.join(' ');
       if (languageLower === 'kannada') {
@@ -765,7 +1122,7 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
         }
       }
     }
-    
+
     // STEP 1: Verify answer correctness for language questions
     console.log(`[AI] Verifying answer correctness for ${language} MCQ...`);
     const verification = await verifyAnswer(
@@ -774,22 +1131,22 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
       'language',
       modelToUse
     );
-    
+
     let verifiedAnswer = result.correctAnswer;
     let verifiedExplanation = result.explanation;
     let verifiedOption = result.correctOption;
-    
+
     if (!verification.isValid) {
       if (verification.alternativeAnswer && verification.alternativeAnswer !== "VERIFICATION_FAILED") {
         console.warn(`[AI WARNING] MCQ answer verification failed! Original: "${result.correctAnswer}" | Corrected: "${verification.alternativeAnswer}"`);
         console.warn(`[AI WARNING] Reason: ${verification.explanation}`);
-        
+
         // Try to find which option matches the corrected answer
         const matchingOptionIndex = result.options.findIndex((opt: string) => 
           opt.toLowerCase().includes(verification.alternativeAnswer!.toLowerCase()) ||
           verification.alternativeAnswer!.toLowerCase().includes(opt.replace(/^[A-D]\.\s*/, '').trim().toLowerCase())
         );
-        
+
         if (matchingOptionIndex >= 0) {
           verifiedOption = String.fromCharCode(65 + matchingOptionIndex); // 65 is 'A'
           verifiedAnswer = verification.alternativeAnswer;
@@ -806,7 +1163,7 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
     } else {
       console.log(`[AI] ✓ Answer verified as correct: ${verification.explanation.substring(0, 50)}...`);
     }
-    
+
     // STEP 2: Assess question quality
     console.log(`[AI] Assessing ${language} MCQ quality...`);
     const quality = await assessQuestionQuality(
@@ -816,16 +1173,16 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
       'language',
       modelToUse
     );
-    
+
     console.log(`[AI] Quality Score: ${quality.score}/10`);
     if (quality.issues.length > 0) {
       console.log(`[AI] Quality Issues: ${quality.issues.join(', ')}`);
     }
-    
+
     if (quality.score < 6) {
       console.warn(`[AI WARNING] Question quality below threshold (${quality.score}/10).`);
     }
-    
+
     // Only return verified data
     return {
       question: result.question || "Error generating question",
@@ -851,6 +1208,7 @@ async function generateScienceQuestion(params: {
   previousQuestions?: string[];
   isMcq?: boolean;
   gptModel?: string;
+  language?: string; 
 }): Promise<{
   question: string;
   correctAnswer: string;
@@ -858,15 +1216,17 @@ async function generateScienceQuestion(params: {
   options?: string[];
   correctOption?: string;
   explanation?: string;
-}> {
+}| null> {
   const { scienceCategory, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance, previousQuestions, isMcq = true, gptModel } = params;
+  const category = scienceCategory || chapterTitle || "general science";
   const modelToUse = gptModel || CURRENT_MODEL;
-  
+
   const questionTypeText = isMcq ? 'MCQ' : 'open-ended';
-  console.log(`[AI] Generating science ${questionTypeText} question #${questionNumber} for ${scienceCategory} - ${difficulty} difficulty`);
-  
+  // console.log(`[AI] Generating science ${questionTypeText} question #${questionNumber} for ${scienceCategory} - ${difficulty} difficulty`);
+  console.log(`[AI] Generating science ${questionTypeText} question #${questionNumber} for ${category} - ${difficulty} difficulty`);
+
   const guidelines = CBSE_CLASS_GUIDELINES[classLevel as keyof typeof CBSE_CLASS_GUIDELINES];
-  
+
   const adaptiveContext = previousPerformance 
     ? `\nStudent's previous performance: ${previousPerformance}. Adjust the difficulty accordingly.`
     : '';
@@ -889,6 +1249,11 @@ async function generateScienceQuestion(params: {
     : "Generate an open-ended question that requires a detailed written answer";
 
   const prompt = `You are a strict CBSE General Science teacher for Class ${classLevel} following the official NCERT curriculum.
+      if (language && language.toLowerCase() === "hindi") {
+
+    IMPORTANT LANGUAGE RULE:
+    Generate question, options, correct answer and explanation ONLY in Hindi.
+    Do NOT use English words.
 
 🎯 CBSE CLASS ${classLevel} BLUEPRINT REQUIREMENTS:
 - Bloom's Taxonomy Level: ${guidelines.bloomLevel}
@@ -956,40 +1321,59 @@ Return your response in this exact JSON format:
 Make the question challenging but fair for Class ${classLevel} CBSE students. Ensure 100% scientific accuracy - you will be fact-checked.`;
 
   const startTime = Date.now();
-  
+
   try {
-    const response = await openai.chat.completions.create({
-      model: modelToUse,
+    const isO1Model = modelToUse.startsWith("o1");
+    const SAFE_MODEL =
+    modelToUse && modelToUse.startsWith("gpt-5")
+    ? "gpt-4o"
+    : modelToUse;
+    // ✅ ONE requestConfig only
+    const requestConfig: any = {
+      model: SAFE_MODEL,
       messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
-      max_completion_tokens: 800,
-    });
-    
+      temperature: AI_CONFIG.temperature,
+      max_tokens: AI_CONFIG.max_tokens,
+    };
+
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    const response = await openai.chat.completions.create(requestConfig);
     const content = response.choices[0]?.message?.content?.trim();
-    
+
     if (!content) {
       throw new Error("AI returned empty response");
     }
-    
-    const result = JSON.parse(content);
-    console.log(`[AI] Science ${isMcq ? 'MCQ' : 'open-ended'} generated in ${elapsed}s using ${modelToUse}: ${result.question.substring(0, 50)}...`);
-    
+
+    let cleanContent = content;
+
+    if (cleanContent.includes("```json")) {
+      const match = cleanContent.match(/```json\s*([\s\S]*?)\s*```/);
+      if (match) cleanContent = match[1];
+    } else if (cleanContent.includes("```")) {
+      const match = cleanContent.match(/```\s*([\s\S]*?)\s*```/);
+      if (match) cleanContent = match[1];
+    }
+
+    const result = JSON.parse(cleanContent);
+    // console.log(`[AI] Science ${isMcq ? 'MCQ' : 'open-ended'} generated in ${elapsed}s using ${modelToUse}: ${result.question.substring(0, 50)}...`);
+    const { difficulty, questionNumber, scienceCategory, chapterTitle } = params;
+    const category = scienceCategory || chapterTitle || "general science";
+
     if (isMcq) {
       // Validate MCQ format
       if (!Array.isArray(result.options) || result.options.length !== 4) {
         throw new Error("Invalid MCQ format: must have exactly 4 options");
       }
-      
+
       if (!["A", "B", "C", "D"].includes(result.correctOption)) {
         throw new Error("Invalid MCQ format: correctOption must be A, B, C, or D");
       }
-      
+
       if (!result.explanation || result.explanation.trim().length === 0) {
         console.error("[AI ERROR] Science MCQ missing explanation");
         result.explanation = "No explanation provided";
       }
-      
+
       // STEP 1: Verify answer correctness independently
       console.log(`[AI] Verifying answer correctness for science question...`);
       const verification = await verifyAnswer(
@@ -998,11 +1382,11 @@ Make the question challenging but fair for Class ${classLevel} CBSE students. En
         'science',
         modelToUse
       );
-      
+
       let verifiedAnswer = result.correctAnswer;
       let verifiedExplanation = result.explanation;
       let verifiedOption = result.correctOption;
-      
+
       // STRICT VERIFICATION: If answer is wrong, reject the entire question
       if (!verification.isValid) {
         console.error(`[AI ERROR] ❌ Science answer verification FAILED!`);
@@ -1013,33 +1397,34 @@ Make the question challenging but fair for Class ${classLevel} CBSE students. En
           console.error(`[AI ERROR] Correct Answer should be: "${verification.alternativeAnswer}"`);
         }
         console.error(`[AI ERROR] REJECTING this question - will regenerate a new one`);
-        throw new Error(`Science question verification failed - answer is incorrect. ${verification.explanation}`);
+        console.warn("Science question verification failed - regenerating...");
+        return null;
       } else {
         console.log(`[AI] ✓ Answer verified as correct by o1-mini verification model`);
         if (verification.calculationSteps) {
           console.log(`[AI] ✓ Calculation steps: ${verification.calculationSteps}`);
         }
       }
-      
+
       // STEP 2: Assess question quality
-      console.log(`[AI] Assessing question quality...`);
-      const quality = await assessQuestionQuality(
-        result.question,
-        classLevel,
-        difficulty,
-        'science',
-        modelToUse
-      );
-      
-      console.log(`[AI] Quality Score: ${quality.score}/10`);
-      if (quality.issues.length > 0) {
-        console.log(`[AI] Quality Issues: ${quality.issues.join(', ')}`);
-      }
-      
-      if (quality.score < 6) {
-        console.warn(`[AI WARNING] Question quality below threshold (${quality.score}/10). Consider regeneration.`);
-      }
-      
+      // console.log(`[AI] Assessing question quality...`);
+      // const quality = await assessQuestionQuality(
+      //   result.question,
+      //   classLevel,
+      //   difficulty,
+      //   'science',
+      //   modelToUse
+      // );
+
+      // console.log(`[AI] Quality Score: ${quality.score}/10`);
+      // if (quality.issues.length > 0) {
+      //   console.log(`[AI] Quality Issues: ${quality.issues.join(', ')}`);
+      // }
+
+      // if (quality.score < 6) {
+      //   console.warn(`[AI WARNING] Question quality below threshold (${quality.score}/10). Consider regeneration.`);
+      // }
+
       // Return verified MCQ data
       return {
         question: result.question || "Error generating question",
@@ -1054,7 +1439,7 @@ Make the question challenging but fair for Class ${classLevel} CBSE students. En
       if (!result.correctAnswer || result.correctAnswer.trim().length < 10) {
         throw new Error("Invalid open-ended format: answer too short");
       }
-      
+
       // STEP 1: Verify answer correctness
       console.log(`[AI] Verifying answer correctness for science open-ended question...`);
       const verification = await verifyAnswer(
@@ -1063,7 +1448,7 @@ Make the question challenging but fair for Class ${classLevel} CBSE students. En
         'science',
         modelToUse
       );
-      
+
       let verifiedAnswer = result.correctAnswer;
       if (!verification.isValid) {
         if (verification.alternativeAnswer && verification.alternativeAnswer !== "VERIFICATION_FAILED") {
@@ -1077,26 +1462,26 @@ Make the question challenging but fair for Class ${classLevel} CBSE students. En
       } else {
         console.log(`[AI] ✓ Answer verified as correct`);
       }
-      
+
       // STEP 2: Assess question quality
-      console.log(`[AI] Assessing question quality...`);
-      const quality = await assessQuestionQuality(
-        result.question,
-        classLevel,
-        difficulty,
-        'science',
-        modelToUse
-      );
-      
-      console.log(`[AI] Quality Score: ${quality.score}/10`);
-      if (quality.issues.length > 0) {
-        console.log(`[AI] Quality Issues: ${quality.issues.join(', ')}`);
-      }
-      
-      if (quality.score < 6) {
-        console.warn(`[AI WARNING] Question quality below threshold (${quality.score}/10). Consider manual review.`);
-      }
-      
+      // console.log(`[AI] Assessing question quality...`);
+      // const quality = await assessQuestionQuality(
+      //   result.question,
+      //   classLevel,
+      //   difficulty,
+      //   'science',
+      //   modelToUse
+      // );
+
+      // console.log(`[AI] Quality Score: ${quality.score}/10`);
+      // if (quality.issues.length > 0) {
+      //   console.log(`[AI] Quality Issues: ${quality.issues.join(', ')}`);
+      // }
+
+      // if (quality.score < 6) {
+      //   console.warn(`[AI WARNING] Question quality below threshold (${quality.score}/10). Consider manual review.`);
+      // }
+
       // Return verified open-ended data
       return {
         question: result.question || "Error generating question",
@@ -1149,21 +1534,29 @@ Return in this exact JSON format:
 }`;
 
   const startTime = Date.now();
-  
+
   try {
-    const response = await openai.chat.completions.create({
-      model: modelToUse,
+    const isO1Model = modelToUse.startsWith("o1");
+    const SAFE_MODEL =
+    modelToUse && modelToUse.startsWith("gpt-5")
+    ? "gpt-4o"
+    : modelToUse;
+    // ✅ ONE requestConfig only
+    const requestConfig: any = {
+      model: SAFE_MODEL,
       messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
-      max_completion_tokens: 1000,
-    });
+      temperature: AI_CONFIG.temperature,
+      max_tokens: AI_CONFIG.max_tokens,
+    };
+
+    const response = await openai.chat.completions.create(requestConfig);
 
     const content = response.choices[0]?.message?.content || "{}";
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-    
+
     const result = JSON.parse(content);
     console.log(`[AI] Answer evaluated in ${elapsed}s using ${modelToUse} - Score: ${result.score}/10 - Correct: ${result.isCorrect}`);
-    
+
     return {
       score: result.score || 0,
       feedback: result.feedback || "Please try again.",
@@ -1199,7 +1592,7 @@ export async function improveQuestion(params: {
   console.log(`[AI] Improving question based on teacher feedback using ${modelToUse}...`);
 
   const isMCQ = params.questionType === "mcq";
-  
+
   const prompt = `You are an expert CBSE question designer for ${params.subject}, Class ${params.classLevel}.
 
 ORIGINAL QUESTION:
@@ -1240,21 +1633,29 @@ ${isMCQ ? `{
 }`}`;
 
   const startTime = Date.now();
-  
+
   try {
-    const response = await openai.chat.completions.create({
-      model: modelToUse,
+    const isO1Model = modelToUse.startsWith("o1");
+      const SAFE_MODEL =
+      modelToUse && modelToUse.startsWith("gpt-5")
+      ? "gpt-4o"
+      : modelToUse;
+    // ✅ ONE requestConfig only
+    const requestConfig: any = {
+      model: SAFE_MODEL,
       messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
-      max_completion_tokens: 2000,
-    });
+      temperature: AI_CONFIG.temperature,
+      max_tokens: AI_CONFIG.max_tokens,
+    };
+
+    const response = await openai.chat.completions.create(requestConfig);
 
     const content = response.choices[0]?.message?.content || "{}";
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-    
+
     const result = JSON.parse(content);
     console.log(`[AI] Question improved in ${elapsed}s using ${modelToUse}`);
-    
+
     if (isMCQ) {
       return {
         question: result.question || params.originalQuestion,

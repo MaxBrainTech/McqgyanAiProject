@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Languages, BookOpen, Sparkles, Trophy, RotateCcw, GraduationCap, Book, Library, ScrollText, Atom, Beaker, Dna, Zap, Settings2, Loader2 } from "lucide-react";
 import LanguageCard from "@/components/LanguageCard";
@@ -11,16 +11,65 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import LeaderboardCard from "@/components/LeaderboardCard";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+// import { toast } from "@/components/ui/use-toast";
+
+// import React{ userEffect, useState} from "react";
+import {auth, db} from "./firebase";
+// import {doc, getDoc} from "firebase/firestore"; 
+
+// function profile(){
+//   const[userDetails, setUserDetails]=useState(null);
+//   const fetchUserDetails=async()=>{
+//     auth.onAuthStateChanged(async(user)=>{
+//       console.log(user);
+//       setUserDetails(user);
+//     });
+//   };
+//   useEffect(()=>{
+//     fetchUserDetails();
+//   }, []);
+// }
+
+// const [leaderboard, setLeaderboard] = useState([]);
+
+export interface LocalizedText {
+  english: string;
+  hindi: string;
+}
+
+export interface Chapter {
+  id: number;
+  title: LocalizedText;
+  description: LocalizedText;
+}
+
+// const [chapters, setChapters] = useState<Chapter[]>([]);
 
 export default function Home() {
+  const hasInitialized = { current: false };  
   const navigate = useNavigate();
   const location = useLocation();
   const [step, setStep] = useState<"mode" | "subject" | "class" | "difficulty" | "testType" | "testLength" | "testMode" | "chapter" | "customTopics" | "custom">("mode");
   const [selectedMode, setSelectedMode] = useState<string>("");
-  const [selectedLanguage, setSelectedLanguage] = useState<string>("");
-  const [selectedScienceCategory, setSelectedScienceCategory] = useState<string>("");
+  // const [selectedLanguage, setSelectedLanguage] = useState<string>("");
+// Subject language (French, German etc)
+// Subject language (French etc)
+const [selectedSubjectLanguage, setSelectedSubjectLanguage] =
+  useState<string>("");
+
+// Medium (English / Hindi)
+const [selectedMedium, setSelectedMedium] =
+  useState<"english" | "hindi">("english");
+
+const [leaderboard, setLeaderboard] = useState([]);
+
+// Science category
+const [selectedScienceCategory, setSelectedScienceCategory] =
+  useState<string>("");
+  // const [selectedScienceCategory, setSelectedScienceCategory] = useState<"english" | "hindi">("english");
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("english");
   const [selectedClass, setSelectedClass] = useState<number>(0);
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("");
   const [selectedTestType, setSelectedTestType] = useState<string>("");
@@ -30,57 +79,194 @@ export default function Home() {
   const [customTopic2, setCustomTopic2] = useState<string>("");
   const [customTopic3, setCustomTopic3] = useState<string>("");
   const [customTopic4, setCustomTopic4] = useState<string>("");
+  const [customTopic5, setCustomTopic5] = useState<string>("");
+  const [customTopic6, setCustomTopic6] = useState<string>("");
+
+  // const [selectedGptModel, setSelectedGptModel] = useState<string>("gpt-5.2");
   const [selectedGptModel, setSelectedGptModel] = useState<string>("gpt-4o-mini");
   const [selectedBoard, setSelectedBoard] = useState<string>("CBSE");
   const [isGeneratingTest, setIsGeneratingTest] = useState<boolean>(false);
-  const [chapters, setChapters] = useState<Array<{ id: number; title: string; description: string }>>([]);
+  // const [chapters, setChapters] = useState<Array<{ id: number; title: string; description: string }>>([]);
+    const [chapters, setChapters] = useState<Chapter[]>([])
 
+  const scrollYRef = useRef(0);
   // Reset to mode screen when component mounts/location changes to home
-  useEffect(() => {
-    setStep("mode");
-    setSelectedMode("");
-    setSelectedLanguage("");
-    setSelectedScienceCategory("");
-    setSelectedClass(0);
-    setSelectedDifficulty("");
-    setSelectedTestType("");
-    setSelectedTestLength(0);
-    setSelectedTestMode("");
-    
-    // Scroll to the mode selection section after state updates
-    setTimeout(() => {
-      const modeSection = document.querySelector('[data-section="mode-selection"]');
-      if (modeSection) {
-        modeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    }, 100);
-  }, [location.pathname]);
+  // useEffect(() => {
+    // setStep("mode");
+    // setSelectedMode("");
+    // setSelectedLanguage("");
+    // setSelectedScienceCategory("");
+    // setSelectedClass(0);
+    // setSelectedDifficulty("");
+    // setSelectedTestType("");
+    // setSelectedTestLength(0);
+    // setSelectedTestMode("");
+
+    // // Scroll to the mode selection section after state updates
+    // setTimeout(() => {
+    //   const modeSection = document.querySelector('[data-section="mode-selection"]');
+    //   if (modeSection) {
+    //     modeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    //   } else {
+    //     window.scrollTo({ top: 0, behavior: 'smooth' });
+    //   }
+    // }, 100);
+  // }, [location.pathname]);
 
   // Load chapters when subject is selected
-  useEffect(() => {
-    if (step === "chapter") {
-      const subject = selectedMode === "science" ? selectedScienceCategory : selectedLanguage;
-      if (subject) {
-        fetch(`/api/chapters/${subject}`)
-          .then(res => res.json())
-          .then(data => setChapters(data))
-          .catch(err => console.error("Error loading chapters:", err));
-      }
+  const handleBack = () => {
+  setStep((prev) => {
+    switch (prev) {
+      case "subject":
+        return "mode";
+      case "class":
+        return "subject";
+      case "difficulty":
+        return "class";
+      case "testType":
+        return "difficulty";
+      case "testLength":
+        return "testType";
+      case "testMode":
+        return "testLength";
+      case "customTopics":
+        return "testMode";
+      case "chapter":
+        return "testMode";
+      case "custom":
+        return "mode";
+      default:
+        return "mode";
     }
-  }, [selectedLanguage, selectedScienceCategory, selectedMode, step]);
+  });
+};
 
-  // Load leaderboard from local storage
-  const [leaderboard, setLeaderboard] = useState<Array<any>>([]);
-  const { toast } = useToast();
-  
-  useEffect(() => {
-    const savedScores = localStorage.getItem("langbuddy_scores");
-    if (savedScores) {
-      setLeaderboard(JSON.parse(savedScores));
+//   useEffect(() => {
+//     if (step === "chapter") {
+//       const subject = selectedMode === "science" ? selectedScienceCategory : selectedLanguage;
+//       if (subject) {
+//         fetch(`/api/chapters/${subject}`)
+//           .then(res => res.json())
+//           .then(data => setChapters(data))
+//           .catch(err => console.error("Error loading chapters:", err));
+//       }
+//     }
+//   }, [selectedLanguage, selectedScienceCategory, selectedMode, step]);
+
+//   // Load leaderboard from local storage
+//   // const [leaderboard, setLeaderboard] = useState<Array<any>>([]);
+//   // const { toast } = useToast();
+
+//   useEffect(() => {
+//     const savedScores = localStorage.getItem("langbuddy_scores");
+//     if (savedScores) {
+//       setLeaderboard(JSON.parse(savedScores));
+//     }
+//   }, []);
+
+//  useEffect(() => {
+//   const fetchChapters = async () => {
+//     const res = await fetch(`/api/chapters/${selectedSubjectLanguage}`);
+//     const data = await res.json();
+
+//     setChapters(
+//       data.map((ch: any) => ({
+//         id: ch.id,
+//         title: {
+//           english: ch.title,
+//           hindi: ch.title
+//         },
+//         description: {
+//           english: ch.description,
+//           hindi: ch.description
+//         }
+//       }))
+//     );
+//   };
+
+//   fetchChapters();
+// }, []);
+
+// useEffect(() => {
+//   const fetchChapters = async () => {
+//     try {
+//       const res = await fetch(`/api/chapters/${selectedSubjectLanguage}`);
+//       const data = await res.json();
+
+//       console.log("API Response:", data);
+
+//       // Ensure data is array
+//       if (!Array.isArray(data)) {
+//         console.error("Chapters API did not return an array");
+//         return;
+//       }
+
+//       const mappedChapters: Chapter[] = data.map((ch: any) => ({
+//         id: ch.id,
+//         title: {
+//           english: ch.title,
+//           hindi: ch.title,
+//         },
+//         description: {  
+//           english: ch.description,
+//           hindi: ch.description,
+//         },
+//       }));
+
+//       setChapters(mappedChapters);
+//     } catch (error) {
+//       console.error("Failed to fetch chapters:", error);
+//     }
+//   };
+
+//   if (selectedSubjectLanguage) {
+//     fetchChapters();
+//   }
+// }, [selectedSubjectLanguage]);
+
+useEffect(() => {
+  if (step !== "chapter") return;
+
+  const subject =
+  selectedMode === "science"
+    ? selectedScienceCategory
+    : selectedSubjectLanguage;
+
+  if (!subject) return;
+
+  const fetchChapters = async () => {
+    try {
+      const res = await fetch(`/api/chapters/${subject}`);
+      const data = await res.json();
+
+      if (!Array.isArray(data)) {
+        console.error("API did not return array:", data);
+        return;
+      }
+
+      const mappedChapters = data.map((ch: any) => ({
+        id: ch.id,
+        title: ch.title,          // NO WRAPPING
+        description: ch.description
+      }));
+
+      setChapters(mappedChapters);
+    } catch (error) {
+      console.error("Failed to fetch chapters:", error);
     }
-  }, []);
+  };
+
+  fetchChapters();
+}, [step, selectedSubjectLanguage, selectedScienceCategory, selectedMode]);
+
+  // 🔒 Save scroll position BEFORE step change
+useLayoutEffect(() => {
+  const currentScroll = window.scrollY;
+
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: currentScroll });
+  });
+}, [step]);
 
   const handleResetScores = () => {
     localStorage.removeItem("langbuddy_scores");
@@ -91,8 +277,9 @@ export default function Home() {
     });
   };
 
+
   // Helper function to scroll to top smoothly
-  const scrollToTop = () => {
+  const ScrollRestoration = () => {
     setTimeout(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 50);
@@ -105,25 +292,28 @@ export default function Home() {
     } else {
       setStep("subject");
     }
-    scrollToTop();
+    ScrollRestoration();  
   };
 
-  const handleLanguageSelect = (language: string) => {
-    setSelectedLanguage(language);
-    setStep("class");
-    scrollToTop();
+  const handleMediumSelect = (medium: "english" | "hindi") => {
+  setSelectedMedium(medium);
+  };
+
+  const handleSubjectLanguageSelect = (language: string) => {
+  setSelectedSubjectLanguage(language);
+  setStep("class");
   };
 
   const handleScienceCategorySelect = (category: string) => {
     setSelectedScienceCategory(category);
     setStep("class");
-    scrollToTop();
+    // ScrollRestoration();
   };
 
   const handleClassSelect = (classNum: string | number) => {
     setSelectedClass(classNum as number);
     setStep("difficulty");
-    scrollToTop();
+    // ScrollRestoration();
   };
 
   const handleDifficultySelect = (difficulty: string | number) => {
@@ -135,21 +325,21 @@ export default function Home() {
     } else {
       setStep("testType");
     }
-    scrollToTop();
+    // ScrollRestoration();
   };
 
   const handleTestTypeSelect = (testType: string) => {
     setSelectedTestType(testType);
     setStep("testLength");
-    scrollToTop();
+    // ScrollRestoration();
   };
 
   const handleTestLengthSelect = (length: string | number) => {
     setSelectedTestLength(length as number);
     setStep("testMode");
-    scrollToTop();
+    // ScrollRestoration();
   };
-  
+
   const handleTestModeSelect = (mode: string) => {
     setSelectedTestMode(mode);
     if (mode === "predefined") {
@@ -157,50 +347,80 @@ export default function Home() {
     } else {
       setStep("customTopics");
     }
-    scrollToTop();
+    // ScrollRestoration();
   };
-  
+
+  // const handleCustomTestGenerate = async () => {
+  //   // Validate that at least topic 1 is filled
+  //   if (!customTopic1.trim()) {
+  //     toast({
+  //       title: "Topic Required",
+  //       description: "Please enter at least one topic (Topic 1 is mandatory)",
+  //       variant: "destructive",
+  //     });
+  //     return;
+  //   }
+
+  //   // Collect topics
+  //   const topics = [customTopic1, customTopic2, customTopic3, customTopic4]
+  //     .filter(t => t && t.trim().length > 0)
+  //     .join(', ');
+
   const handleCustomTestGenerate = async () => {
-    // Validate that at least topic 1 is filled
-    if (!customTopic1.trim()) {
+  // ✅ Validate first 3 required topics
+    if (
+      !customTopic1.trim() ||
+      !customTopic2.trim() ||
+      !customTopic3.trim()
+    ) {
       toast({
-        title: "Topic Required",
-        description: "Please enter at least one topic (Topic 1 is mandatory)",
+        title: "Required Topics Missing",
+        description: "Please fill Topic 1, Topic 2 and Topic 3 (all are mandatory).",
         variant: "destructive",
       });
       return;
     }
-    
-    // Collect topics
-    const topics = [customTopic1, customTopic2, customTopic3, customTopic4]
-      .filter(t => t && t.trim().length > 0)
-      .join(', ');
-    
-    setIsGeneratingTest(true);
-    
+
+    // ✅ Collect all 6 topics (ignore empty optional ones)
+    const topics = [
+      customTopic1,
+      customTopic2,
+      customTopic3,
+      customTopic4,
+      customTopic5,
+      customTopic6,
+    ]
+      .filter((t) => t && t.trim().length > 0)
+      .join(", ");
+
+
     try {
+      setIsGeneratingTest(true);
       // Generate test via API
-      const subject = selectedMode === "science" ? selectedScienceCategory : selectedLanguage;
+      const subject = selectedMode === "science" ? selectedScienceCategory : selectedSubjectLanguage;
       const response = await apiRequest("POST", "/api/student/generate-custom-test", {
         subject,
         classLevel: selectedClass,
         difficulty: selectedDifficulty,
         syllabus: topics,
         numQuestions: selectedTestLength,
+        subjectLanguage: selectedSubjectLanguage,
+        scienceCategory: selectedScienceCategory,
+        medium: selectedMedium,
         testType: selectedTestType === "mcq-only" ? "mcq" : "mixed",
         gptModel: selectedGptModel,
         board: selectedBoard,
         mode: selectedMode,
       });
-      
+
       const data = await response.json();
-      
+
       // Navigate to test page with generated questions
       navigate('/test', {
         state: {
           config: {
             mode: "custom-student",
-            language: selectedMode === "language" ? selectedLanguage : undefined,
+            language: selectedMode === "language" ? selectedSubjectLanguage : undefined,
             scienceCategory: selectedMode === "science" ? selectedScienceCategory : undefined,
             class: selectedClass,
             difficulty: selectedDifficulty,
@@ -212,7 +432,7 @@ export default function Home() {
           }
         }
       });
-      
+
       toast({
         title: "Test Generated!",
         description: `Successfully generated ${data.questionsGenerated} unique questions. Good luck!`,
@@ -233,7 +453,7 @@ export default function Home() {
       state: {
         config: {
           mode: selectedMode,
-          language: selectedMode === "language" ? selectedLanguage : undefined,
+          language: selectedMode === "language" ? selectedSubjectLanguage : undefined,
           scienceCategory: selectedMode === "science" ? selectedScienceCategory : undefined,
           class: selectedClass,
           difficulty: selectedDifficulty,
@@ -249,13 +469,14 @@ export default function Home() {
     setStep("mode");
     setSelectedMode("");
     setSelectedLanguage("");
-    setSelectedScienceCategory("");
+    setSelectedScienceCategory("english");
     setSelectedClass(0);
     setSelectedDifficulty("");
-    scrollToTop();
+    // ScrollRestoration();
   };
 
   return (
+
     <div className="min-h-screen relative overflow-hidden">
       {/* Decorative background shapes */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -272,7 +493,7 @@ export default function Home() {
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-white/5 rounded-full blur-3xl transform -translate-x-1/4 translate-y-1/4"></div>
         </div>
 
-        <div className="relative container mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-24 max-w-7xl">
+        <div className="relative container mx-auto px-4 sm:px-6 py-6 sm:py-8 lg:py-12 max-w-7xl">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             {/* Left Content */}
             <div className="text-white space-y-6 sm:space-y-8">
@@ -349,7 +570,7 @@ export default function Home() {
                 <h2 className="text-2xl sm:text-3xl font-bold mb-2">Choose Your Quiz Mode</h2>
                 <p className="text-base text-muted-foreground">Select between language learning or science quizzes</p>
               </div>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
                 <Card 
                   className="
@@ -429,12 +650,6 @@ export default function Home() {
                 </Card>
 
 
-
-
-              
-
-
-                
                 <Card 
                   className="
                     p-8 text-center cursor-pointer transition-all rounded-2xl
@@ -471,7 +686,7 @@ export default function Home() {
                   <Badge variant="secondary" className="mt-4 text-base">Teacher/Student</Badge>
                 </Card>
 
-                
+
                 <Card 
                   className="
                     p-8 text-center cursor-pointer transition-all rounded-2xl
@@ -543,13 +758,25 @@ export default function Home() {
         {step === "custom" && (
           <div className="space-y-6 sm:space-y-8">
             <div className="text-center mb-8">
-              <Button variant="outline" onClick={() => setStep("mode")} className="mb-4">
-                ← Back
+              <Button variant="outline"type="button" onClick={handleBack} className="
+                        group flex items-center gap-2
+                        rounded-full px-4 py-2
+                        bg-white dark:bg-gray-900
+                        border border-gray-300 dark:border-gray-700
+                        shadow-md
+                        transition-all duration-200
+                        hover:shadow-xl hover:scale-[1.03]
+                        active:scale-[0.96]
+                      ">
+                <span className="transition-transform duration-200 group-hover:-translate-x-1">
+                  ←
+                </span>
+                <span>Back</span>
               </Button>
               <h2 className="text-2xl sm:text-3xl font-bold mb-2">Custom MCQ Platform</h2>
               <p className="text-base text-muted-foreground">Choose your role to continue</p>
             </div>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
               <Card 
                 className="p-8 text-center hover-elevate cursor-pointer border-2 hover:border-primary transition-all"
@@ -584,9 +811,21 @@ export default function Home() {
 
         {step === "subject" && selectedMode === "language" && (
           <div className="space-y-6 sm:space-y-8">
-            <Button variant="outline" onClick={() => setStep("mode")} className="mb-4">
-              ← Back
-            </Button>
+            <Button variant="outline"type="button" onClick={handleBack} className="
+                        group flex items-center gap-2
+                        rounded-full px-4 py-2
+                        bg-white dark:bg-gray-900
+                        border border-gray-300 dark:border-gray-700
+                        shadow-md
+                        transition-all duration-200
+                        hover:shadow-xl hover:scale-[1.03]
+                        active:scale-[0.96]
+                      ">
+                <span className="transition-transform duration-200 group-hover:-translate-x-1">
+                  ←
+                </span>
+                <span>Back</span>
+              </Button>
             {/* Features Banner */}
             {/* <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <Card className="p-4 sm:p-5 text-center hover-elevate">
@@ -667,43 +906,43 @@ export default function Home() {
                   6 Languages Available
                 </Badge>
               </div>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 <LanguageCard
                   language="French"
                   icon={BookOpen}
                   color="bg-pink-50 dark:bg-pink-950/20 text-pink-600 dark:text-pink-400"
-                  onClick={() => handleLanguageSelect("french")}
+                  onClick={() => handleSubjectLanguageSelect("french")}
                 />
                 <LanguageCard
                   language="German"
                   icon={Languages}
                   color="bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400"
-                  onClick={() => handleLanguageSelect("german")}
+                  onClick={() => handleSubjectLanguageSelect("german")}
                 />
                 <LanguageCard
                   language="Spanish"
                   icon={Sparkles}
                   color="bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400"
-                  onClick={() => handleLanguageSelect("spanish")}
+                  onClick={() => handleSubjectLanguageSelect("spanish")}
                 />
                 <LanguageCard
                   language="Hindi"
                   icon={Book}
                   color="bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400"
-                  onClick={() => handleLanguageSelect("hindi")}
+                  onClick={() => handleSubjectLanguageSelect("hindi")}
                 />
                 <LanguageCard
                   language="Marathi"
                   icon={Library}
                   color="bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400"
-                  onClick={() => handleLanguageSelect("marathi")}
+                  onClick={() => handleSubjectLanguageSelect("marathi")}
                 />
                 <LanguageCard
                   language="Kannada"
                   icon={ScrollText}
                   color="bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400"
-                  onClick={() => handleLanguageSelect("kannada")}
+                  onClick={() => handleSubjectLanguageSelect("kannada")}
                 />
               </div>
             </div>
@@ -713,8 +952,20 @@ export default function Home() {
         {step === "subject" && selectedMode === "science" && (
           <div className="space-y-6 sm:space-y-8">
             <div className="flex items-center gap-3 sm:gap-4 mb-6">
-              <Button variant="outline" onClick={() => setStep("mode")} data-testid="button-back" size="sm">
-                ← Back
+              <Button variant="outline"type="button" onClick={handleBack} className="
+                        group flex items-center gap-2
+                        rounded-full px-4 py-2
+                        bg-white dark:bg-gray-900
+                        border border-gray-300 dark:border-gray-700
+                        shadow-md
+                        transition-all duration-200
+                        hover:shadow-xl hover:scale-[1.03]
+                        active:scale-[0.96]
+                      ">
+                <span className="transition-transform duration-200 group-hover:-translate-x-1">
+                  ←
+                </span>
+                <span>Back</span>
               </Button>
               <div>
                 <h2 className="text-xl sm:text-2xl font-bold">General Science Quiz</h2>
@@ -729,7 +980,7 @@ export default function Home() {
                   4 Categories • 25 Chapters
                 </Badge>
               </div>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <LanguageCard
                   language="Physics"
@@ -792,17 +1043,24 @@ export default function Home() {
         {step === "class" && (
           <div className="space-y-6 max-w-3xl mx-auto">
             <div className="flex items-center gap-3 sm:gap-4 mb-6">
-              <Button
-                variant="outline"
-                onClick={() => setStep("subject")}
-                data-testid="button-back"
-                size="sm"
-              >
-                ← Back
+              <Button variant="outline"type="button" onClick={handleBack} className="
+                        group flex items-center gap-2
+                        rounded-full px-4 py-2
+                        bg-white dark:bg-gray-900
+                        border border-gray-300 dark:border-gray-700
+                        shadow-md
+                        transition-all duration-200
+                        hover:shadow-xl hover:scale-[1.03]
+                        active:scale-[0.96]
+                      ">
+                <span className="transition-transform duration-200 group-hover:-translate-x-1">
+                  ←
+                </span>
+                <span>Back</span>
               </Button>
               <div>
                 <h2 className="text-xl sm:text-2xl font-bold capitalize">
-                  {selectedMode === "science" ? selectedScienceCategory : selectedLanguage}
+                  {selectedMode === "science" ? selectedScienceCategory : selectedSubjectLanguage}
                 </h2>
                 <p className="text-sm text-muted-foreground">Step 1 of 4</p>
               </div>
@@ -866,19 +1124,26 @@ export default function Home() {
         {step === "difficulty" && (
           <div className="space-y-6 max-w-3xl mx-auto">
             <div className="flex items-center gap-3 sm:gap-4 mb-6">
-              <Button
-                variant="outline"
-                onClick={() => setStep("class")}
-                data-testid="button-back"
-                size="sm"
-              >
-                ← Back
+              <Button variant="outline"type="button" onClick={handleBack} className="
+                        group flex items-center gap-2
+                        rounded-full px-4 py-2
+                        bg-white dark:bg-gray-900
+                        border border-gray-300 dark:border-gray-700
+                        shadow-md
+                        transition-all duration-200
+                        hover:shadow-xl hover:scale-[1.03]
+                        active:scale-[0.96]
+                      ">
+                <span className="transition-transform duration-200 group-hover:-translate-x-1">
+                  ←
+                </span>
+                <span>Back</span>
               </Button>
               <div>
                 <h2 className="text-lg sm:text-2xl font-bold capitalize">
                   {selectedMode === "science"
                     ? selectedScienceCategory
-                    : selectedLanguage} - Class {selectedClass}
+                    : selectedSubjectLanguage} - Class {selectedClass}
                 </h2>
                 <p className="text-sm text-muted-foreground">Step 2 of 5</p>
               </div>
@@ -1011,17 +1276,24 @@ export default function Home() {
         {step === "testType" && (
           <div className="space-y-6 max-w-3xl mx-auto">
             <div className="flex items-center gap-3 sm:gap-4 mb-6">
-              <Button
-                variant="outline"
-                onClick={() => setStep("difficulty")}
-                data-testid="button-back"
-                size="sm"
-              >
-                ← Back
+              <Button variant="outline"type="button" onClick={handleBack} className="
+                        group flex items-center gap-2
+                        rounded-full px-4 py-2
+                        bg-white dark:bg-gray-900
+                        border border-gray-300 dark:border-gray-700
+                        shadow-md
+                        transition-all duration-200
+                        hover:shadow-xl hover:scale-[1.03]
+                        active:scale-[0.96]
+                      ">
+                <span className="transition-transform duration-200 group-hover:-translate-x-1">
+                  ←
+                </span>
+                <span>Back</span>
               </Button>
               <div>
                 <h2 className="text-lg sm:text-2xl font-bold capitalize">
-                  {selectedLanguage} - Class {selectedClass} - {selectedDifficulty}
+                  {selectedSubjectLanguage} - Class {selectedClass} - {selectedDifficulty}
                 </h2>
                 <p className="text-sm text-muted-foreground">Step 3 of 5</p>
               </div>
@@ -1098,7 +1370,7 @@ export default function Home() {
         )}
 
 
-        
+
         {/* {step === "testLength" && (
           <div className="space-y-6 max-w-4xl mx-auto">
             <div className="flex items-center gap-3 sm:gap-4 mb-6">
@@ -1170,17 +1442,24 @@ export default function Home() {
         {step === "testLength" && (
           <div className="space-y-6 max-w-4xl mx-auto">
             <div className="flex items-center gap-3 sm:gap-4 mb-6">
-              <Button 
-                variant="outline" 
-                onClick={() => setStep(selectedMode === "science" ? "difficulty" : "testType")} 
-                data-testid="button-back" 
-                size="sm"
-              >
-                ← Back
+              <Button variant="outline"type="button" onClick={handleBack} className="
+                        group flex items-center gap-2
+                        rounded-full px-4 py-2
+                        bg-white dark:bg-gray-900
+                        border border-gray-300 dark:border-gray-700
+                        shadow-md
+                        transition-all duration-200
+                        hover:shadow-xl hover:scale-[1.03]
+                        active:scale-[0.96]
+                      ">
+                <span className="transition-transform duration-200 group-hover:-translate-x-1">
+                  ←
+                </span>
+                <span>Back</span>
               </Button>
               <div>
                 <h2 className="text-lg sm:text-xl md:text-2xl font-bold capitalize">
-                  {selectedMode === "science" ? selectedScienceCategory : selectedLanguage} - Class {selectedClass} - {selectedDifficulty} - {selectedTestType === "mcq-only" ? "MCQ Only" : "Mixed"}
+                  {selectedMode === "science" ? selectedScienceCategory : selectedSubjectLanguage} - Class {selectedClass} - {selectedDifficulty} - {selectedTestType === "mcq-only" ? "MCQ Only" : "Mixed"}
                 </h2>
                 <p className="text-sm text-muted-foreground">Step 4 of 5</p>
               </div>
@@ -1283,7 +1562,7 @@ export default function Home() {
                     </div>
                   </div>
                 </Card>
-                
+
                 <Card
                   className={`p-6 cursor-pointer hover-elevate active-elevate-2 ${
                     selectedTestMode === "custom"
@@ -1319,16 +1598,24 @@ export default function Home() {
         )} */}
 
 
+
         {step === "testMode" && (
           <div className="space-y-6 max-w-4xl mx-auto">
             <div className="flex items-center gap-3 sm:gap-4 mb-6">
-              <Button
-                variant="outline"
-                onClick={() => setStep("testLength")}
-                data-testid="button-back"
-                size="sm"
-              >
-                ← Back
+              <Button variant="outline"type="button" onClick={handleBack} className="
+                        group flex items-center gap-2
+                        rounded-full px-4 py-2
+                        bg-white dark:bg-gray-900
+                        border border-gray-300 dark:border-gray-700
+                        shadow-md
+                        transition-all duration-200
+                        hover:shadow-xl hover:scale-[1.03]
+                        active:scale-[0.96]
+                      ">
+                <span className="transition-transform duration-200 group-hover:-translate-x-1">
+                  ←
+                </span>
+                <span>Back</span>
               </Button>
               <div>
                 <h2 className="text-lg sm:text-xl md:text-2xl font-bold capitalize">
@@ -1339,9 +1626,58 @@ export default function Home() {
             </div>
 
             <Card className="p-4 sm:p-6 bg-[hsl(200.49deg_56.52%_80.08%)] dark:bg-[hsl(200.49deg_56.52%_20%)]">
+              {/* <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">
+                Select How You Want to Create Your Test
+              </h2> */}
+              <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">
                 Select How You Want to Create Your Test
               </h2>
+
+
+              {/* <div className="flex gap-2">
+                <button
+                  onClick={() => setSelectedLanguage("english")}
+                  className={`px-4 py-1 rounded ${
+                    selectedLanguage === "english"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-200"
+                  }`}
+                >
+                  English
+                </button>
+
+                <button
+                  onClick={() => setSelectedLanguage("hindi")}
+                  className={`px-4 py-1 rounded ${
+                    selectedLanguage === "hindi"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-200"
+                  }`}
+                >
+                  हिंदी
+                </button>
+              </div> */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleMediumSelect("english")}
+                  className={selectedMedium === "english"
+                    ? "bg-blue-600 text-white px-4 py-1 rounded"
+                    : "bg-gray-200 px-4 py-1 rounded"}
+                >
+                  English
+                </button>
+
+                <button
+                  onClick={() => handleMediumSelect("hindi")}
+                  className={selectedMedium === "hindi"
+                    ? "bg-blue-600 text-white px-4 py-1 rounded"
+                    : "bg-gray-200 px-4 py-1 rounded"}
+                >
+                  हिंदी
+                </button>
+              </div>
+            </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
@@ -1417,21 +1753,23 @@ export default function Home() {
           </div>
         )}
 
-
-
-
-
-
-
-
-
-        
-
         {step === "customTopics" && (
           <div className="space-y-6 max-w-3xl mx-auto">
             <div className="flex items-center gap-3 sm:gap-4 mb-6">
-              <Button variant="outline" onClick={() => setStep("testMode")} data-testid="button-back" size="sm" disabled={isGeneratingTest}>
-                ← Back
+              <Button variant="outline"type="button" onClick={handleBack} className="
+                        group flex items-center gap-2
+                        rounded-full px-4 py-2
+                        bg-white dark:bg-gray-900
+                        border border-gray-300 dark:border-gray-700
+                        shadow-md
+                        transition-all duration-200
+                        hover:shadow-xl hover:scale-[1.03]
+                        active:scale-[0.96]
+                      ">
+                <span className="transition-transform duration-200 group-hover:-translate-x-1">
+                  ←
+                </span>
+                <span>Back</span>
               </Button>
               <div>
                 <h2 className="text-lg sm:text-xl md:text-2xl font-bold capitalize">
@@ -1449,10 +1787,11 @@ export default function Home() {
                     Test Topics
                   </h3>
                   <p className="text-sm text-muted-foreground mb-4">Enter topics you want to focus on (Topic 1 is mandatory, others are optional)</p>
-                  
+
                   <div className="space-y-4">
+                    {/* Topic 1 */}
                     <div>
-                      <Label htmlFor="topic1" className="text-base">Topic 1 (Required) *</Label>
+                      <Label htmlFor="topic1" className="text-base"> Topic 1 (Required) *</Label>
                       <Input
                         id="topic1"
                         placeholder="e.g., Basic Greetings, Verb Conjugation, Cell Structure"
@@ -1463,9 +1802,10 @@ export default function Home() {
                         disabled={isGeneratingTest}
                       />
                     </div>
-                    
+
+                    {/* Topic 2 */}
                     <div>
-                      <Label htmlFor="topic2" className="text-base">Topic 2 (Optional)</Label>
+                      <Label htmlFor="topic2" className="text-base"> Topic 2 (Required) *</Label>
                       <Input
                         id="topic2"
                         placeholder="e.g., Numbers and Counting, Past Tense"
@@ -1476,9 +1816,10 @@ export default function Home() {
                         disabled={isGeneratingTest}
                       />
                     </div>
-                    
+
+                    {/* Topic 3 */}
                     <div>
-                      <Label htmlFor="topic3" className="text-base">Topic 3 (Optional)</Label>
+                      <Label htmlFor="topic3" className="text-base">Topic 3 (Required) *</Label>
                       <Input
                         id="topic3"
                         placeholder="e.g., Family Members, Photosynthesis"
@@ -1489,7 +1830,8 @@ export default function Home() {
                         disabled={isGeneratingTest}
                       />
                     </div>
-                    
+
+                    {/* Topic 4 */}
                     <div>
                       <Label htmlFor="topic4" className="text-base">Topic 4 (Optional)</Label>
                       <Input
@@ -1502,25 +1844,85 @@ export default function Home() {
                         disabled={isGeneratingTest}
                       />
                     </div>
+
+                    {/* Topic 5 */}
+                    <div>
+                      <Label htmlFor="topic5" className="text-base">Topic 5 (Optional)</Label>
+                      <Input
+                        id="topic5"
+                        placeholder="e.g., Tenses Practice, Algebra Basics"
+                        value={customTopic5}
+                        onChange={(e) => setCustomTopic5(e.target.value)}
+                        className="mt-1"
+                        data-testid="input-topic5"
+                        disabled={isGeneratingTest}
+                      />
+                    </div>
+
+                    {/* Topic 6 */}
+                    <div>
+                      <Label htmlFor="topic6" className="text-base"> Topic 6 (Optional)</Label>
+                      <Input
+                        id="topic6"
+                        placeholder="e.g., Geometry, Human Digestive System"
+                        value={customTopic6}
+                        onChange={(e) => setCustomTopic6(e.target.value)}
+                        className="mt-1"
+                        data-testid="input-topic6"
+                        disabled={isGeneratingTest}
+                      />
+                    </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
                   <div>
                     <Label htmlFor="gptModel" className="text-base">AI Model Quality</Label>
-                    <Select value={selectedGptModel} onValueChange={setSelectedGptModel} disabled={isGeneratingTest}>
-                      <SelectTrigger className="mt-1" data-testid="select-gpt-model">
-                        <SelectValue placeholder="Select GPT Model" />
+                    <Select
+                      value={selectedGptModel}
+                      onValueChange={setSelectedGptModel}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select AI Model" />
                       </SelectTrigger>
+
                       <SelectContent>
-                        <SelectItem value="gpt-4o">GPT-4o (Best Quality) ⭐</SelectItem>
-                        <SelectItem value="gpt-4o-mini">GPT-4o Mini (Fast & Affordable - Recommended) ⚡</SelectItem>
-                        <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo (Cheapest) 💰</SelectItem>
+
+                        {/* 🤗 HuggingFace Model */}
+                        <SelectItem value="hf-mcqgyaan">
+                          MCQGyaan HF Model 🤗
+                        </SelectItem>
+
+                        {/* 🔥 Fine-Tuned Model */}
+                      <SelectItem value="ft:gpt-4.1-nano-2025-04-14:maxbrain-technologies:pricer:DD6LfCqA">
+                        FT Pricer 4.1 Nano (Custom Trained) 🧠🔥
+                      </SelectItem>
+                        {/* 🔥 GPT-5 Series */}
+                        <SelectItem value="gpt-5.2">
+                          GPT-5.2 (Latest • Highest Intelligence) 🧠🔥
+                        </SelectItem>
+
+                        <SelectItem value="gpt-5.1">
+                          GPT-5.1 (Fast • Near GPT-5.2 Quality) ⚡
+                        </SelectItem>
+
+                        {/* GPT-4 Series */}
+                        <SelectItem value="gpt-4o">
+                          GPT-4o (Best Quality) ⭐
+                        </SelectItem>
+
+                        <SelectItem value="gpt-4o-mini">
+                          GPT-4o Mini (Fast & Affordable - Recommended) ⚡
+                        </SelectItem>
+
+                        {/* Legacy */}
+                        <SelectItem value="gpt-3.5-turbo">
+                          GPT-3.5 Turbo (Cheapest) 💰
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground mt-1">Higher quality models generate better questions but take longer</p>
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="board" className="text-base">Education Board</Label>
                     <Select value={selectedBoard} onValueChange={setSelectedBoard} disabled={isGeneratingTest}>
@@ -1546,7 +1948,7 @@ export default function Home() {
                       Test Configuration Summary
                     </h4>
                     <div className="text-sm space-y-1 text-muted-foreground">
-                      <p><strong>Subject:</strong> {selectedMode === "science" ? selectedScienceCategory : selectedLanguage}</p>
+                      <p><strong>Subject:</strong> {selectedMode === "science" ? selectedScienceCategory : selectedSubjectLanguage}</p>
                       <p><strong>Class:</strong> {selectedClass} | <strong>Difficulty:</strong> {selectedDifficulty}</p>
                       <p><strong>Type:</strong> {selectedTestType === "mcq-only" ? "MCQ Only" : "Mixed"} | <strong>Questions:</strong> {selectedTestLength}</p>
                       <p><strong>Topics:</strong> {[customTopic1, customTopic2, customTopic3, customTopic4].filter(t => t.trim()).length} topic(s)</p>
@@ -1581,13 +1983,35 @@ export default function Home() {
         {step === "chapter" && (
           <div className="space-y-6 max-w-3xl mx-auto">
             <div className="flex items-center gap-3 sm:gap-4 mb-6">
-              <Button variant="outline" onClick={() => setStep("testMode")} data-testid="button-back" size="sm">
-                ← Back
+              <Button variant="outline"type="button" onClick={handleBack} className="
+                        group flex items-center gap-2
+                        rounded-full px-4 py-2
+                        bg-white dark:bg-gray-900
+                        border border-gray-300 dark:border-gray-700
+                        shadow-md
+                        transition-all duration-200
+                        hover:shadow-xl hover:scale-[1.03]
+                        active:scale-[0.96]
+                      ">
+                <span className="transition-transform duration-200 group-hover:-translate-x-1">
+                  ←
+                </span>
+                <span>Back</span>
               </Button>
               <div>
-                <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold capitalize">
+                {/* <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold capitalize">
                   {selectedLanguage} - Class {selectedClass} - {selectedDifficulty} - {selectedTestType === "mcq-only" ? "MCQ" : "Mixed"} - {selectedTestLength}Q
-                </h2>
+                </h2> */}
+
+              <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold capitalize">
+                  {selectedMedium === "hindi"
+                    ? `हिंदी - कक्षा ${selectedClass} - माध्यम - ${
+                        selectedTestType === "mcq-only" ? "एमसीक्यू" : "मिक्स्ड"
+                      } - ${selectedTestLength} प्रश्न`
+                    : `English - Class ${selectedClass} - Medium - ${
+                        selectedTestType === "mcq-only" ? "MCQ" : "Mixed"
+                      } - ${selectedTestLength}Q`}
+              </h2>
                 <p className="text-sm text-muted-foreground">Step 6 of 6</p>
               </div>
             </div>
@@ -1595,6 +2019,7 @@ export default function Home() {
             <ChapterList
               chapters={chapters}
               onSelect={handleChapterSelect}
+              selectedMedium={selectedMedium}
             />
           </div>
         )}

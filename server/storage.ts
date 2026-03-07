@@ -4,52 +4,74 @@ import {
   type Teacher, type InsertTeacher,
   type CustomTest, type InsertCustomTest,
   type CustomQuestion, type InsertCustomQuestion,
-  type AnswerSheetEvaluation, type InsertAnswerSheetEvaluation,
-  teachers, customTests, customQuestions, answerSheetEvaluations
+  type AnswerSheetEvaluation, type InsertAnswerSheetEvaluation
 } from "@shared/schema";
 import { randomUUID } from "crypto";
-import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
+
+  // Test session methods
   createTestSession(session: InsertTestSession): Promise<TestSession>;
   getTestSession(id: string): Promise<TestSession | undefined>;
   updateTestSession(id: string, updates: Partial<TestSession>): Promise<TestSession | undefined>;
   deleteTestSession(id: string): Promise<void>;
-  
+
+  // Teacher methods
   getTeacher(id: string): Promise<Teacher | undefined>;
   getTeacherByUsername(username: string): Promise<Teacher | undefined>;
   getTeacherByEmail(email: string): Promise<Teacher | undefined>;
   createTeacher(teacher: InsertTeacher): Promise<Teacher>;
-  
+
+  // Custom test methods
   createCustomTest(test: InsertCustomTest): Promise<CustomTest>;
   getCustomTest(id: string): Promise<CustomTest | undefined>;
   getCustomTestByShareCode(shareCode: string): Promise<CustomTest | undefined>;
   getCustomTestsByTeacher(teacherId: string): Promise<CustomTest[]>;
   updateCustomTest(id: string, updates: Partial<CustomTest>): Promise<CustomTest | undefined>;
   deleteCustomTest(id: string): Promise<void>;
-  
+
+  // Custom question methods
   createCustomQuestion(question: InsertCustomQuestion): Promise<CustomQuestion>;
   getCustomQuestion(questionId: string): Promise<CustomQuestion | undefined>;
   getCustomQuestions(testId: string): Promise<CustomQuestion[]>;
   updateCustomQuestion(questionId: string, updates: Partial<CustomQuestion>): Promise<CustomQuestion | undefined>;
   deleteCustomQuestions(testId: string): Promise<void>;
-  
+
+  // Answer sheet evaluation methods
   saveAnswerSheetEvaluation(evaluation: InsertAnswerSheetEvaluation): Promise<AnswerSheetEvaluation>;
   getRecentEvaluations(limit: number): Promise<AnswerSheetEvaluation[]>;
 }
 
-export class DatabaseStorage implements IStorage {
+export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private testSessions: Map<string, TestSession>;
+  private teachers: Map<string, Teacher>;
+  private customTests: Map<string, CustomTest>;
+  private customQuestions: Map<string, CustomQuestion>;
+  private answerSheetEvaluations: Map<string, AnswerSheetEvaluation>;
 
   constructor() {
     this.users = new Map();
     this.testSessions = new Map();
+    this.teachers = new Map();
+    this.customTests = new Map();
+    this.customQuestions = new Map();
+    this.answerSheetEvaluations = new Map();
+
+    // Create demo teacher account
+    const demoTeacher: Teacher = {
+      id: "demo-teacher-id",
+      username: "demo",
+      password: "demo123",
+      fullName: "Demo Teacher",
+      email: "demo@teacher.com",
+      school: "Demo School",
+      createdAt: new Date(),
+    };
+    this.teachers.set(demoTeacher.id, demoTeacher);
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -98,6 +120,7 @@ export class DatabaseStorage implements IStorage {
   async updateTestSession(id: string, updates: Partial<TestSession>): Promise<TestSession | undefined> {
     const session = this.testSessions.get(id);
     if (!session) return undefined;
+
     const updated = { ...session, ...updates };
     this.testSessions.set(id, updated);
     return updated;
@@ -107,114 +130,142 @@ export class DatabaseStorage implements IStorage {
     this.testSessions.delete(id);
   }
 
-  // Teacher methods - stored in PostgreSQL database
+  // Teacher methods
   async getTeacher(id: string): Promise<Teacher | undefined> {
-    const result = await db.select().from(teachers).where(eq(teachers.id, id));
-    return result[0] || undefined;
+    return this.teachers.get(id);
   }
 
   async getTeacherByUsername(username: string): Promise<Teacher | undefined> {
-    const result = await db.select().from(teachers).where(eq(teachers.username, username));
-    return result[0] || undefined;
+    return Array.from(this.teachers.values()).find(
+      (teacher) => teacher.username === username,
+    );
   }
 
   async getTeacherByEmail(email: string): Promise<Teacher | undefined> {
-    const result = await db.select().from(teachers).where(eq(teachers.email, email));
-    return result[0] || undefined;
+    return Array.from(this.teachers.values()).find(
+      (teacher) => teacher.email === email,
+    );
   }
 
   async createTeacher(insertTeacher: InsertTeacher): Promise<Teacher> {
-    const result = await db.insert(teachers).values({
+    const id = randomUUID();
+    const teacher: Teacher = {
       ...insertTeacher,
+      id,
       school: insertTeacher.school ?? null,
-    }).returning();
-    return result[0];
+      createdAt: new Date(),
+    };
+    this.teachers.set(id, teacher);
+    return teacher;
   }
 
-  // Custom test methods - stored in PostgreSQL database
+  // Custom test methods
   async createCustomTest(insertTest: InsertCustomTest): Promise<CustomTest> {
+    const id = randomUUID();
     const shareCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-    const result = await db.insert(customTests).values({
+    const test: CustomTest = {
       ...insertTest,
+      id,
       shareCode,
       testType: insertTest.testType ?? "mcq",
       gptModel: insertTest.gptModel ?? "gpt-4o-mini",
       status: insertTest.status ?? "draft",
       instructions: insertTest.instructions ?? null,
-    }).returning();
-    return result[0];
+      createdAt: new Date(),
+    };
+    this.customTests.set(id, test);
+    return test;
   }
 
   async getCustomTest(id: string): Promise<CustomTest | undefined> {
-    const result = await db.select().from(customTests).where(eq(customTests.id, id));
-    return result[0] || undefined;
+    return this.customTests.get(id);
   }
 
   async getCustomTestByShareCode(shareCode: string): Promise<CustomTest | undefined> {
-    const result = await db.select().from(customTests).where(eq(customTests.shareCode, shareCode));
-    return result[0] || undefined;
+    return Array.from(this.customTests.values()).find(
+      (test) => test.shareCode === shareCode,
+    );
   }
 
   async getCustomTestsByTeacher(teacherId: string): Promise<CustomTest[]> {
-    return db.select().from(customTests).where(eq(customTests.teacherId, teacherId)).orderBy(desc(customTests.createdAt));
+    return Array.from(this.customTests.values()).filter(
+      (test) => test.teacherId === teacherId,
+    );
   }
 
   async updateCustomTest(id: string, updates: Partial<CustomTest>): Promise<CustomTest | undefined> {
-    const result = await db.update(customTests).set(updates).where(eq(customTests.id, id)).returning();
-    return result[0] || undefined;
+    const test = this.customTests.get(id);
+    if (!test) return undefined;
+
+    const updated = { ...test, ...updates };
+    this.customTests.set(id, updated);
+    return updated;
   }
 
   async deleteCustomTest(id: string): Promise<void> {
-    await db.delete(customTests).where(eq(customTests.id, id));
+    this.customTests.delete(id);
   }
 
-  // Custom question methods - stored in PostgreSQL database
+  // Custom question methods
   async createCustomQuestion(insertQuestion: InsertCustomQuestion): Promise<CustomQuestion> {
-    const result = await db.insert(customQuestions).values({
+    const id = randomUUID();
+    const question: CustomQuestion = {
       ...insertQuestion,
+      id,
       options: insertQuestion.options ?? null,
       correctOption: insertQuestion.correctOption ?? null,
-    }).returning();
-    return result[0];
+      createdAt: new Date(),
+    };
+    this.customQuestions.set(id, question);
+    return question;
   }
 
   async getCustomQuestion(questionId: string): Promise<CustomQuestion | undefined> {
-    const result = await db.select().from(customQuestions).where(eq(customQuestions.id, questionId));
-    return result[0] || undefined;
+    return this.customQuestions.get(questionId);
   }
 
   async getCustomQuestions(testId: string): Promise<CustomQuestion[]> {
-    return db.select().from(customQuestions)
-      .where(eq(customQuestions.testId, testId))
-      .orderBy(customQuestions.questionNumber);
+    return Array.from(this.customQuestions.values())
+      .filter((q) => q.testId === testId)
+      .sort((a, b) => a.questionNumber - b.questionNumber);
   }
 
   async updateCustomQuestion(questionId: string, updates: Partial<CustomQuestion>): Promise<CustomQuestion | undefined> {
-    const result = await db.update(customQuestions).set(updates).where(eq(customQuestions.id, questionId)).returning();
-    return result[0] || undefined;
+    const question = this.customQuestions.get(questionId);
+    if (!question) return undefined;
+
+    const updated = { ...question, ...updates };
+    this.customQuestions.set(questionId, updated);
+    return updated;
   }
 
   async deleteCustomQuestions(testId: string): Promise<void> {
-    await db.delete(customQuestions).where(eq(customQuestions.testId, testId));
+    const questions = Array.from(this.customQuestions.entries())
+      .filter(([_, q]) => q.testId === testId);
+    questions.forEach(([id, _]) => this.customQuestions.delete(id));
   }
 
-  // Answer sheet evaluation methods - stored in PostgreSQL database
+  // Answer sheet evaluation methods
   async saveAnswerSheetEvaluation(insertEvaluation: InsertAnswerSheetEvaluation): Promise<AnswerSheetEvaluation> {
-    const result = await db.insert(answerSheetEvaluations).values({
+    const id = randomUUID();
+    const evaluation: AnswerSheetEvaluation = {
       ...insertEvaluation,
+      id,
       studentName: insertEvaluation.studentName ?? null,
       classLevel: insertEvaluation.classLevel ?? null,
       subject: insertEvaluation.subject ?? null,
       gptModel: insertEvaluation.gptModel || "gpt-4o",
-    }).returning();
-    return result[0];
+      createdAt: new Date(),
+    };
+    this.answerSheetEvaluations.set(id, evaluation);
+    return evaluation;
   }
 
   async getRecentEvaluations(limit: number): Promise<AnswerSheetEvaluation[]> {
-    return db.select().from(answerSheetEvaluations)
-      .orderBy(desc(answerSheetEvaluations.createdAt))
-      .limit(limit);
+    return Array.from(this.answerSheetEvaluations.values())
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, limit);
   }
 }
 
-export const storage = new DatabaseStorage();
+export const storage = new MemStorage();

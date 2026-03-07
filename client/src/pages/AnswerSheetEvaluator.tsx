@@ -8,6 +8,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Upload, X, Loader2, CheckCircle, AlertCircle, BookOpen } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
+
+
 interface AnswerEvaluation {
   questionNumber: number;
   extractedAnswer: string;
@@ -29,19 +31,22 @@ export default function AnswerSheetEvaluator() {
   const { toast } = useToast();
   const [studentName, setStudentName] = useState<string>("");
   const [classLevel, setClassLevel] = useState<string>("");
-  const [subject, setSubject] = useState<string>("");
+  const [subject, setSubject] = useState<string>("");   
   const [gptModel, setGptModel] = useState<string>("gpt-4o");
   const [images, setImages] = useState<string[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isEvaluating, setIsEvaluating] = useState<boolean>(false);
   const [evaluationResult, setEvaluationResult] = useState<EvaluationResult | null>(null);
 
+  const [questionImages, setQuestionImages] = useState<string[]>([]);
+  const [questionPreviews, setQuestionPreviews] = useState<string[]>([]);
+
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files) return;
 
     const fileArray = Array.from(files);
-    
+
     if (images.length + fileArray.length > 20) {
       toast({
         title: "Too Many Images",
@@ -78,9 +83,49 @@ export default function AnswerSheetEvaluator() {
 
     setImages([...images, ...newImages]);
     setImagePreviews([...imagePreviews, ...newPreviews]);
-    
+
     toast({
       title: "Images Uploaded",
+      description: `${newImages.length} image(s) added successfully`,
+    });
+  };
+
+    const handleQuestionUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    const fileArray = Array.from(files);
+
+    const newImages: string[] = [];
+    const newPreviews: string[] = [];
+
+    for (const file of fileArray) {
+      if (!file.type.startsWith("image/")) {
+        toast({
+          title: "Invalid File",
+          description: `${file.name} is not an image file`,
+          variant: "destructive",
+        });
+        continue;
+      }
+
+      const reader = new FileReader();
+      await new Promise((resolve) => {
+        reader.onload = (e) => {
+          const base64 = e.target?.result as string;
+          newImages.push(base64);
+          newPreviews.push(base64);
+          resolve(null);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    setQuestionImages([...questionImages, ...newImages]);
+    setQuestionPreviews([...questionPreviews, ...newPreviews]);
+
+    toast({
+      title: "Question Images Uploaded",
       description: `${newImages.length} image(s) added successfully`,
     });
   };
@@ -104,17 +149,18 @@ export default function AnswerSheetEvaluator() {
     setEvaluationResult(null);
 
     try {
-      const res = await apiRequest("POST", "/api/evaluate-answer-sheet", {
-        images,
-        studentName: studentName || "Anonymous",
-        classLevel: classLevel ? parseInt(classLevel) : undefined,
-        subject: subject || undefined,
-        gptModel,
-      });
+        const res = await apiRequest("POST", "/api/evaluate-answer-sheet", {
+          images,
+          questionImages: questionImages.length > 0 ? questionImages : undefined,
+          studentName: studentName || "Anonymous",
+          classLevel: classLevel ? parseInt(classLevel) : undefined,
+          subject: subject || undefined,
+          gptModel,
+        });
 
       const data = await res.json();
       setEvaluationResult(data);
-      
+
       toast({
         title: "Evaluation Complete!",
         description: `Evaluated ${data.totalAnswers} answer(s) with average score ${data.averageScore.toFixed(1)}/10`,
@@ -252,8 +298,59 @@ export default function AnswerSheetEvaluator() {
               </CardContent>
             </Card>
 
-            {/* AI Model Selection */}
+             {/* Question Upload (Optional) */}
             <Card>
+              <CardHeader>
+                <CardTitle>Upload Question Paper (Optional)</CardTitle>
+                <CardDescription>
+                  Upload question paper images for more accurate evaluation
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <Label
+                      htmlFor="question-upload"
+                      className="flex-1 cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-8 text-center hover:border-blue-500 dark:hover:border-blue-400 transition-colors"
+                    >
+                      <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                      <p className="text-sm font-medium mb-1">
+                        Click to upload question images
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {questionImages.length} question image(s) uploaded
+                      </p>
+                      <Input
+                        id="question-upload"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={handleQuestionUpload}
+                      />
+                    </Label>
+                  </div>
+
+                  {questionPreviews.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {questionPreviews.map((preview, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={preview}
+                            alt={`Question ${index + 1}`}
+                            className="w-full h-40 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+
+            {/* AI Model Selection */}
+          { /* <Card>
               <CardHeader>
                 <CardTitle>AI Model Quality</CardTitle>
                 <CardDescription>Select the AI model for evaluation</CardDescription>
@@ -269,7 +366,7 @@ export default function AnswerSheetEvaluator() {
                   </SelectContent>
                 </Select>
               </CardContent>
-            </Card>
+            </Card> */}
 
             {/* Evaluate Button */}
             <Button
@@ -395,6 +492,54 @@ export default function AnswerSheetEvaluator() {
               </Card>
             ))}
 
+           {/* <Button
+            size="lg"
+            className="w-full mb-4"
+            onClick={async () => {
+              const res = await fetch("/api/download-evaluation-pdf", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(evaluationResult),
+              });
+
+              const blob = await res.blob();
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "evaluation-report.pdf";
+              a.click();
+            }}
+          >
+            Download PDF Report
+          </Button> */}
+
+         <Button
+          size="lg"
+          className="w-full mb-4"
+          onClick={async () => {
+
+            const res = await fetch("/api/download-evaluation-pdf", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                ...evaluationResult,
+                studentName: studentName,
+                classLevel: classLevel,
+                subject: subject
+              }),
+            });
+
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "evaluation-report.pdf";
+            a.click();
+          }}
+        >
+          Download PDF Report
+        </Button>
             {/* Reset Button */}
             <Button
               size="lg"
@@ -403,6 +548,8 @@ export default function AnswerSheetEvaluator() {
                 setEvaluationResult(null);
                 setImages([]);
                 setImagePreviews([]);
+                setQuestionImages([]);
+                setQuestionPreviews([]);
                 setStudentName("");
                 setClassLevel("");
                 setSubject("");

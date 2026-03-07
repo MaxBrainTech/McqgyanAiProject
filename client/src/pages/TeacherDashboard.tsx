@@ -18,9 +18,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
+
 const testSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
   subject: z.string().min(1, "Subject is required"),
+  language: z.enum(["english", "hindi"]), 
   classLevel: z.number().min(6).max(12),
   difficulty: z.enum(["easy", "medium", "hard"]),
   topic1: z.string().min(3, "Topic 1 is required (minimum 3 characters)"),
@@ -56,14 +58,14 @@ export default function TeacherDashboard() {
   const location = useLocation();
   const navigate = useNavigate();
   const teacherData = location.state?.teacherData;
-  
+
   // Redirect to teacher auth if no teacher data
   useEffect(() => {
     if (!teacherData) {
       navigate('/teacher-auth');
     }
   }, [teacherData, navigate]);
-  
+
   // Return loading state while redirecting if no teacher data
   if (!teacherData) {
     return (
@@ -75,9 +77,9 @@ export default function TeacherDashboard() {
       </div>
     );
   }
-  
+
   const handleLogout = () => {
-    navigate('/custom-mcq');
+    navigate('/');
   };
   const [showForm, setShowForm] = useState(false);
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
@@ -93,6 +95,7 @@ export default function TeacherDashboard() {
     defaultValues: {
       title: "",
       subject: "",
+      language: "english", 
       classLevel: 9,
       difficulty: "medium",
       topic1: "",
@@ -121,19 +124,20 @@ export default function TeacherDashboard() {
       const topics = [data.topic1, data.topic2, data.topic3, data.topic4]
         .filter(topic => topic && topic.trim().length > 0)
         .join(', ');
-      
+
       const payload = {
-        title: data.title,
-        subject: data.subject,
-        classLevel: data.classLevel,
-        difficulty: data.difficulty,
-        syllabus: topics, // Send combined topics as syllabus
-        numQuestions: data.numQuestions,
-        testType: data.testType,
-        gptModel: data.gptModel,
-        instructions: data.instructions,
-      };
-      
+      title: data.title,
+      subject: data.subject,
+      language: data.language,   // ✅ correct
+      classLevel: data.classLevel,
+      difficulty: data.difficulty,
+      syllabus: topics,
+      numQuestions: data.numQuestions,
+      testType: data.testType,
+      gptModel: data.gptModel,
+      instructions: data.instructions,
+    };
+
       const res = await apiRequest("POST", `/api/teacher/${teacherData.id}/generate-test`, payload);
       return await res.json();
     },
@@ -142,12 +146,14 @@ export default function TeacherDashboard() {
         title: "Test Generated!",
         description: `Successfully created ${result.questionsGenerated} questions. Share code: ${result.test.shareCode}`,
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/teacher/${teacherData.id}/tests`] });
+      queryClient.refetchQueries({ queryKey: [`/api/teacher/${teacherData.id}/tests`] });
       form.reset();
       setShowForm(false);
       // Show the questions dialog
       setSelectedTestId(result.test.id);
-      setShowQuestionsDialog(true);
+        setTimeout(() => {
+        setShowQuestionsDialog(true);
+      }, 300);
     },
     onError: (error: any) => {
       toast({
@@ -222,50 +228,96 @@ export default function TeacherDashboard() {
       // Fetch test details if not already loaded
       const response = await fetch(`/api/teacher/${teacherData.id}/tests/${testId}`);
       const data = await response.json();
-      
+
       // Create PDF with jsPDF for professional formatting
       const pdf = new (jsPDF as any)({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4'
       });
-      
+
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const margins = { top: 15, bottom: 15, left: 15, right: 15 };
       const contentWidth = pageWidth - margins.left - margins.right;
       let yPosition = margins.top;
-      
+
       // Helper function to add text with wrapping
       const addWrappedText = (text: string, x: number, maxWidth: number, fontSize: number, isBold: boolean = false) => {
         pdf.setFontSize(fontSize);
         if (isBold) pdf.setFont(undefined, 'bold');
         else pdf.setFont(undefined, 'normal');
-        
+
         const lines = pdf.splitTextToSize(text, maxWidth);
         pdf.text(lines, x, yPosition);
         yPosition += lines.length * (fontSize * 0.35) + 2;
         return lines.length;
       };
-      
-      // Header with test title
-      pdf.setFillColor(51, 65, 85);
-      pdf.rect(0, 0, pageWidth, 30, 'F');
+
+      // // Header with test title
+      // pdf.setFillColor(51, 65, 85);
+      // pdf.rect(0, 0, pageWidth, 30, 'F');
+      // pdf.setTextColor(255, 255, 255);
+      // // pdf.setFontSize(18);
+      // // pdf.setFont(undefined, 'bold');
+      // // pdf.text(data.test.title, margins.left, 12);
+      // pdf.setFontSize(20);
+      // pdf.setFont(undefined, 'bold');
+      // pdf.text(data.test.title, pageWidth / 2, 15, { align: "center" });
+
+      // // Reset text color
+      // pdf.setTextColor(0, 0, 0);
+      // yPosition = 40;
+
+      // ======= PROFESSIONAL HEADER =======
+
+      // Dark header background
+     // ===== HEADER BACKGROUND =====
+      // ======= HEADER SECTION =======
+      pdf.setFillColor(30, 41, 59); // dark navy background
+      pdf.rect(0, 0, pageWidth, 32, "F");
+
+      // ---- Test Title (Left side) ----
       pdf.setTextColor(255, 255, 255);
       pdf.setFontSize(18);
-      pdf.setFont(undefined, 'bold');
-      pdf.text(data.test.title, margins.left, 12);
-      
+      pdf.setFont(undefined, "bold");
+      pdf.text(data.test.title, margins.left, 18);
+
+      // ===== RIGHT SIDE BRAND (NO LOGO) =====
+      pdf.setFontSize(14);
+      pdf.setFont("helvetica", "bold");
+
+      // Text
+      const brandText = "MCQGyaan AI";
+
+      // Text width calculate
+      const brandTextWidth = pdf.getTextWidth(brandText);
+
+      // Right align position
+      const brandX = pageWidth - margins.right - brandTextWidth;
+
+      // White text
+      pdf.setTextColor(255, 255, 255);
+
+      // Print brand name
+      pdf.text(brandText, brandX, 18);
+
       // Reset text color
       pdf.setTextColor(0, 0, 0);
-      yPosition = 40;
-      
+
+      // Start content position
+      yPosition = 42;
+
+      pdf.setDrawColor(200);
+      pdf.line(margins.left, 30, pageWidth - margins.right, 30);
+
+
       // Test Info Section
       pdf.setFontSize(10);
       pdf.setFont(undefined, 'bold');
       pdf.text('Test Information', margins.left, yPosition);
       yPosition += 8;
-      
+
       pdf.setFont(undefined, 'normal');
       pdf.setFontSize(9);
       const testInfo = [
@@ -275,14 +327,14 @@ export default function TeacherDashboard() {
         `Total Questions: ${data.questions.length}`,
         `Share Code: ${data.test.shareCode}`
       ];
-      
+
       testInfo.forEach(info => {
         pdf.text(info, margins.left, yPosition);
         yPosition += 5;
       });
-      
+
       yPosition += 3;
-      
+
       // Instructions section if present
       if (data.test.instructions) {
         pdf.setFillColor(240, 240, 240);
@@ -291,20 +343,31 @@ export default function TeacherDashboard() {
         pdf.setFontSize(10);
         pdf.text('Instructions:', margins.left + 3, yPosition + 2);
         yPosition += 6;
-        
+
         pdf.setFont(undefined, 'normal');
         pdf.setFontSize(9);
         const instructionLines = pdf.splitTextToSize(data.test.instructions, contentWidth - 6);
         pdf.text(instructionLines, margins.left + 3, yPosition);
         yPosition += instructionLines.length * 4 + 3;
       }
-      
+
+
+
       // Questions section
-      pdf.setFont(undefined, 'bold');
-      pdf.setFontSize(10);
       pdf.text('Questions', margins.left, yPosition + 5);
-      yPosition += 10;
-      
+      pdf.setFillColor(240, 240, 240);
+      pdf.rect(margins.left, yPosition, contentWidth, 8, 'F');
+
+      pdf.setFontSize(11);
+      pdf.setFont(undefined, "bold");
+      pdf.text("Questions", pageWidth / 2, yPosition + 6, { align: "center" });
+
+      yPosition += 12;
+      // pdf.setFont(undefined, 'bold');
+      // pdf.setFontSize(10);
+      // pdf.text('Questions', margins.left, yPosition + 5);
+      // yPosition += 10;
+
       // Add questions
       data.questions.forEach((q: any, idx: number) => {
         // Check if we need a new page
@@ -312,19 +375,19 @@ export default function TeacherDashboard() {
           pdf.addPage();
           yPosition = margins.top;
         }
-        
+
         // Question number and text
         pdf.setFont(undefined, 'bold');
         pdf.setFontSize(10);
         pdf.text(`Q${idx + 1}.`, margins.left, yPosition);
         yPosition += 5;
-        
+
         pdf.setFont(undefined, 'normal');
         pdf.setFontSize(9);
         const questionLines = pdf.splitTextToSize(q.question, contentWidth - 5);
         pdf.text(questionLines, margins.left + 5, yPosition);
         yPosition += questionLines.length * 3.5 + 2;
-        
+
         // Options for MCQ
         if (q.questionType === 'mcq' && q.options) {
           pdf.setFontSize(8.5);
@@ -333,14 +396,14 @@ export default function TeacherDashboard() {
               pdf.addPage();
               yPosition = margins.top;
             }
-            
+
             const optionLetter = String.fromCharCode(65 + optIdx);
             const optionLines = pdf.splitTextToSize(`${optionLetter}. ${opt}`, contentWidth - 8);
             pdf.text(optionLines, margins.left + 8, yPosition);
             yPosition += optionLines.length * 3.2 + 1;
           });
         }
-        
+
         // Model answer for open-ended
         if (q.questionType === 'open-ended') {
           pdf.setFont(undefined, 'bold');
@@ -348,10 +411,10 @@ export default function TeacherDashboard() {
           pdf.text('Answer: _____________________________________', margins.left + 5, yPosition);
           yPosition += 4;
         }
-        
+
         yPosition += 4;
       });
-      
+
       // Footer on each page
       const totalPages = pdf.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
@@ -361,10 +424,10 @@ export default function TeacherDashboard() {
         pdf.setTextColor(128, 128, 128);
         pdf.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 8, { align: 'center' });
       }
-      
+
       // Save the PDF
       pdf.save(`${data.test.title}_${data.test.shareCode}.pdf`);
-      
+
       toast({
         title: "Success!",
         description: "Question paper downloaded as PDF",
@@ -415,11 +478,38 @@ export default function TeacherDashboard() {
         ) : (
           <Card className="mb-8">
             <CardHeader>
+
+            <div className="flex items-center justify-between">
+
               <CardTitle>Create Custom MCQ Test</CardTitle>
-              <CardDescription>
-                Configure test parameters and AI will generate questions automatically
-              </CardDescription>
-            </CardHeader>
+
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  className="h-8 px-3 text-sm"
+                  variant={form.watch("language") === "english" ? "default" : "outline"}
+                  onClick={() => form.setValue("language", "english")}
+                >
+                  English
+                </Button>
+
+                <Button
+                  type="button"
+                  className="h-8 px-3 text-sm"
+                  variant={form.watch("language") === "hindi" ? "default" : "outline"}
+                  onClick={() => form.setValue("language", "hindi")}
+                >
+                  हिंदी
+                </Button>
+              </div>
+
+            </div>
+
+            <CardDescription>
+              Configure test parameters and AI will generate questions automatically
+            </CardDescription>
+
+          </CardHeader>
             <CardContent>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
@@ -594,7 +684,7 @@ export default function TeacherDashboard() {
                     <p className="text-sm text-muted-foreground">
                       Enter up to 4 topics. Questions will be distributed evenly across all topics you provide.
                     </p>
-                    
+
                     <div className="grid gap-3">
                       <FormField
                         control={form.control}
@@ -613,7 +703,7 @@ export default function TeacherDashboard() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="topic2"
@@ -631,7 +721,7 @@ export default function TeacherDashboard() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="topic3"
@@ -649,7 +739,7 @@ export default function TeacherDashboard() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="topic4"
