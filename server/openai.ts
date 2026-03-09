@@ -12,7 +12,7 @@ interface MCQ {
 }
 
 export const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
+  apiKey: process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
 });
 // OpenAI Configuration
 // Priority: Use your own OPENAI_API_KEY if provided, otherwise fall back to Replit's AI Integrations
@@ -143,7 +143,7 @@ export const GPT_MODELS = {
 // });
 
 // Current model in use - Change this to switch models globally  
-const CURRENT_MODEL = GPT_MODELS.STANDARD;  // Using gpt-4o-mini as default (o1 models used for verification)
+const CURRENT_MODEL = "gpt-4o-mini";  // Using gpt-4o-mini as default (o1 models used for verification)
 
 // CBSE Blueprint Metadata - Defines age-appropriate expectations for each class level
 const CBSE_CLASS_GUIDELINES = {
@@ -1198,7 +1198,7 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
   }
 }
 
-async function generateScienceQuestion(params: {
+export async function generateScienceQuestion(params: {
   scienceCategory?: string;
   classLevel: number;
   difficulty: string;
@@ -1217,7 +1217,8 @@ async function generateScienceQuestion(params: {
   correctOption?: string;
   explanation?: string;
 }| null> {
-  const { scienceCategory, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance, previousQuestions, isMcq = true, gptModel } = params;
+  const { scienceCategory, classLevel, difficulty, chapterTitle, questionNumber, previousPerformance, previousQuestions, isMcq = true, gptModel,language } = params;
+  const lang = language || "English";
   const category = scienceCategory || chapterTitle || "general science";
   const modelToUse = gptModel || CURRENT_MODEL;
 
@@ -1248,12 +1249,38 @@ async function generateScienceQuestion(params: {
     ? "Generate a multiple choice question (MCQ)"
     : "Generate an open-ended question that requires a detailed written answer";
 
-  const prompt = `You are a strict CBSE General Science teacher for Class ${classLevel} following the official NCERT curriculum.
-      if (language && language.toLowerCase() === "hindi") {
+  const languageInstruction =
+    language === "hindi"
+      ? "Generate the question strictly in Hindi."
+      : "Generate the question strictly in English.";
 
-    IMPORTANT LANGUAGE RULE:
-    Generate question, options, correct answer and explanation ONLY in Hindi.
-    Do NOT use English words.
+  const prompt = `
+  Generate a ${difficulty} science question for class ${classLevel}.
+
+  Language: ${lang}
+
+  IMPORTANT:
+  If language is English then the question, options, and answer MUST be strictly in English.
+  Do NOT use Hindi.
+
+  Science Category: ${scienceCategory}
+  
+  Return JSON format:
+  {
+    question:"",
+    options:[],
+    correctOption:"",
+    explanation:""
+  }
+      {
+
+      IMPORTANT RULE:
+      If language = English then output ONLY in English.
+      Hindi or any other language is NOT allowed.
+
+    // IMPORTANT LANGUAGE RULE:
+    // Generate question, options, correct answer and explanation ONLY in Hindi.
+    // Do NOT use English words.
 
 🎯 CBSE CLASS ${classLevel} BLUEPRINT REQUIREMENTS:
 - Bloom's Taxonomy Level: ${guidelines.bloomLevel}
@@ -1356,7 +1383,7 @@ Make the question challenging but fair for Class ${classLevel} CBSE students. En
 
     const result = JSON.parse(cleanContent);
     // console.log(`[AI] Science ${isMcq ? 'MCQ' : 'open-ended'} generated in ${elapsed}s using ${modelToUse}: ${result.question.substring(0, 50)}...`);
-    const { difficulty, questionNumber, scienceCategory, chapterTitle } = params;
+    const { difficulty, questionNumber, scienceCategory, chapterTitle,language } = params;
     const category = scienceCategory || chapterTitle || "general science";
 
     if (isMcq) {
@@ -1661,7 +1688,10 @@ ${isMCQ ? `{
         question: result.question || params.originalQuestion,
         options: result.options || params.options,
         correctOption: result.correctOption || "A",
-        correctAnswer: result.options?.[result.correctOption?.charCodeAt(0) - 65] || result.options?.[0] || "",
+        correctAnswer:
+          result.options?.[result.correctOption?.charCodeAt(0) - 65] ||
+          result.options?.[0] ||
+          "",
         explanation: result.explanation || params.explanation,
       };
     } else {

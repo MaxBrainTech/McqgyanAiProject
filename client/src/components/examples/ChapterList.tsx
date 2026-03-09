@@ -36,7 +36,6 @@
 //   );
 // }
 
-
 import ChapterList from "../ChapterList";
 
 export default function ChapterListExample() {
@@ -81,7 +80,7 @@ export default function ChapterListExample() {
       <ChapterList
         chapters={chapters}
         onSelect={(id) => console.log("Selected chapter:", id)}
-        selectedMedium="english"   // 👈 REQUIRED PROP
+        selectedMedium="english" // 👈 REQUIRED PROP
       />
     </div>
   );

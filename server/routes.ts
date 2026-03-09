@@ -1,29 +1,32 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { generateQuestion, evaluateAnswer, improveQuestion, getEmbedding, cosineSimilarity,verifyAnswer  } from "./openai";
+import {
+  generateQuestion,
+  evaluateAnswer,
+  improveQuestion,
+  getEmbedding,
+  cosineSimilarity,
+  verifyAnswer,
+} from "./openai";
 import { generateFromHF } from "./services/huggingface";
 // import type {  Request, Response } from "express";
 
 import express, { Router, Request, Response } from "express";
 
-
 import { saveMCQ } from "./services/mcq.service";
 
 import { generateEvaluationPDF } from "./answerSheetEvaluator";
 
-
 // import { Request, Response } from "express";
 
-
 const router = Router();
-
-
 
 import pool from "./db";
 import bcrypt from "bcrypt";
 import { openai } from "./openai";
 
+console.log("ROUTES FILE LOADED");
 
 // router.post("/api/teacher/login", async (req: Request, res: Response) => {
 //   const { username, password } = req.body;
@@ -55,12 +58,7 @@ import { openai } from "./openai";
 //   }
 // });
 
-
 export default router;
-
-
-
-
 
 // // 🔧 Auto-adjust numQuestions based on topics
 // const MAX_QUESTIONS_PER_TOPIC = 3;
@@ -72,8 +70,6 @@ export default router;
 //   );
 //   numQuestions = maxPossibleQuestions;
 // }
-
-
 
 // Comprehensive chapter mappings for all languages (CBSE Curriculum)
 // const CHAPTERS: Record<string, Array<{ id: number; title: string; description: string }>> = {
@@ -125,32 +121,186 @@ const CHAPTERS: Record<
   // ],
 
   french: [
-  { id: 1, title: { english: "Les Salutations", hindi: "अभिवादन" }, description: { english: "Greetings and introductions", hindi: "अभिवादन और परिचय" } },
-  { id: 2, title: { english: "La Présentation", hindi: "परिचय" }, description: { english: "Self introduction and personal details", hindi: "स्व-परिचय और व्यक्तिगत विवरण" } },
-  { id: 3, title: { english: "Les Nombres", hindi: "संख्याएँ" }, description: { english: "Numbers 1-100", hindi: "१-१०० तक की संख्याएँ" } },
-  { id: 4, title: { english: "La Famille", hindi: "परिवार" }, description: { english: "Family members and relationships", hindi: "परिवार के सदस्य और रिश्ते" } },
-  { id: 5, title: { english: "Les Couleurs", hindi: "रंग" }, description: { english: "Colors and adjectives", hindi: "रंग और विशेषण" } },
-  { id: 6, title: { english: "Les Articles", hindi: "लेख (आर्टिकल्स)" }, description: { english: "Definite and indefinite articles", hindi: "निश्चित और अनिश्चित लेख" } },
-  { id: 7, title: { english: "Les Verbes", hindi: "क्रियाएँ" }, description: { english: "Present tense verbs (être, avoir)", hindi: "वर्तमान काल की क्रियाएँ (être, avoir)" } },
-  { id: 8, title: { english: "La Nourriture", hindi: "भोजन" }, description: { english: "Food, fruits, and vegetables", hindi: "भोजन, फल और सब्जियाँ" } },
-  { id: 9, title: { english: "Les Vêtements", hindi: "कपड़े" }, description: { english: "Clothing and accessories", hindi: "कपड़े और सहायक वस्तुएँ" } },
-  { id: 10, title: { english: "La Maison", hindi: "घर" }, description: { english: "House, rooms, and furniture", hindi: "घर, कमरे और फर्नीचर" } },
-  { id: 11, title: { english: "L'École", hindi: "विद्यालय" }, description: { english: "School subjects and activities", hindi: "विद्यालय विषय और गतिविधियाँ" } },
-  { id: 12, title: { english: "Les Animaux", hindi: "पशु-पक्षी" }, description: { english: "Animals and pets", hindi: "जानवर और पालतू पशु" } },
-  { id: 13, title: { english: "Le Temps", hindi: "मौसम" }, description: { english: "Weather and seasons", hindi: "मौसम और ऋतुएँ" } },
-  { id: 14, title: { english: "Les Jours et Mois", hindi: "दिन और महीने" }, description: { english: "Days, months, and dates", hindi: "दिन, महीने और तिथियाँ" } },
-  { id: 15, title: { english: "L'Heure", hindi: "समय" }, description: { english: "Telling time", hindi: "समय बताना" } },
-  { id: 16, title: { english: "Les Loisirs", hindi: "शौक" }, description: { english: "Hobbies and leisure activities", hindi: "शौक और अवकाश गतिविधियाँ" } },
-  { id: 17, title: { english: "Le Corps", hindi: "शरीर के अंग" }, description: { english: "Body parts and health", hindi: "शरीर के अंग और स्वास्थ्य" } },
-  { id: 18, title: { english: "La Ville", hindi: "शहर" }, description: { english: "City, places, and directions", hindi: "शहर, स्थान और दिशाएँ" } },
-  { id: 19, title: { english: "Les Transports", hindi: "परिवहन" }, description: { english: "Transportation and travel", hindi: "यातायात और यात्रा" } },
-  { id: 20, title: { english: "Le Passé Composé", hindi: "भूतकाल (पासे कॉम्पोज़े)" }, description: { english: "Past tense formation", hindi: "भूतकाल का निर्माण (Passé Composé)" } },
-  { id: 21, title: { english: "Le Futur", hindi: "भविष्यकाल" }, description: { english: "Future tense", hindi: "भविष्यकाल" } },
-  { id: 22, title: { english: "Les Pronoms", hindi: "सर्वनाम" }, description: { english: "Personal and possessive pronouns", hindi: "व्यक्तिवाचक और अधिकारवाचक सर्वनाम" } },
-  { id: 23, title: { english: "Les Prépositions", hindi: "पूर्वसर्ग" }, description: { english: "Prepositions of place and time", hindi: "स्थान और समय के पूर्वसर्ग" } },
-  { id: 24, title: { english: "La Négation", hindi: "नकारात्मक वाक्य" }, description: { english: "Negative sentences", hindi: "नकारात्मक वाक्य" } },
-  { id: 25, title: { english: "Les Questions", hindi: "प्रश्नवाचक वाक्य" }, description: { english: "Question formation and interrogatives", hindi: "प्रश्न निर्माण और प्रश्नवाचक शब्द" } }
-],
+    {
+      id: 1,
+      title: { english: "Les Salutations", hindi: "अभिवादन" },
+      description: {
+        english: "Greetings and introductions",
+        hindi: "अभिवादन और परिचय",
+      },
+    },
+    {
+      id: 2,
+      title: { english: "La Présentation", hindi: "परिचय" },
+      description: {
+        english: "Self introduction and personal details",
+        hindi: "स्व-परिचय और व्यक्तिगत विवरण",
+      },
+    },
+    {
+      id: 3,
+      title: { english: "Les Nombres", hindi: "संख्याएँ" },
+      description: { english: "Numbers 1-100", hindi: "१-१०० तक की संख्याएँ" },
+    },
+    {
+      id: 4,
+      title: { english: "La Famille", hindi: "परिवार" },
+      description: {
+        english: "Family members and relationships",
+        hindi: "परिवार के सदस्य और रिश्ते",
+      },
+    },
+    {
+      id: 5,
+      title: { english: "Les Couleurs", hindi: "रंग" },
+      description: { english: "Colors and adjectives", hindi: "रंग और विशेषण" },
+    },
+    {
+      id: 6,
+      title: { english: "Les Articles", hindi: "लेख (आर्टिकल्स)" },
+      description: {
+        english: "Definite and indefinite articles",
+        hindi: "निश्चित और अनिश्चित लेख",
+      },
+    },
+    {
+      id: 7,
+      title: { english: "Les Verbes", hindi: "क्रियाएँ" },
+      description: {
+        english: "Present tense verbs (être, avoir)",
+        hindi: "वर्तमान काल की क्रियाएँ (être, avoir)",
+      },
+    },
+    {
+      id: 8,
+      title: { english: "La Nourriture", hindi: "भोजन" },
+      description: {
+        english: "Food, fruits, and vegetables",
+        hindi: "भोजन, फल और सब्जियाँ",
+      },
+    },
+    {
+      id: 9,
+      title: { english: "Les Vêtements", hindi: "कपड़े" },
+      description: {
+        english: "Clothing and accessories",
+        hindi: "कपड़े और सहायक वस्तुएँ",
+      },
+    },
+    {
+      id: 10,
+      title: { english: "La Maison", hindi: "घर" },
+      description: {
+        english: "House, rooms, and furniture",
+        hindi: "घर, कमरे और फर्नीचर",
+      },
+    },
+    {
+      id: 11,
+      title: { english: "L'École", hindi: "विद्यालय" },
+      description: {
+        english: "School subjects and activities",
+        hindi: "विद्यालय विषय और गतिविधियाँ",
+      },
+    },
+    {
+      id: 12,
+      title: { english: "Les Animaux", hindi: "पशु-पक्षी" },
+      description: { english: "Animals and pets", hindi: "जानवर और पालतू पशु" },
+    },
+    {
+      id: 13,
+      title: { english: "Le Temps", hindi: "मौसम" },
+      description: { english: "Weather and seasons", hindi: "मौसम और ऋतुएँ" },
+    },
+    {
+      id: 14,
+      title: { english: "Les Jours et Mois", hindi: "दिन और महीने" },
+      description: {
+        english: "Days, months, and dates",
+        hindi: "दिन, महीने और तिथियाँ",
+      },
+    },
+    {
+      id: 15,
+      title: { english: "L'Heure", hindi: "समय" },
+      description: { english: "Telling time", hindi: "समय बताना" },
+    },
+    {
+      id: 16,
+      title: { english: "Les Loisirs", hindi: "शौक" },
+      description: {
+        english: "Hobbies and leisure activities",
+        hindi: "शौक और अवकाश गतिविधियाँ",
+      },
+    },
+    {
+      id: 17,
+      title: { english: "Le Corps", hindi: "शरीर के अंग" },
+      description: {
+        english: "Body parts and health",
+        hindi: "शरीर के अंग और स्वास्थ्य",
+      },
+    },
+    {
+      id: 18,
+      title: { english: "La Ville", hindi: "शहर" },
+      description: {
+        english: "City, places, and directions",
+        hindi: "शहर, स्थान और दिशाएँ",
+      },
+    },
+    {
+      id: 19,
+      title: { english: "Les Transports", hindi: "परिवहन" },
+      description: {
+        english: "Transportation and travel",
+        hindi: "यातायात और यात्रा",
+      },
+    },
+    {
+      id: 20,
+      title: { english: "Le Passé Composé", hindi: "भूतकाल (पासे कॉम्पोज़े)" },
+      description: {
+        english: "Past tense formation",
+        hindi: "भूतकाल का निर्माण (Passé Composé)",
+      },
+    },
+    {
+      id: 21,
+      title: { english: "Le Futur", hindi: "भविष्यकाल" },
+      description: { english: "Future tense", hindi: "भविष्यकाल" },
+    },
+    {
+      id: 22,
+      title: { english: "Les Pronoms", hindi: "सर्वनाम" },
+      description: {
+        english: "Personal and possessive pronouns",
+        hindi: "व्यक्तिवाचक और अधिकारवाचक सर्वनाम",
+      },
+    },
+    {
+      id: 23,
+      title: { english: "Les Prépositions", hindi: "पूर्वसर्ग" },
+      description: {
+        english: "Prepositions of place and time",
+        hindi: "स्थान और समय के पूर्वसर्ग",
+      },
+    },
+    {
+      id: 24,
+      title: { english: "La Négation", hindi: "नकारात्मक वाक्य" },
+      description: { english: "Negative sentences", hindi: "नकारात्मक वाक्य" },
+    },
+    {
+      id: 25,
+      title: { english: "Les Questions", hindi: "प्रश्नवाचक वाक्य" },
+      description: {
+        english: "Question formation and interrogatives",
+        hindi: "प्रश्न निर्माण और प्रश्नवाचक शब्द",
+      },
+    },
+  ],
   // german: [
   //   { id: 1, title: "Begrüßungen", description: "Greetings and farewells" },
   //   { id: 2, title: "Vorstellung", description: "Self introduction and details" },
@@ -180,32 +330,192 @@ const CHAPTERS: Record<
   // ],
 
   german: [
-  { id: 1, title: { english: "Begrüßungen", hindi: "अभिवादन" }, description: { english: "Greetings and farewells", hindi: "अभिवादन और विदाई" } },
-  { id: 2, title: { english: "Vorstellung", hindi: "परिचय" }, description: { english: "Self introduction and details", hindi: "स्व-परिचय और विवरण" } },
-  { id: 3, title: { english: "Zahlen", hindi: "संख्याएँ" }, description: { english: "Numbers 1-100", hindi: "१-१०० तक की संख्याएँ" } },
-  { id: 4, title: { english: "Familie", hindi: "परिवार" }, description: { english: "Family members and relationships", hindi: "परिवार के सदस्य और रिश्ते" } },
-  { id: 5, title: { english: "Farben", hindi: "रंग" }, description: { english: "Colors and descriptions", hindi: "रंग और उनके वर्णन" } },
-  { id: 6, title: { english: "Artikel", hindi: "लेख (आर्टिकल्स)" }, description: { english: "Der, die, das articles", hindi: "Der, Die, Das लेख" } },
-  { id: 7, title: { english: "Verben", hindi: "क्रियाएँ" }, description: { english: "Present tense verbs (sein, haben)", hindi: "वर्तमान काल की क्रियाएँ (sein, haben)" } },
-  { id: 8, title: { english: "Essen und Trinken", hindi: "भोजन और पेय" }, description: { english: "Food and beverages", hindi: "भोजन और पेय पदार्थ" } },
-  { id: 9, title: { english: "Kleidung", hindi: "कपड़े" }, description: { english: "Clothing and accessories", hindi: "कपड़े और सहायक वस्तुएँ" } },
-  { id: 10, title: { english: "Das Haus", hindi: "घर" }, description: { english: "House, rooms, and furniture", hindi: "घर, कमरे और फर्नीचर" } },
-  { id: 11, title: { english: "Die Schule", hindi: "विद्यालय" }, description: { english: "School subjects and activities", hindi: "विद्यालय विषय और गतिविधियाँ" } },
-  { id: 12, title: { english: "Tiere", hindi: "पशु-पक्षी" }, description: { english: "Animals and pets", hindi: "जानवर और पालतू पशु" } },
-  { id: 13, title: { english: "Das Wetter", hindi: "मौसम" }, description: { english: "Weather and seasons", hindi: "मौसम और ऋतुएँ" } },
-  { id: 14, title: { english: "Tage und Monate", hindi: "दिन और महीने" }, description: { english: "Days, months, and dates", hindi: "दिन, महीने और तिथियाँ" } },
-  { id: 15, title: { english: "Die Uhrzeit", hindi: "समय" }, description: { english: "Telling time", hindi: "समय बताना" } },
-  { id: 16, title: { english: "Hobbys", hindi: "शौक" }, description: { english: "Hobbies and free time", hindi: "शौक और खाली समय" } },
-  { id: 17, title: { english: "Der Körper", hindi: "शरीर के अंग" }, description: { english: "Body parts and health", hindi: "शरीर के अंग और स्वास्थ्य" } },
-  { id: 18, title: { english: "Die Stadt", hindi: "शहर" }, description: { english: "City, places, and directions", hindi: "शहर, स्थान और दिशाएँ" } },
-  { id: 19, title: { english: "Verkehrsmittel", hindi: "परिवहन साधन" }, description: { english: "Transportation modes", hindi: "यातायात के साधन" } },
-  { id: 20, title: { english: "Perfekt", hindi: "भूतकाल (परफेक्ट)" }, description: { english: "Perfect tense formation", hindi: "परफेक्ट काल का निर्माण" } },
-  { id: 21, title: { english: "Futur", hindi: "भविष्यकाल" }, description: { english: "Future tense", hindi: "भविष्यकाल" } },
-  { id: 22, title: { english: "Pronomen", hindi: "सर्वनाम" }, description: { english: "Personal and possessive pronouns", hindi: "व्यक्तिवाचक और अधिकारवाचक सर्वनाम" } },
-  { id: 23, title: { english: "Präpositionen", hindi: "पूर्वसर्ग" }, description: { english: "Prepositions (Akkusativ/Dativ)", hindi: "पूर्वसर्ग (Akkusativ/Dativ)" } },
-  { id: 24, title: { english: "Negation", hindi: "नकारात्मक वाक्य" }, description: { english: "Negative sentences (nicht, kein)", hindi: "नकारात्मक वाक्य (nicht, kein)" } },
-  { id: 25, title: { english: "Fragen", hindi: "प्रश्नवाचक वाक्य" }, description: { english: "Question words and formation", hindi: "प्रश्नवाचक शब्द और वाक्य निर्माण" } }
-],
+    {
+      id: 1,
+      title: { english: "Begrüßungen", hindi: "अभिवादन" },
+      description: {
+        english: "Greetings and farewells",
+        hindi: "अभिवादन और विदाई",
+      },
+    },
+    {
+      id: 2,
+      title: { english: "Vorstellung", hindi: "परिचय" },
+      description: {
+        english: "Self introduction and details",
+        hindi: "स्व-परिचय और विवरण",
+      },
+    },
+    {
+      id: 3,
+      title: { english: "Zahlen", hindi: "संख्याएँ" },
+      description: { english: "Numbers 1-100", hindi: "१-१०० तक की संख्याएँ" },
+    },
+    {
+      id: 4,
+      title: { english: "Familie", hindi: "परिवार" },
+      description: {
+        english: "Family members and relationships",
+        hindi: "परिवार के सदस्य और रिश्ते",
+      },
+    },
+    {
+      id: 5,
+      title: { english: "Farben", hindi: "रंग" },
+      description: {
+        english: "Colors and descriptions",
+        hindi: "रंग और उनके वर्णन",
+      },
+    },
+    {
+      id: 6,
+      title: { english: "Artikel", hindi: "लेख (आर्टिकल्स)" },
+      description: {
+        english: "Der, die, das articles",
+        hindi: "Der, Die, Das लेख",
+      },
+    },
+    {
+      id: 7,
+      title: { english: "Verben", hindi: "क्रियाएँ" },
+      description: {
+        english: "Present tense verbs (sein, haben)",
+        hindi: "वर्तमान काल की क्रियाएँ (sein, haben)",
+      },
+    },
+    {
+      id: 8,
+      title: { english: "Essen und Trinken", hindi: "भोजन और पेय" },
+      description: {
+        english: "Food and beverages",
+        hindi: "भोजन और पेय पदार्थ",
+      },
+    },
+    {
+      id: 9,
+      title: { english: "Kleidung", hindi: "कपड़े" },
+      description: {
+        english: "Clothing and accessories",
+        hindi: "कपड़े और सहायक वस्तुएँ",
+      },
+    },
+    {
+      id: 10,
+      title: { english: "Das Haus", hindi: "घर" },
+      description: {
+        english: "House, rooms, and furniture",
+        hindi: "घर, कमरे और फर्नीचर",
+      },
+    },
+    {
+      id: 11,
+      title: { english: "Die Schule", hindi: "विद्यालय" },
+      description: {
+        english: "School subjects and activities",
+        hindi: "विद्यालय विषय और गतिविधियाँ",
+      },
+    },
+    {
+      id: 12,
+      title: { english: "Tiere", hindi: "पशु-पक्षी" },
+      description: { english: "Animals and pets", hindi: "जानवर और पालतू पशु" },
+    },
+    {
+      id: 13,
+      title: { english: "Das Wetter", hindi: "मौसम" },
+      description: { english: "Weather and seasons", hindi: "मौसम और ऋतुएँ" },
+    },
+    {
+      id: 14,
+      title: { english: "Tage und Monate", hindi: "दिन और महीने" },
+      description: {
+        english: "Days, months, and dates",
+        hindi: "दिन, महीने और तिथियाँ",
+      },
+    },
+    {
+      id: 15,
+      title: { english: "Die Uhrzeit", hindi: "समय" },
+      description: { english: "Telling time", hindi: "समय बताना" },
+    },
+    {
+      id: 16,
+      title: { english: "Hobbys", hindi: "शौक" },
+      description: {
+        english: "Hobbies and free time",
+        hindi: "शौक और खाली समय",
+      },
+    },
+    {
+      id: 17,
+      title: { english: "Der Körper", hindi: "शरीर के अंग" },
+      description: {
+        english: "Body parts and health",
+        hindi: "शरीर के अंग और स्वास्थ्य",
+      },
+    },
+    {
+      id: 18,
+      title: { english: "Die Stadt", hindi: "शहर" },
+      description: {
+        english: "City, places, and directions",
+        hindi: "शहर, स्थान और दिशाएँ",
+      },
+    },
+    {
+      id: 19,
+      title: { english: "Verkehrsmittel", hindi: "परिवहन साधन" },
+      description: {
+        english: "Transportation modes",
+        hindi: "यातायात के साधन",
+      },
+    },
+    {
+      id: 20,
+      title: { english: "Perfekt", hindi: "भूतकाल (परफेक्ट)" },
+      description: {
+        english: "Perfect tense formation",
+        hindi: "परफेक्ट काल का निर्माण",
+      },
+    },
+    {
+      id: 21,
+      title: { english: "Futur", hindi: "भविष्यकाल" },
+      description: { english: "Future tense", hindi: "भविष्यकाल" },
+    },
+    {
+      id: 22,
+      title: { english: "Pronomen", hindi: "सर्वनाम" },
+      description: {
+        english: "Personal and possessive pronouns",
+        hindi: "व्यक्तिवाचक और अधिकारवाचक सर्वनाम",
+      },
+    },
+    {
+      id: 23,
+      title: { english: "Präpositionen", hindi: "पूर्वसर्ग" },
+      description: {
+        english: "Prepositions (Akkusativ/Dativ)",
+        hindi: "पूर्वसर्ग (Akkusativ/Dativ)",
+      },
+    },
+    {
+      id: 24,
+      title: { english: "Negation", hindi: "नकारात्मक वाक्य" },
+      description: {
+        english: "Negative sentences (nicht, kein)",
+        hindi: "नकारात्मक वाक्य (nicht, kein)",
+      },
+    },
+    {
+      id: 25,
+      title: { english: "Fragen", hindi: "प्रश्नवाचक वाक्य" },
+      description: {
+        english: "Question words and formation",
+        hindi: "प्रश्नवाचक शब्द और वाक्य निर्माण",
+      },
+    },
+  ],
   // spanish: [
   //   { id: 1, title: "Saludos", description: "Greetings and introductions" },
   //   { id: 2, title: "Presentación", description: "Self introduction and personal info" },
@@ -235,32 +545,186 @@ const CHAPTERS: Record<
   // ],
 
   spanish: [
-  { id: 1, title: { english: "Saludos", hindi: "अभिवादन" }, description: { english: "Greetings and introductions", hindi: "अभिवादन और परिचय" } },
-  { id: 2, title: { english: "Presentación", hindi: "परिचय" }, description: { english: "Self introduction and personal info", hindi: "स्व-परिचय और व्यक्तिगत जानकारी" } },
-  { id: 3, title: { english: "Números", hindi: "संख्याएँ" }, description: { english: "Numbers 1-100", hindi: "१-१०० तक की संख्याएँ" } },
-  { id: 4, title: { english: "La Familia", hindi: "परिवार" }, description: { english: "Family members and relationships", hindi: "परिवार के सदस्य और रिश्ते" } },
-  { id: 5, title: { english: "Colores", hindi: "रंग" }, description: { english: "Colors and adjectives", hindi: "रंग और विशेषण" } },
-  { id: 6, title: { english: "Artículos", hindi: "लेख (आर्टिकल्स)" }, description: { english: "Definite and indefinite articles", hindi: "निश्चित और अनिश्चित लेख" } },
-  { id: 7, title: { english: "Verbos", hindi: "क्रियाएँ" }, description: { english: "Present tense verbs (ser, estar, tener)", hindi: "वर्तमान काल की क्रियाएँ (ser, estar, tener)" } },
-  { id: 8, title: { english: "Comida", hindi: "भोजन" }, description: { english: "Food, fruits, and vegetables", hindi: "भोजन, फल और सब्जियाँ" } },
-  { id: 9, title: { english: "Ropa", hindi: "कपड़े" }, description: { english: "Clothing and accessories", hindi: "कपड़े और सहायक वस्तुएँ" } },
-  { id: 10, title: { english: "La Casa", hindi: "घर" }, description: { english: "House, rooms, and furniture", hindi: "घर, कमरे और फर्नीचर" } },
-  { id: 11, title: { english: "La Escuela", hindi: "विद्यालय" }, description: { english: "School subjects and activities", hindi: "विद्यालय विषय और गतिविधियाँ" } },
-  { id: 12, title: { english: "Animales", hindi: "पशु-पक्षी" }, description: { english: "Animals and pets", hindi: "जानवर और पालतू पशु" } },
-  { id: 13, title: { english: "El Tiempo", hindi: "मौसम" }, description: { english: "Weather and seasons", hindi: "मौसम और ऋतुएँ" } },
-  { id: 14, title: { english: "Días y Meses", hindi: "दिन और महीने" }, description: { english: "Days, months, and dates", hindi: "दिन, महीने और तिथियाँ" } },
-  { id: 15, title: { english: "La Hora", hindi: "समय" }, description: { english: "Telling time", hindi: "समय बताना" } },
-  { id: 16, title: { english: "Pasatiempos", hindi: "शौक" }, description: { english: "Hobbies and leisure activities", hindi: "शौक और अवकाश गतिविधियाँ" } },
-  { id: 17, title: { english: "El Cuerpo", hindi: "शरीर के अंग" }, description: { english: "Body parts and health", hindi: "शरीर के अंग और स्वास्थ्य" } },
-  { id: 18, title: { english: "La Ciudad", hindi: "शहर" }, description: { english: "City, places, and directions", hindi: "शहर, स्थान और दिशाएँ" } },
-  { id: 19, title: { english: "Transporte", hindi: "परिवहन" }, description: { english: "Transportation and travel", hindi: "यातायात और यात्रा" } },
-  { id: 20, title: { english: "Pretérito", hindi: "भूतकाल" }, description: { english: "Past tense (preterite)", hindi: "भूतकाल (प्रेटेराइट)" } },
-  { id: 21, title: { english: "Futuro", hindi: "भविष्यकाल" }, description: { english: "Future tense", hindi: "भविष्यकाल" } },
-  { id: 22, title: { english: "Pronombres", hindi: "सर्वनाम" }, description: { english: "Personal and possessive pronouns", hindi: "व्यक्तिवाचक और अधिकारवाचक सर्वनाम" } },
-  { id: 23, title: { english: "Preposiciones", hindi: "पूर्वसर्ग" }, description: { english: "Prepositions of place and time", hindi: "स्थान और समय के पूर्वसर्ग" } },
-  { id: 24, title: { english: "Negación", hindi: "नकारात्मक वाक्य" }, description: { english: "Negative sentences", hindi: "नकारात्मक वाक्य" } },
-  { id: 25, title: { english: "Preguntas", hindi: "प्रश्नवाचक वाक्य" }, description: { english: "Question words and formation", hindi: "प्रश्नवाचक शब्द और वाक्य निर्माण" } }
-],
+    {
+      id: 1,
+      title: { english: "Saludos", hindi: "अभिवादन" },
+      description: {
+        english: "Greetings and introductions",
+        hindi: "अभिवादन और परिचय",
+      },
+    },
+    {
+      id: 2,
+      title: { english: "Presentación", hindi: "परिचय" },
+      description: {
+        english: "Self introduction and personal info",
+        hindi: "स्व-परिचय और व्यक्तिगत जानकारी",
+      },
+    },
+    {
+      id: 3,
+      title: { english: "Números", hindi: "संख्याएँ" },
+      description: { english: "Numbers 1-100", hindi: "१-१०० तक की संख्याएँ" },
+    },
+    {
+      id: 4,
+      title: { english: "La Familia", hindi: "परिवार" },
+      description: {
+        english: "Family members and relationships",
+        hindi: "परिवार के सदस्य और रिश्ते",
+      },
+    },
+    {
+      id: 5,
+      title: { english: "Colores", hindi: "रंग" },
+      description: { english: "Colors and adjectives", hindi: "रंग और विशेषण" },
+    },
+    {
+      id: 6,
+      title: { english: "Artículos", hindi: "लेख (आर्टिकल्स)" },
+      description: {
+        english: "Definite and indefinite articles",
+        hindi: "निश्चित और अनिश्चित लेख",
+      },
+    },
+    {
+      id: 7,
+      title: { english: "Verbos", hindi: "क्रियाएँ" },
+      description: {
+        english: "Present tense verbs (ser, estar, tener)",
+        hindi: "वर्तमान काल की क्रियाएँ (ser, estar, tener)",
+      },
+    },
+    {
+      id: 8,
+      title: { english: "Comida", hindi: "भोजन" },
+      description: {
+        english: "Food, fruits, and vegetables",
+        hindi: "भोजन, फल और सब्जियाँ",
+      },
+    },
+    {
+      id: 9,
+      title: { english: "Ropa", hindi: "कपड़े" },
+      description: {
+        english: "Clothing and accessories",
+        hindi: "कपड़े और सहायक वस्तुएँ",
+      },
+    },
+    {
+      id: 10,
+      title: { english: "La Casa", hindi: "घर" },
+      description: {
+        english: "House, rooms, and furniture",
+        hindi: "घर, कमरे और फर्नीचर",
+      },
+    },
+    {
+      id: 11,
+      title: { english: "La Escuela", hindi: "विद्यालय" },
+      description: {
+        english: "School subjects and activities",
+        hindi: "विद्यालय विषय और गतिविधियाँ",
+      },
+    },
+    {
+      id: 12,
+      title: { english: "Animales", hindi: "पशु-पक्षी" },
+      description: { english: "Animals and pets", hindi: "जानवर और पालतू पशु" },
+    },
+    {
+      id: 13,
+      title: { english: "El Tiempo", hindi: "मौसम" },
+      description: { english: "Weather and seasons", hindi: "मौसम और ऋतुएँ" },
+    },
+    {
+      id: 14,
+      title: { english: "Días y Meses", hindi: "दिन और महीने" },
+      description: {
+        english: "Days, months, and dates",
+        hindi: "दिन, महीने और तिथियाँ",
+      },
+    },
+    {
+      id: 15,
+      title: { english: "La Hora", hindi: "समय" },
+      description: { english: "Telling time", hindi: "समय बताना" },
+    },
+    {
+      id: 16,
+      title: { english: "Pasatiempos", hindi: "शौक" },
+      description: {
+        english: "Hobbies and leisure activities",
+        hindi: "शौक और अवकाश गतिविधियाँ",
+      },
+    },
+    {
+      id: 17,
+      title: { english: "El Cuerpo", hindi: "शरीर के अंग" },
+      description: {
+        english: "Body parts and health",
+        hindi: "शरीर के अंग और स्वास्थ्य",
+      },
+    },
+    {
+      id: 18,
+      title: { english: "La Ciudad", hindi: "शहर" },
+      description: {
+        english: "City, places, and directions",
+        hindi: "शहर, स्थान और दिशाएँ",
+      },
+    },
+    {
+      id: 19,
+      title: { english: "Transporte", hindi: "परिवहन" },
+      description: {
+        english: "Transportation and travel",
+        hindi: "यातायात और यात्रा",
+      },
+    },
+    {
+      id: 20,
+      title: { english: "Pretérito", hindi: "भूतकाल" },
+      description: {
+        english: "Past tense (preterite)",
+        hindi: "भूतकाल (प्रेटेराइट)",
+      },
+    },
+    {
+      id: 21,
+      title: { english: "Futuro", hindi: "भविष्यकाल" },
+      description: { english: "Future tense", hindi: "भविष्यकाल" },
+    },
+    {
+      id: 22,
+      title: { english: "Pronombres", hindi: "सर्वनाम" },
+      description: {
+        english: "Personal and possessive pronouns",
+        hindi: "व्यक्तिवाचक और अधिकारवाचक सर्वनाम",
+      },
+    },
+    {
+      id: 23,
+      title: { english: "Preposiciones", hindi: "पूर्वसर्ग" },
+      description: {
+        english: "Prepositions of place and time",
+        hindi: "स्थान और समय के पूर्वसर्ग",
+      },
+    },
+    {
+      id: 24,
+      title: { english: "Negación", hindi: "नकारात्मक वाक्य" },
+      description: { english: "Negative sentences", hindi: "नकारात्मक वाक्य" },
+    },
+    {
+      id: 25,
+      title: { english: "Preguntas", hindi: "प्रश्नवाचक वाक्य" },
+      description: {
+        english: "Question words and formation",
+        hindi: "प्रश्नवाचक शब्द और वाक्य निर्माण",
+      },
+    },
+  ],
   // hindi: [
   //   { id: 1, title: "अभिवादन (Abhivadan)", description: "Greetings and basic expressions" },
   //   { id: 2, title: "आत्म परिचय (Parichay)", description: "Self introduction and personal details" },
@@ -290,32 +754,192 @@ const CHAPTERS: Record<
   // ],
 
   hindi: [
-  { id: 1, title: { english: "अभिवादन (Abhivadan)", hindi: "अभिवादन" }, description: { english: "Greetings and basic expressions", hindi: "अभिवादन और मूल अभिव्यक्तियाँ" } },
-  { id: 2, title: { english: "आत्म परिचय (Parichay)", hindi: "आत्म परिचय" }, description: { english: "Self introduction and personal details", hindi: "स्व-परिचय और व्यक्तिगत विवरण" } },
-  { id: 3, title: { english: "संख्याएँ (Sankhyaen)", hindi: "संख्याएँ" }, description: { english: "Numbers 1-100", hindi: "१-१०० तक की संख्याएँ" } },
-  { id: 4, title: { english: "परिवार (Parivar)", hindi: "परिवार" }, description: { english: "Family members and relationships", hindi: "परिवार के सदस्य और रिश्ते" } },
-  { id: 5, title: { english: "रंग (Rang)", hindi: "रंग" }, description: { english: "Colors and descriptions", hindi: "रंग और उनके वर्णन" } },
-  { id: 6, title: { english: "वर्णमाला (Varnmala)", hindi: "वर्णमाला" }, description: { english: "Hindi alphabet (Swar and Vyanjan)", hindi: "हिंदी वर्णमाला (स्वर और व्यंजन)" } },
-  { id: 7, title: { english: "क्रिया (Kriya)", hindi: "क्रिया" }, description: { english: "Basic verbs and present tense", hindi: "मूल क्रियाएँ और वर्तमान काल" } },
-  { id: 8, title: { english: "भोजन (Bhojan)", hindi: "भोजन" }, description: { english: "Food, fruits, and vegetables", hindi: "भोजन, फल और सब्जियाँ" } },
-  { id: 9, title: { english: "वस्त्र (Vastra)", hindi: "वस्त्र" }, description: { english: "Clothing and accessories", hindi: "कपड़े और सहायक वस्तुएँ" } },
-  { id: 10, title: { english: "घर (Ghar)", hindi: "घर" }, description: { english: "House, rooms, and household items", hindi: "घर, कमरे और घरेलू वस्तुएँ" } },
-  { id: 11, title: { english: "विद्यालय (Vidyalaya)", hindi: "विद्यालय" }, description: { english: "School subjects and activities", hindi: "विद्यालय विषय और गतिविधियाँ" } },
-  { id: 12, title: { english: "पशु-पक्षी (Pashu-Pakshi)", hindi: "पशु-पक्षी" }, description: { english: "Animals and birds", hindi: "जानवर और पक्षी" } },
-  { id: 13, title: { english: "मौसम (Mausam)", hindi: "मौसम" }, description: { english: "Weather and seasons", hindi: "मौसम और ऋतुएँ" } },
-  { id: 14, title: { english: "दिन और महीने (Din aur Mahine)", hindi: "दिन और महीने" }, description: { english: "Days, months, and calendar", hindi: "दिन, महीने और कैलेंडर" } },
-  { id: 15, title: { english: "समय (Samay)", hindi: "समय" }, description: { english: "Telling time", hindi: "समय बताना" } },
-  { id: 16, title: { english: "शौक (Shauk)", hindi: "शौक" }, description: { english: "Hobbies and interests", hindi: "शौक और रुचियाँ" } },
-  { id: 17, title: { english: "शरीर के अंग (Sharir ke Ang)", hindi: "शरीर के अंग" }, description: { english: "Body parts and health", hindi: "शरीर के अंग और स्वास्थ्य" } },
-  { id: 18, title: { english: "शहर (Shahar)", hindi: "शहर" }, description: { english: "City, places, and directions", hindi: "शहर, स्थान और दिशाएँ" } },
-  { id: 19, title: { english: "यातायात (Yatayat)", hindi: "यातायात" }, description: { english: "Transportation and travel", hindi: "परिवहन और यात्रा" } },
-  { id: 20, title: { english: "भूतकाल (Bhootkaal)", hindi: "भूतकाल" }, description: { english: "Past tense formation", hindi: "भूतकाल का निर्माण" } },
-  { id: 21, title: { english: "भविष्यकाल (Bhavishyakaal)", hindi: "भविष्यकाल" }, description: { english: "Future tense", hindi: "भविष्यकाल" } },
-  { id: 22, title: { english: "सर्वनाम (Sarvnam)", hindi: "सर्वनाम" }, description: { english: "Pronouns", hindi: "सर्वनाम" } },
-  { id: 23, title: { english: "संबंध सूचक (Sambandh Suchak)", hindi: "संबंध सूचक" }, description: { english: "Prepositions and postpositions", hindi: "पूर्वसर्ग और परसर्ग" } },
-  { id: 24, title: { english: "निषेध वाक्य (Nishedh Vakya)", hindi: "निषेध वाक्य" }, description: { english: "Negative sentences", hindi: "नकारात्मक वाक्य" } },
-  { id: 25, title: { english: "प्रश्नवाचक शब्द (Prashnvachak Shabd)", hindi: "प्रश्नवाचक शब्द" }, description: { english: "Question words and formation", hindi: "प्रश्नवाचक शब्द और वाक्य निर्माण" } }
-],
+    {
+      id: 1,
+      title: { english: "अभिवादन (Abhivadan)", hindi: "अभिवादन" },
+      description: {
+        english: "Greetings and basic expressions",
+        hindi: "अभिवादन और मूल अभिव्यक्तियाँ",
+      },
+    },
+    {
+      id: 2,
+      title: { english: "आत्म परिचय (Parichay)", hindi: "आत्म परिचय" },
+      description: {
+        english: "Self introduction and personal details",
+        hindi: "स्व-परिचय और व्यक्तिगत विवरण",
+      },
+    },
+    {
+      id: 3,
+      title: { english: "संख्याएँ (Sankhyaen)", hindi: "संख्याएँ" },
+      description: { english: "Numbers 1-100", hindi: "१-१०० तक की संख्याएँ" },
+    },
+    {
+      id: 4,
+      title: { english: "परिवार (Parivar)", hindi: "परिवार" },
+      description: {
+        english: "Family members and relationships",
+        hindi: "परिवार के सदस्य और रिश्ते",
+      },
+    },
+    {
+      id: 5,
+      title: { english: "रंग (Rang)", hindi: "रंग" },
+      description: {
+        english: "Colors and descriptions",
+        hindi: "रंग और उनके वर्णन",
+      },
+    },
+    {
+      id: 6,
+      title: { english: "वर्णमाला (Varnmala)", hindi: "वर्णमाला" },
+      description: {
+        english: "Hindi alphabet (Swar and Vyanjan)",
+        hindi: "हिंदी वर्णमाला (स्वर और व्यंजन)",
+      },
+    },
+    {
+      id: 7,
+      title: { english: "क्रिया (Kriya)", hindi: "क्रिया" },
+      description: {
+        english: "Basic verbs and present tense",
+        hindi: "मूल क्रियाएँ और वर्तमान काल",
+      },
+    },
+    {
+      id: 8,
+      title: { english: "भोजन (Bhojan)", hindi: "भोजन" },
+      description: {
+        english: "Food, fruits, and vegetables",
+        hindi: "भोजन, फल और सब्जियाँ",
+      },
+    },
+    {
+      id: 9,
+      title: { english: "वस्त्र (Vastra)", hindi: "वस्त्र" },
+      description: {
+        english: "Clothing and accessories",
+        hindi: "कपड़े और सहायक वस्तुएँ",
+      },
+    },
+    {
+      id: 10,
+      title: { english: "घर (Ghar)", hindi: "घर" },
+      description: {
+        english: "House, rooms, and household items",
+        hindi: "घर, कमरे और घरेलू वस्तुएँ",
+      },
+    },
+    {
+      id: 11,
+      title: { english: "विद्यालय (Vidyalaya)", hindi: "विद्यालय" },
+      description: {
+        english: "School subjects and activities",
+        hindi: "विद्यालय विषय और गतिविधियाँ",
+      },
+    },
+    {
+      id: 12,
+      title: { english: "पशु-पक्षी (Pashu-Pakshi)", hindi: "पशु-पक्षी" },
+      description: { english: "Animals and birds", hindi: "जानवर और पक्षी" },
+    },
+    {
+      id: 13,
+      title: { english: "मौसम (Mausam)", hindi: "मौसम" },
+      description: { english: "Weather and seasons", hindi: "मौसम और ऋतुएँ" },
+    },
+    {
+      id: 14,
+      title: {
+        english: "दिन और महीने (Din aur Mahine)",
+        hindi: "दिन और महीने",
+      },
+      description: {
+        english: "Days, months, and calendar",
+        hindi: "दिन, महीने और कैलेंडर",
+      },
+    },
+    {
+      id: 15,
+      title: { english: "समय (Samay)", hindi: "समय" },
+      description: { english: "Telling time", hindi: "समय बताना" },
+    },
+    {
+      id: 16,
+      title: { english: "शौक (Shauk)", hindi: "शौक" },
+      description: {
+        english: "Hobbies and interests",
+        hindi: "शौक और रुचियाँ",
+      },
+    },
+    {
+      id: 17,
+      title: { english: "शरीर के अंग (Sharir ke Ang)", hindi: "शरीर के अंग" },
+      description: {
+        english: "Body parts and health",
+        hindi: "शरीर के अंग और स्वास्थ्य",
+      },
+    },
+    {
+      id: 18,
+      title: { english: "शहर (Shahar)", hindi: "शहर" },
+      description: {
+        english: "City, places, and directions",
+        hindi: "शहर, स्थान और दिशाएँ",
+      },
+    },
+    {
+      id: 19,
+      title: { english: "यातायात (Yatayat)", hindi: "यातायात" },
+      description: {
+        english: "Transportation and travel",
+        hindi: "परिवहन और यात्रा",
+      },
+    },
+    {
+      id: 20,
+      title: { english: "भूतकाल (Bhootkaal)", hindi: "भूतकाल" },
+      description: {
+        english: "Past tense formation",
+        hindi: "भूतकाल का निर्माण",
+      },
+    },
+    {
+      id: 21,
+      title: { english: "भविष्यकाल (Bhavishyakaal)", hindi: "भविष्यकाल" },
+      description: { english: "Future tense", hindi: "भविष्यकाल" },
+    },
+    {
+      id: 22,
+      title: { english: "सर्वनाम (Sarvnam)", hindi: "सर्वनाम" },
+      description: { english: "Pronouns", hindi: "सर्वनाम" },
+    },
+    {
+      id: 23,
+      title: { english: "संबंध सूचक (Sambandh Suchak)", hindi: "संबंध सूचक" },
+      description: {
+        english: "Prepositions and postpositions",
+        hindi: "पूर्वसर्ग और परसर्ग",
+      },
+    },
+    {
+      id: 24,
+      title: { english: "निषेध वाक्य (Nishedh Vakya)", hindi: "निषेध वाक्य" },
+      description: { english: "Negative sentences", hindi: "नकारात्मक वाक्य" },
+    },
+    {
+      id: 25,
+      title: {
+        english: "प्रश्नवाचक शब्द (Prashnvachak Shabd)",
+        hindi: "प्रश्नवाचक शब्द",
+      },
+      description: {
+        english: "Question words and formation",
+        hindi: "प्रश्नवाचक शब्द और वाक्य निर्माण",
+      },
+    },
+  ],
   // marathi: [
   //   { id: 1, title: "अभिवादन (Abhivadan)", description: "Greetings and basic expressions" },
   //   { id: 2, title: "स्वत:चा परिचय (Parichay)", description: "Self introduction and personal details" },
@@ -345,32 +969,198 @@ const CHAPTERS: Record<
   // ],
 
   marathi: [
-  { id: 1, title: { english: "अभिवादन (Abhivadan)", hindi: "अभिवादन" }, description: { english: "Greetings and basic expressions", hindi: "अभिवादन और मूल अभिव्यक्तियाँ" } },
-  { id: 2, title: { english: "स्वत:चा परिचय (Parichay)", hindi: "स्व-परिचय" }, description: { english: "Self introduction and personal details", hindi: "स्व-परिचय और व्यक्तिगत विवरण" } },
-  { id: 3, title: { english: "संख्या (Sankhya)", hindi: "संख्याएँ" }, description: { english: "Numbers 1-100", hindi: "१-१०० तक की संख्याएँ" } },
-  { id: 4, title: { english: "कुटुंब (Kutumb)", hindi: "परिवार" }, description: { english: "Family members and relationships", hindi: "परिवार के सदस्य और रिश्ते" } },
-  { id: 5, title: { english: "रंग (Rang)", hindi: "रंग" }, description: { english: "Colors and descriptions", hindi: "रंग और उनके वर्णन" } },
-  { id: 6, title: { english: "वर्णमाला (Varnmala)", hindi: "वर्णमाला" }, description: { english: "Marathi alphabet", hindi: "मराठी वर्णमाला" } },
-  { id: 7, title: { english: "क्रियापद (Kriyapad)", hindi: "क्रिया" }, description: { english: "Basic verbs and present tense", hindi: "मूल क्रियाएँ और वर्तमान काल" } },
-  { id: 8, title: { english: "अन्न (Anna)", hindi: "भोजन" }, description: { english: "Food, fruits, and vegetables", hindi: "भोजन, फल और सब्जियाँ" } },
-  { id: 9, title: { english: "कपडे (Kapde)", hindi: "कपड़े" }, description: { english: "Clothing and accessories", hindi: "कपड़े और सहायक वस्तुएँ" } },
-  { id: 10, title: { english: "घर (Ghar)", hindi: "घर" }, description: { english: "House, rooms, and furniture", hindi: "घर, कमरे और फर्नीचर" } },
-  { id: 11, title: { english: "शाळा (Shala)", hindi: "विद्यालय" }, description: { english: "School subjects and activities", hindi: "स्कूल विषय और गतिविधियाँ" } },
-  { id: 12, title: { english: "प्राणी-पक्षी (Prani-Pakshi)", hindi: "पशु-पक्षी" }, description: { english: "Animals and birds", hindi: "जानवर और पक्षी" } },
-  { id: 13, title: { english: "हवामान (Havaman)", hindi: "मौसम" }, description: { english: "Weather and seasons", hindi: "मौसम और ऋतुएँ" } },
-  { id: 14, title: { english: "दिवस आणि महिने (Divas ani Mahine)", hindi: "दिन और महीने" }, description: { english: "Days, months, and dates", hindi: "दिन, महीने और तिथियाँ" } },
-  { id: 15, title: { english: "वेळ (Vel)", hindi: "समय" }, description: { english: "Telling time", hindi: "समय बताना" } },
-  { id: 16, title: { english: "छंद (Chhanda)", hindi: "शौक" }, description: { english: "Hobbies and leisure activities", hindi: "शौक और अवकाश गतिविधियाँ" } },
-  { id: 17, title: { english: "शरीराचे अवयव (Shariraache Avayav)", hindi: "शरीर के अंग" }, description: { english: "Body parts and health", hindi: "शरीर के अंग और स्वास्थ्य" } },
-  { id: 18, title: { english: "शहर (Shahar)", hindi: "शहर" }, description: { english: "City, places, and directions", hindi: "शहर, स्थान और दिशाएँ" } },
-  { id: 19, title: { english: "वाहतूक (Vahatuk)", hindi: "परिवहन" }, description: { english: "Transportation and travel", hindi: "यातायात और यात्रा" } },
-  { id: 20, title: { english: "भूतकाळ (Bhootkaal)", hindi: "भूतकाल" }, description: { english: "Past tense formation", hindi: "भूतकाल का निर्माण" } },
-  { id: 21, title: { english: "भविष्यकाळ (Bhavishyakaal)", hindi: "भविष्यकाल" }, description: { english: "Future tense", hindi: "भविष्यकाल" } },
-  { id: 22, title: { english: "सर्वनाम (Sarvnam)", hindi: "सर्वनाम" }, description: { english: "Pronouns", hindi: "सर्वनाम" } },
-  { id: 23, title: { english: "शब्दयोगी अव्यय (Shabdayogi Avyay)", hindi: "पूर्वसर्ग/परसर्ग" }, description: { english: "Prepositions and postpositions", hindi: "पूर्वसर्ग और परसर्ग" } },
-  { id: 24, title: { english: "नकारार्थी वाक्य (Nakaarthi Vakya)", hindi: "नकारात्मक वाक्य" }, description: { english: "Negative sentences", hindi: "नकारात्मक वाक्य" } },
-  { id: 25, title: { english: "प्रश्नार्थक शब्द (Prashnarthak Shabd)", hindi: "प्रश्नवाचक शब्द" }, description: { english: "Question words and formation", hindi: "प्रश्नवाचक शब्द और वाक्य निर्माण" } }
-],
+    {
+      id: 1,
+      title: { english: "अभिवादन (Abhivadan)", hindi: "अभिवादन" },
+      description: {
+        english: "Greetings and basic expressions",
+        hindi: "अभिवादन और मूल अभिव्यक्तियाँ",
+      },
+    },
+    {
+      id: 2,
+      title: { english: "स्वत:चा परिचय (Parichay)", hindi: "स्व-परिचय" },
+      description: {
+        english: "Self introduction and personal details",
+        hindi: "स्व-परिचय और व्यक्तिगत विवरण",
+      },
+    },
+    {
+      id: 3,
+      title: { english: "संख्या (Sankhya)", hindi: "संख्याएँ" },
+      description: { english: "Numbers 1-100", hindi: "१-१०० तक की संख्याएँ" },
+    },
+    {
+      id: 4,
+      title: { english: "कुटुंब (Kutumb)", hindi: "परिवार" },
+      description: {
+        english: "Family members and relationships",
+        hindi: "परिवार के सदस्य और रिश्ते",
+      },
+    },
+    {
+      id: 5,
+      title: { english: "रंग (Rang)", hindi: "रंग" },
+      description: {
+        english: "Colors and descriptions",
+        hindi: "रंग और उनके वर्णन",
+      },
+    },
+    {
+      id: 6,
+      title: { english: "वर्णमाला (Varnmala)", hindi: "वर्णमाला" },
+      description: { english: "Marathi alphabet", hindi: "मराठी वर्णमाला" },
+    },
+    {
+      id: 7,
+      title: { english: "क्रियापद (Kriyapad)", hindi: "क्रिया" },
+      description: {
+        english: "Basic verbs and present tense",
+        hindi: "मूल क्रियाएँ और वर्तमान काल",
+      },
+    },
+    {
+      id: 8,
+      title: { english: "अन्न (Anna)", hindi: "भोजन" },
+      description: {
+        english: "Food, fruits, and vegetables",
+        hindi: "भोजन, फल और सब्जियाँ",
+      },
+    },
+    {
+      id: 9,
+      title: { english: "कपडे (Kapde)", hindi: "कपड़े" },
+      description: {
+        english: "Clothing and accessories",
+        hindi: "कपड़े और सहायक वस्तुएँ",
+      },
+    },
+    {
+      id: 10,
+      title: { english: "घर (Ghar)", hindi: "घर" },
+      description: {
+        english: "House, rooms, and furniture",
+        hindi: "घर, कमरे और फर्नीचर",
+      },
+    },
+    {
+      id: 11,
+      title: { english: "शाळा (Shala)", hindi: "विद्यालय" },
+      description: {
+        english: "School subjects and activities",
+        hindi: "स्कूल विषय और गतिविधियाँ",
+      },
+    },
+    {
+      id: 12,
+      title: { english: "प्राणी-पक्षी (Prani-Pakshi)", hindi: "पशु-पक्षी" },
+      description: { english: "Animals and birds", hindi: "जानवर और पक्षी" },
+    },
+    {
+      id: 13,
+      title: { english: "हवामान (Havaman)", hindi: "मौसम" },
+      description: { english: "Weather and seasons", hindi: "मौसम और ऋतुएँ" },
+    },
+    {
+      id: 14,
+      title: {
+        english: "दिवस आणि महिने (Divas ani Mahine)",
+        hindi: "दिन और महीने",
+      },
+      description: {
+        english: "Days, months, and dates",
+        hindi: "दिन, महीने और तिथियाँ",
+      },
+    },
+    {
+      id: 15,
+      title: { english: "वेळ (Vel)", hindi: "समय" },
+      description: { english: "Telling time", hindi: "समय बताना" },
+    },
+    {
+      id: 16,
+      title: { english: "छंद (Chhanda)", hindi: "शौक" },
+      description: {
+        english: "Hobbies and leisure activities",
+        hindi: "शौक और अवकाश गतिविधियाँ",
+      },
+    },
+    {
+      id: 17,
+      title: {
+        english: "शरीराचे अवयव (Shariraache Avayav)",
+        hindi: "शरीर के अंग",
+      },
+      description: {
+        english: "Body parts and health",
+        hindi: "शरीर के अंग और स्वास्थ्य",
+      },
+    },
+    {
+      id: 18,
+      title: { english: "शहर (Shahar)", hindi: "शहर" },
+      description: {
+        english: "City, places, and directions",
+        hindi: "शहर, स्थान और दिशाएँ",
+      },
+    },
+    {
+      id: 19,
+      title: { english: "वाहतूक (Vahatuk)", hindi: "परिवहन" },
+      description: {
+        english: "Transportation and travel",
+        hindi: "यातायात और यात्रा",
+      },
+    },
+    {
+      id: 20,
+      title: { english: "भूतकाळ (Bhootkaal)", hindi: "भूतकाल" },
+      description: {
+        english: "Past tense formation",
+        hindi: "भूतकाल का निर्माण",
+      },
+    },
+    {
+      id: 21,
+      title: { english: "भविष्यकाळ (Bhavishyakaal)", hindi: "भविष्यकाल" },
+      description: { english: "Future tense", hindi: "भविष्यकाल" },
+    },
+    {
+      id: 22,
+      title: { english: "सर्वनाम (Sarvnam)", hindi: "सर्वनाम" },
+      description: { english: "Pronouns", hindi: "सर्वनाम" },
+    },
+    {
+      id: 23,
+      title: {
+        english: "शब्दयोगी अव्यय (Shabdayogi Avyay)",
+        hindi: "पूर्वसर्ग/परसर्ग",
+      },
+      description: {
+        english: "Prepositions and postpositions",
+        hindi: "पूर्वसर्ग और परसर्ग",
+      },
+    },
+    {
+      id: 24,
+      title: {
+        english: "नकारार्थी वाक्य (Nakaarthi Vakya)",
+        hindi: "नकारात्मक वाक्य",
+      },
+      description: { english: "Negative sentences", hindi: "नकारात्मक वाक्य" },
+    },
+    {
+      id: 25,
+      title: {
+        english: "प्रश्नार्थक शब्द (Prashnarthak Shabd)",
+        hindi: "प्रश्नवाचक शब्द",
+      },
+      description: {
+        english: "Question words and formation",
+        hindi: "प्रश्नवाचक शब्द और वाक्य निर्माण",
+      },
+    },
+  ],
   // kannada: [
   //   { id: 1, title: "ನಮಸ್ಕಾರ (Namaskara)", description: "Greetings and basic expressions" },
   //   { id: 2, title: "ಪರಿಚಯ (Parichaya)", description: "Self introduction and personal details" },
@@ -400,32 +1190,198 @@ const CHAPTERS: Record<
   // ],
 
   kannada: [
-  { id: 1, title: { english: "ನಮಸ್ಕಾರ (Namaskara)", hindi: "नमस्कार" }, description: { english: "Greetings and basic expressions", hindi: "अभिवादन और मूल अभिव्यक्तियाँ" } },
-  { id: 2, title: { english: "ಪರಿಚಯ (Parichaya)", hindi: "परिचय" }, description: { english: "Self introduction and personal details", hindi: "स्व-परिचय और व्यक्तिगत विवरण" } },
-  { id: 3, title: { english: "ಸಂಖ್ಯೆಗಳು (Sankhyegalu)", hindi: "संख्याएँ" }, description: { english: "Numbers 1-100", hindi: "१-१०० तक की संख्याएँ" } },
-  { id: 4, title: { english: "ಕುಟುಂಬ (Kutumba)", hindi: "परिवार" }, description: { english: "Family members and relationships", hindi: "परिवार के सदस्य और रिश्ते" } },
-  { id: 5, title: { english: "ಬಣ್ಣಗಳು (Bannagalu)", hindi: "रंग" }, description: { english: "Colors and descriptions", hindi: "रंग और उनके वर्णन" } },
-  { id: 6, title: { english: "ವರ್ಣಮಾಲೆ (Varnamale)", hindi: "वर्णमाला" }, description: { english: "Kannada alphabet (Swaras and Vyanjanagalu)", hindi: "कन्नड़ वर्णमाला (स्वर और व्यंजन)" } },
-  { id: 7, title: { english: "ಕ್ರಿಯಾಪದಗಳು (Kriyapadagalu)", hindi: "क्रियाएँ" }, description: { english: "Basic verbs and present tense", hindi: "मूल क्रियाएँ और वर्तमान काल" } },
-  { id: 8, title: { english: "ಆಹಾರ (Aahara)", hindi: "भोजन" }, description: { english: "Food, fruits, and vegetables", hindi: "भोजन, फल और सब्जियाँ" } },
-  { id: 9, title: { english: "ಬಟ್ಟೆಗಳು (Battegalu)", hindi: "कपड़े" }, description: { english: "Clothing and accessories", hindi: "कपड़े और सहायक वस्तुएँ" } },
-  { id: 10, title: { english: "ಮನೆ (Mane)", hindi: "घर" }, description: { english: "House, rooms, and furniture", hindi: "घर, कमरे और फर्नीचर" } },
-  { id: 11, title: { english: "ಶಾಲೆ (Shaale)", hindi: "विद्यालय" }, description: { english: "School subjects and activities", hindi: "स्कूल विषय और गतिविधियाँ" } },
-  { id: 12, title: { english: "ಪ್ರಾಣಿ-ಪಕ್ಷಿಗಳು (Prani-Pakshigalu)", hindi: "पशु-पक्षी" }, description: { english: "Animals and birds", hindi: "जानवर और पक्षी" } },
-  { id: 13, title: { english: "ಹವಾಮಾನ (Havamaana)", hindi: "मौसम" }, description: { english: "Weather and seasons", hindi: "मौसम और ऋतुएँ" } },
-  { id: 14, title: { english: "ದಿನ ಮತ್ತು ತಿಂಗಳು (Dina mattu Tingalu)", hindi: "दिन और महीने" }, description: { english: "Days, months, and dates", hindi: "दिन, महीने और तिथियाँ" } },
-  { id: 15, title: { english: "ಸಮಯ (Samaya)", hindi: "समय" }, description: { english: "Telling time", hindi: "समय बताना" } },
-  { id: 16, title: { english: "ಹವ್ಯಾಸಗಳು (Havyasagalu)", hindi: "शौक" }, description: { english: "Hobbies and leisure activities", hindi: "शौक और अवकाश गतिविधियाँ" } },
-  { id: 17, title: { english: "ದೇಹದ ಅಂಗಗಳು (Dehada Angagalu)", hindi: "शरीर के अंग" }, description: { english: "Body parts and health", hindi: "शरीर के अंग और स्वास्थ्य" } },
-  { id: 18, title: { english: "ನಗರ (Nagara)", hindi: "शहर" }, description: { english: "City, places, and directions", hindi: "शहर, स्थान और दिशाएँ" } },
-  { id: 19, title: { english: "ಸಾರಿಗೆ (Sarige)", hindi: "परिवहन" }, description: { english: "Transportation and travel", hindi: "यातायात और यात्रा" } },
-  { id: 20, title: { english: "ಭೂತಕಾಲ (Bhootakaala)", hindi: "भूतकाल" }, description: { english: "Past tense formation", hindi: "भूतकाल का निर्माण" } },
-  { id: 21, title: { english: "ಭವಿಷ್ಯಕಾಲ (Bhavishyakaala)", hindi: "भविष्यकाल" }, description: { english: "Future tense", hindi: "भविष्यकाल" } },
-  { id: 22, title: { english: "ಸರ್ವನಾಮ (Sarvanama)", hindi: "सर्वनाम" }, description: { english: "Pronouns", hindi: "सर्वनाम" } },
-  { id: 23, title: { english: "ಪೂರ್ವಸರ್ಗಗಳು (Poorvasargagalu)", hindi: "पूर्वसर्ग" }, description: { english: "Prepositions and postpositions", hindi: "पूर्वसर्ग और परसर्ग" } },
-  { id: 24, title: { english: "ನಿರಾಕರಣೆ ವಾಕ್ಯಗಳು (Nirakarane Vakyagalu)", hindi: "नकारात्मक वाक्य" }, description: { english: "Negative sentences", hindi: "नकारात्मक वाक्य" } },
-  { id: 25, title: { english: "ಪ್ರಶ್ನಾರ್ಥಕ ಪದಗಳು (Prashnarthaka Padagalu)", hindi: "प्रश्नवाचक शब्द" }, description: { english: "Question words and formation", hindi: "प्रश्नवाचक शब्द और वाक्य निर्माण" } }
-],
+    {
+      id: 1,
+      title: { english: "ನಮಸ್ಕಾರ (Namaskara)", hindi: "नमस्कार" },
+      description: {
+        english: "Greetings and basic expressions",
+        hindi: "अभिवादन और मूल अभिव्यक्तियाँ",
+      },
+    },
+    {
+      id: 2,
+      title: { english: "ಪರಿಚಯ (Parichaya)", hindi: "परिचय" },
+      description: {
+        english: "Self introduction and personal details",
+        hindi: "स्व-परिचय और व्यक्तिगत विवरण",
+      },
+    },
+    {
+      id: 3,
+      title: { english: "ಸಂಖ್ಯೆಗಳು (Sankhyegalu)", hindi: "संख्याएँ" },
+      description: { english: "Numbers 1-100", hindi: "१-१०० तक की संख्याएँ" },
+    },
+    {
+      id: 4,
+      title: { english: "ಕುಟುಂಬ (Kutumba)", hindi: "परिवार" },
+      description: {
+        english: "Family members and relationships",
+        hindi: "परिवार के सदस्य और रिश्ते",
+      },
+    },
+    {
+      id: 5,
+      title: { english: "ಬಣ್ಣಗಳು (Bannagalu)", hindi: "रंग" },
+      description: {
+        english: "Colors and descriptions",
+        hindi: "रंग और उनके वर्णन",
+      },
+    },
+    {
+      id: 6,
+      title: { english: "ವರ್ಣಮಾಲೆ (Varnamale)", hindi: "वर्णमाला" },
+      description: {
+        english: "Kannada alphabet (Swaras and Vyanjanagalu)",
+        hindi: "कन्नड़ वर्णमाला (स्वर और व्यंजन)",
+      },
+    },
+    {
+      id: 7,
+      title: { english: "ಕ್ರಿಯಾಪದಗಳು (Kriyapadagalu)", hindi: "क्रियाएँ" },
+      description: {
+        english: "Basic verbs and present tense",
+        hindi: "मूल क्रियाएँ और वर्तमान काल",
+      },
+    },
+    {
+      id: 8,
+      title: { english: "ಆಹಾರ (Aahara)", hindi: "भोजन" },
+      description: {
+        english: "Food, fruits, and vegetables",
+        hindi: "भोजन, फल और सब्जियाँ",
+      },
+    },
+    {
+      id: 9,
+      title: { english: "ಬಟ್ಟೆಗಳು (Battegalu)", hindi: "कपड़े" },
+      description: {
+        english: "Clothing and accessories",
+        hindi: "कपड़े और सहायक वस्तुएँ",
+      },
+    },
+    {
+      id: 10,
+      title: { english: "ಮನೆ (Mane)", hindi: "घर" },
+      description: {
+        english: "House, rooms, and furniture",
+        hindi: "घर, कमरे और फर्नीचर",
+      },
+    },
+    {
+      id: 11,
+      title: { english: "ಶಾಲೆ (Shaale)", hindi: "विद्यालय" },
+      description: {
+        english: "School subjects and activities",
+        hindi: "स्कूल विषय और गतिविधियाँ",
+      },
+    },
+    {
+      id: 12,
+      title: {
+        english: "ಪ್ರಾಣಿ-ಪಕ್ಷಿಗಳು (Prani-Pakshigalu)",
+        hindi: "पशु-पक्षी",
+      },
+      description: { english: "Animals and birds", hindi: "जानवर और पक्षी" },
+    },
+    {
+      id: 13,
+      title: { english: "ಹವಾಮಾನ (Havamaana)", hindi: "मौसम" },
+      description: { english: "Weather and seasons", hindi: "मौसम और ऋतुएँ" },
+    },
+    {
+      id: 14,
+      title: {
+        english: "ದಿನ ಮತ್ತು ತಿಂಗಳು (Dina mattu Tingalu)",
+        hindi: "दिन और महीने",
+      },
+      description: {
+        english: "Days, months, and dates",
+        hindi: "दिन, महीने और तिथियाँ",
+      },
+    },
+    {
+      id: 15,
+      title: { english: "ಸಮಯ (Samaya)", hindi: "समय" },
+      description: { english: "Telling time", hindi: "समय बताना" },
+    },
+    {
+      id: 16,
+      title: { english: "ಹವ್ಯಾಸಗಳು (Havyasagalu)", hindi: "शौक" },
+      description: {
+        english: "Hobbies and leisure activities",
+        hindi: "शौक और अवकाश गतिविधियाँ",
+      },
+    },
+    {
+      id: 17,
+      title: { english: "ದೇಹದ ಅಂಗಗಳು (Dehada Angagalu)", hindi: "शरीर के अंग" },
+      description: {
+        english: "Body parts and health",
+        hindi: "शरीर के अंग और स्वास्थ्य",
+      },
+    },
+    {
+      id: 18,
+      title: { english: "ನಗರ (Nagara)", hindi: "शहर" },
+      description: {
+        english: "City, places, and directions",
+        hindi: "शहर, स्थान और दिशाएँ",
+      },
+    },
+    {
+      id: 19,
+      title: { english: "ಸಾರಿಗೆ (Sarige)", hindi: "परिवहन" },
+      description: {
+        english: "Transportation and travel",
+        hindi: "यातायात और यात्रा",
+      },
+    },
+    {
+      id: 20,
+      title: { english: "ಭೂತಕಾಲ (Bhootakaala)", hindi: "भूतकाल" },
+      description: {
+        english: "Past tense formation",
+        hindi: "भूतकाल का निर्माण",
+      },
+    },
+    {
+      id: 21,
+      title: { english: "ಭವಿಷ್ಯಕಾಲ (Bhavishyakaala)", hindi: "भविष्यकाल" },
+      description: { english: "Future tense", hindi: "भविष्यकाल" },
+    },
+    {
+      id: 22,
+      title: { english: "ಸರ್ವನಾಮ (Sarvanama)", hindi: "सर्वनाम" },
+      description: { english: "Pronouns", hindi: "सर्वनाम" },
+    },
+    {
+      id: 23,
+      title: { english: "ಪೂರ್ವಸರ್ಗಗಳು (Poorvasargagalu)", hindi: "पूर्वसर्ग" },
+      description: {
+        english: "Prepositions and postpositions",
+        hindi: "पूर्वसर्ग और परसर्ग",
+      },
+    },
+    {
+      id: 24,
+      title: {
+        english: "ನಿರಾಕರಣೆ ವಾಕ್ಯಗಳು (Nirakarane Vakyagalu)",
+        hindi: "नकारात्मक वाक्य",
+      },
+      description: { english: "Negative sentences", hindi: "नकारात्मक वाक्य" },
+    },
+    {
+      id: 25,
+      title: {
+        english: "ಪ್ರಶ್ನಾರ್ಥಕ ಪದಗಳು (Prashnarthaka Padagalu)",
+        hindi: "प्रश्नवाचक शब्द",
+      },
+      description: {
+        english: "Question words and formation",
+        hindi: "प्रश्नवाचक शब्द और वाक्य निर्माण",
+      },
+    },
+  ],
   // General Science chapters across four categories
   // physics: [
   //   { id: 1, title: "Measurement and Units", description: "Physical quantities, SI units, measurement tools" },
@@ -436,73 +1392,73 @@ const CHAPTERS: Record<
   //   { id: 6, title: "Gravity", description: "Universal gravitation, weight, free fall" },
   // ],
   physics: [
-  {
-    id: 1,
-    title: {
-      english: "Measurement and Units",
-      hindi: "मापन और इकाइयाँ"
+    {
+      id: 1,
+      title: {
+        english: "Measurement and Units",
+        hindi: "मापन और इकाइयाँ",
+      },
+      description: {
+        english: "Physical quantities, SI units, measurement tools",
+        hindi: "भौतिक राशियाँ, SI इकाइयाँ, मापन के उपकरण",
+      },
     },
-    description: {
-      english: "Physical quantities, SI units, measurement tools",
-      hindi: "भौतिक राशियाँ, SI इकाइयाँ, मापन के उपकरण"
-    }
-  },
-  {
-    id: 2,
-    title: {
-      english: "Motion",
-      hindi: "गति"
+    {
+      id: 2,
+      title: {
+        english: "Motion",
+        hindi: "गति",
+      },
+      description: {
+        english: "Types of motion, speed, velocity, distance-time graphs",
+        hindi: "गति के प्रकार, चाल, वेग, दूरी-समय ग्राफ",
+      },
     },
-    description: {
-      english: "Types of motion, speed, velocity, distance-time graphs",
-      hindi: "गति के प्रकार, चाल, वेग, दूरी-समय ग्राफ"
-    }
-  },
-  {
-    id: 3,
-    title: {
-      english: "Force and Pressure",
-      hindi: "बल और दाब"
+    {
+      id: 3,
+      title: {
+        english: "Force and Pressure",
+        hindi: "बल और दाब",
+      },
+      description: {
+        english: "Types of forces, pressure, atmospheric pressure",
+        hindi: "बल के प्रकार, दाब, वायुमंडलीय दाब",
+      },
     },
-    description: {
-      english: "Types of forces, pressure, atmospheric pressure",
-      hindi: "बल के प्रकार, दाब, वायुमंडलीय दाब"
-    }
-  },
-  {
-    id: 4,
-    title: {
-      english: "Work and Energy",
-      hindi: "कार्य और ऊर्जा"
+    {
+      id: 4,
+      title: {
+        english: "Work and Energy",
+        hindi: "कार्य और ऊर्जा",
+      },
+      description: {
+        english: "Work, energy forms, law of conservation of energy",
+        hindi: "कार्य, ऊर्जा के प्रकार, ऊर्जा संरक्षण का नियम",
+      },
     },
-    description: {
-      english: "Work, energy forms, law of conservation of energy",
-      hindi: "कार्य, ऊर्जा के प्रकार, ऊर्जा संरक्षण का नियम"
-    }
-  },
-  {
-    id: 5,
-    title: {
-      english: "Simple Machines",
-      hindi: "सरल मशीनें"
+    {
+      id: 5,
+      title: {
+        english: "Simple Machines",
+        hindi: "सरल मशीनें",
+      },
+      description: {
+        english: "Levers, pulleys, inclined planes, mechanical advantage",
+        hindi: "उतोलक, चरखी, तिरछा तल, यांत्रिक लाभ",
+      },
     },
-    description: {
-      english: "Levers, pulleys, inclined planes, mechanical advantage",
-      hindi: "उतोलक, चरखी, तिरछा तल, यांत्रिक लाभ"
-    }
-  },
-  {
-    id: 6,
-    title: {
-      english: "Gravity",
-      hindi: "गुरुत्वाकर्षण"
+    {
+      id: 6,
+      title: {
+        english: "Gravity",
+        hindi: "गुरुत्वाकर्षण",
+      },
+      description: {
+        english: "Universal gravitation, weight, free fall",
+        hindi: "सार्वत्रिक गुरुत्वाकर्षण, भार, मुक्त पतन",
+      },
     },
-    description: {
-      english: "Universal gravitation, weight, free fall",
-      hindi: "सार्वत्रिक गुरुत्वाकर्षण, भार, मुक्त पतन"
-    }
-  }
-],
+  ],
   // chemistry: [
   //   { id: 7, title: "Matter and Its States", description: "Solid, liquid, gas, changes of state" },
   //   { id: 8, title: "Elements and Compounds", description: "Pure substances, mixtures, separation techniques" },
@@ -513,73 +1469,73 @@ const CHAPTERS: Record<
   // ],
 
   chemistry: [
-  {
-    id: 7,
-    title: {
-      english: "Matter and Its States",
-      hindi: "पदार्थ और उसकी अवस्थाएँ"
+    {
+      id: 7,
+      title: {
+        english: "Matter and Its States",
+        hindi: "पदार्थ और उसकी अवस्थाएँ",
+      },
+      description: {
+        english: "Solid, liquid, gas, changes of state",
+        hindi: "ठोस, द्रव, गैस, अवस्था परिवर्तन",
+      },
     },
-    description: {
-      english: "Solid, liquid, gas, changes of state",
-      hindi: "ठोस, द्रव, गैस, अवस्था परिवर्तन"
-    }
-  },
-  {
-    id: 8,
-    title: {
-      english: "Elements and Compounds",
-      hindi: "तत्व और यौगिक"
+    {
+      id: 8,
+      title: {
+        english: "Elements and Compounds",
+        hindi: "तत्व और यौगिक",
+      },
+      description: {
+        english: "Pure substances, mixtures, separation techniques",
+        hindi: "शुद्ध पदार्थ, मिश्रण, पृथक्करण की विधियाँ",
+      },
     },
-    description: {
-      english: "Pure substances, mixtures, separation techniques",
-      hindi: "शुद्ध पदार्थ, मिश्रण, पृथक्करण की विधियाँ"
-    }
-  },
-  {
-    id: 9,
-    title: {
-      english: "Atoms and Molecules",
-      hindi: "परमाणु और अणु"
+    {
+      id: 9,
+      title: {
+        english: "Atoms and Molecules",
+        hindi: "परमाणु और अणु",
+      },
+      description: {
+        english: "Atomic structure, ions, chemical formulae",
+        hindi: "परमाणु संरचना, आयन, रासायनिक सूत्र",
+      },
     },
-    description: {
-      english: "Atomic structure, ions, chemical formulae",
-      hindi: "परमाणु संरचना, आयन, रासायनिक सूत्र"
-    }
-  },
-  {
-    id: 10,
-    title: {
-      english: "Acids, Bases and Salts",
-      hindi: "अम्ल, क्षार और लवण"
+    {
+      id: 10,
+      title: {
+        english: "Acids, Bases and Salts",
+        hindi: "अम्ल, क्षार और लवण",
+      },
+      description: {
+        english: "Properties, pH scale, neutralization",
+        hindi: "गुण, pH स्केल, उदासीनीकरण",
+      },
     },
-    description: {
-      english: "Properties, pH scale, neutralization",
-      hindi: "गुण, pH स्केल, उदासीनीकरण"
-    }
-  },
-  {
-    id: 11,
-    title: {
-      english: "Chemical Reactions",
-      hindi: "रासायनिक अभिक्रियाएँ"
+    {
+      id: 11,
+      title: {
+        english: "Chemical Reactions",
+        hindi: "रासायनिक अभिक्रियाएँ",
+      },
+      description: {
+        english: "Types of reactions, balancing equations",
+        hindi: "अभिक्रियाओं के प्रकार, समीकरण संतुलन",
+      },
     },
-    description: {
-      english: "Types of reactions, balancing equations",
-      hindi: "अभिक्रियाओं के प्रकार, समीकरण संतुलन"
-    }
-  },
-  {
-    id: 12,
-    title: {
-      english: "Metals and Non-metals",
-      hindi: "धातु और अधातु"
+    {
+      id: 12,
+      title: {
+        english: "Metals and Non-metals",
+        hindi: "धातु और अधातु",
+      },
+      description: {
+        english: "Properties, reactivity series, corrosion",
+        hindi: "गुण, क्रियाशीलता श्रेणी, जंग लगना",
+      },
     },
-    description: {
-      english: "Properties, reactivity series, corrosion",
-      hindi: "गुण, क्रियाशीलता श्रेणी, जंग लगना"
-    }
-  }
-],
+  ],
   // biology: [
   //   { id: 13, title: "Cell - Basic Unit of Life", description: "Cell structure, organelles, prokaryotic vs eukaryotic" },
   //   { id: 14, title: "Tissues", description: "Plant and animal tissues, functions" },
@@ -591,84 +1547,84 @@ const CHAPTERS: Record<
   // ],
 
   biology: [
-  {
-    id: 13,
-    title: {
-      english: "Cell - Basic Unit of Life",
-      hindi: "कोशिका - जीवन की मूल इकाई"
+    {
+      id: 13,
+      title: {
+        english: "Cell - Basic Unit of Life",
+        hindi: "कोशिका - जीवन की मूल इकाई",
+      },
+      description: {
+        english: "Cell structure, organelles, prokaryotic vs eukaryotic",
+        hindi: "कोशिका संरचना, कोशिकांग, प्रोकैरियोटिक और यूकैरियोटिक",
+      },
     },
-    description: {
-      english: "Cell structure, organelles, prokaryotic vs eukaryotic",
-      hindi: "कोशिका संरचना, कोशिकांग, प्रोकैरियोटिक और यूकैरियोटिक"
-    }
-  },
-  {
-    id: 14,
-    title: {
-      english: "Tissues",
-      hindi: "ऊतक"
+    {
+      id: 14,
+      title: {
+        english: "Tissues",
+        hindi: "ऊतक",
+      },
+      description: {
+        english: "Plant and animal tissues, functions",
+        hindi: "पादप और जंतु ऊतक, उनके कार्य",
+      },
     },
-    description: {
-      english: "Plant and animal tissues, functions",
-      hindi: "पादप और जंतु ऊतक, उनके कार्य"
-    }
-  },
-  {
-    id: 15,
-    title: {
-      english: "Life Processes",
-      hindi: "जीवन प्रक्रियाएँ"
+    {
+      id: 15,
+      title: {
+        english: "Life Processes",
+        hindi: "जीवन प्रक्रियाएँ",
+      },
+      description: {
+        english: "Nutrition, respiration, transportation, excretion",
+        hindi: "पोषण, श्वसन, परिवहन, उत्सर्जन",
+      },
     },
-    description: {
-      english: "Nutrition, respiration, transportation, excretion",
-      hindi: "पोषण, श्वसन, परिवहन, उत्सर्जन"
-    }
-  },
-  {
-    id: 16,
-    title: {
-      english: "Diversity in Living Organisms",
-      hindi: "जीवों में विविधता"
+    {
+      id: 16,
+      title: {
+        english: "Diversity in Living Organisms",
+        hindi: "जीवों में विविधता",
+      },
+      description: {
+        english: "Classification, five kingdoms",
+        hindi: "वर्गीकरण, पाँच जगत",
+      },
     },
-    description: {
-      english: "Classification, five kingdoms",
-      hindi: "वर्गीकरण, पाँच जगत"
-    }
-  },
-  {
-    id: 17,
-    title: {
-      english: "Human Body Systems",
-      hindi: "मानव शरीर तंत्र"
+    {
+      id: 17,
+      title: {
+        english: "Human Body Systems",
+        hindi: "मानव शरीर तंत्र",
+      },
+      description: {
+        english: "Digestive, circulatory, respiratory, nervous systems",
+        hindi: "पाचन, परिसंचरण, श्वसन, तंत्रिका तंत्र",
+      },
     },
-    description: {
-      english: "Digestive, circulatory, respiratory, nervous systems",
-      hindi: "पाचन, परिसंचरण, श्वसन, तंत्रिका तंत्र"
-    }
-  },
-  {
-    id: 18,
-    title: {
-      english: "Reproduction",
-      hindi: "प्रजनन"
+    {
+      id: 18,
+      title: {
+        english: "Reproduction",
+        hindi: "प्रजनन",
+      },
+      description: {
+        english: "Asexual and sexual reproduction, human reproduction",
+        hindi: "अलैंगिक और लैंगिक प्रजनन, मानव प्रजनन",
+      },
     },
-    description: {
-      english: "Asexual and sexual reproduction, human reproduction",
-      hindi: "अलैंगिक और लैंगिक प्रजनन, मानव प्रजनन"
-    }
-  },
-  {
-    id: 19,
-    title: {
-      english: "Heredity and Evolution",
-      hindi: "अनुवांशिकता और विकास"
+    {
+      id: 19,
+      title: {
+        english: "Heredity and Evolution",
+        hindi: "अनुवांशिकता और विकास",
+      },
+      description: {
+        english: "Genes, DNA, natural selection, adaptation",
+        hindi: "जीन, डीएनए, प्राकृतिक चयन, अनुकूलन",
+      },
     },
-    description: {
-      english: "Genes, DNA, natural selection, adaptation",
-      hindi: "जीन, डीएनए, प्राकृतिक चयन, अनुकूलन"
-    }
-  }
-],
+  ],
   // general: [
   //   { id: 20, title: "Natural Resources", description: "Air, water, soil, conservation" },
   //   { id: 21, title: "Environmental Science", description: "Pollution, ecosystem, biodiversity" },
@@ -678,76 +1634,74 @@ const CHAPTERS: Record<
   //   { id: 25, title: "Electricity and Magnetism", description: "Electric current, circuits, magnets" },
   // ],
   general: [
-  {
-    id: 20,
-    title: {
-      english: "Natural Resources",
-      hindi: "प्राकृतिक संसाधन"
+    {
+      id: 20,
+      title: {
+        english: "Natural Resources",
+        hindi: "प्राकृतिक संसाधन",
+      },
+      description: {
+        english: "Air, water, soil, conservation",
+        hindi: "वायु, जल, मृदा, संरक्षण",
+      },
     },
-    description: {
-      english: "Air, water, soil, conservation",
-      hindi: "वायु, जल, मृदा, संरक्षण"
-    }
-  },
-  {
-    id: 21,
-    title: {
-      english: "Environmental Science",
-      hindi: "पर्यावरण विज्ञान"
+    {
+      id: 21,
+      title: {
+        english: "Environmental Science",
+        hindi: "पर्यावरण विज्ञान",
+      },
+      description: {
+        english: "Pollution, ecosystem, biodiversity",
+        hindi: "प्रदूषण, पारितंत्र, जैव विविधता",
+      },
     },
-    description: {
-      english: "Pollution, ecosystem, biodiversity",
-      hindi: "प्रदूषण, पारितंत्र, जैव विविधता"
-    }
-  },
-  {
-    id: 22,
-    title: {
-      english: "Light and Reflection",
-      hindi: "प्रकाश और परावर्तन"
+    {
+      id: 22,
+      title: {
+        english: "Light and Reflection",
+        hindi: "प्रकाश और परावर्तन",
+      },
+      description: {
+        english: "Laws of reflection, mirrors, image formation",
+        hindi: "परावर्तन के नियम, दर्पण, प्रतिबिंब निर्माण",
+      },
     },
-    description: {
-      english: "Laws of reflection, mirrors, image formation",
-      hindi: "परावर्तन के नियम, दर्पण, प्रतिबिंब निर्माण"
-    }
-  },
-  {
-    id: 23,
-    title: {
-      english: "Sound",
-      hindi: "ध्वनि"
+    {
+      id: 23,
+      title: {
+        english: "Sound",
+        hindi: "ध्वनि",
+      },
+      description: {
+        english: "Production, propagation, characteristics",
+        hindi: "उत्पादन, संचरण, विशेषताएँ",
+      },
     },
-    description: {
-      english: "Production, propagation, characteristics",
-      hindi: "उत्पादन, संचरण, विशेषताएँ"
-    }
-  },
-  {
-    id: 24,
-    title: {
-      english: "Heat and Temperature",
-      hindi: "ऊष्मा और तापमान"
+    {
+      id: 24,
+      title: {
+        english: "Heat and Temperature",
+        hindi: "ऊष्मा और तापमान",
+      },
+      description: {
+        english: "Thermal energy, heat transfer, expansion",
+        hindi: "ऊष्मीय ऊर्जा, ऊष्मा संचरण, प्रसार",
+      },
     },
-    description: {
-      english: "Thermal energy, heat transfer, expansion",
-      hindi: "ऊष्मीय ऊर्जा, ऊष्मा संचरण, प्रसार"
-    }
-  },
-  {
-    id: 25,
-    title: {
-      english: "Electricity and Magnetism",
-      hindi: "विद्युत और चुंबकत्व"
+    {
+      id: 25,
+      title: {
+        english: "Electricity and Magnetism",
+        hindi: "विद्युत और चुंबकत्व",
+      },
+      description: {
+        english: "Electric current, circuits, magnets",
+        hindi: "विद्युत धारा, परिपथ, चुंबक",
+      },
     },
-    description: {
-      english: "Electric current, circuits, magnets",
-      hindi: "विद्युत धारा, परिपथ, चुंबक"
-    }
-  }
-]
+  ],
 };
-
-
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Get chapters for a language or science category
@@ -760,29 +1714,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Teacher Registration
 
   app.post("/api/teacher/register", async (req, res) => {
-  try {
-    const { fullName, username, password, email, school } = req.body;
+    try {
+      const { fullName, username, password, email, school } = req.body;
 
-    if (!username || !password || !fullName || !email) {
-      return res.status(400).json({ error: "All fields required" });
-    }
+      if (!username || !password || !fullName || !email) {
+        return res.status(400).json({ error: "All fields required" });
+      }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+      const hashedPassword = await bcrypt.hash(password, 10);
 
-    const result = await pool.query(
-      `INSERT INTO teachers (fullname, email, username, password, school)
+      const result = await pool.query(
+        `INSERT INTO teachers (full_name, email, username, password, school)
        VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, fullname, email, username, school`,
-      [fullName, email, username, hashedPassword, school]
-    );
+       RETURNING id, full_name, email, username, school`,
+        [fullName, email, username, hashedPassword, school],
+      );
 
-    res.json(result.rows[0]);
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to register teacher" });
-  }
-});
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Failed to register teacher" });
+    }
+  });
 
   // app.post("/api/teacher/register", async (req, res) => {
   //   try {
@@ -836,29 +1789,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Teacher Login
 
   app.post("/api/teacher/login", async (req, res) => {
-  const { username, password } = req.body;
+    const { username, password } = req.body;
 
-  const result = await pool.query(
-    "SELECT * FROM teachers WHERE username = $1",
-    [username]
-  );
+    const result = await pool.query(
+      "SELECT * FROM teachers WHERE username = $1",
+      [username],
+    );
 
-  if (result.rows.length === 0) {
-    return res.status(401).json({ error: "Invalid username or password" });
-  }
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: "Invalid username or password" });
+    }
 
-  const teacher = result.rows[0];
+    const teacher = result.rows[0];
 
-  const isMatch = await bcrypt.compare(password, teacher.password);
+    const isMatch = await bcrypt.compare(password, teacher.password);
 
-  if (!isMatch) {
-    return res.status(401).json({ error: "Invalid username or password" });
-  }
+    if (!isMatch) {
+      return res.status(401).json({ error: "Invalid username or password" });
+    }
 
-  delete teacher.password;
+    const { password: _, ...teacherData } = teacher;
+    res.json(teacherData);
 
-  res.json(teacher);
-});
+    // res.json(teacher);
+  });
 
   // app.post("/api/teacher/login", async (req, res) => {
   //   try {
@@ -894,152 +1848,170 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //   }
   // });
 
-//   // Get all custom tests for a teacher
-//   app.get("/api/teacher/:teacherId/tests", async (req, res) => {
-//     try {
-//       const { teacherId } = req.params;
-//       const tests = await storage.getCustomTestsByTeacher(teacherId);
-//       res.json(tests);
-//     } catch (error) {
-//       console.error("Error fetching tests:", error);
-//       res.status(500).json({ error: "Failed to fetch tests" });
-//     }
-//   });
+  //   // Get all custom tests for a teacher
+  //   app.get("/api/teacher/:teacherId/tests", async (req, res) => {
+  //     try {
+  //       const { teacherId } = req.params;
+  //       const tests = await storage.getCustomTestsByTeacher(teacherId);
+  //       res.json(tests);
+  //     } catch (error) {
+  //       console.error("Error fetching tests:", error);
+  //       res.status(500).json({ error: "Failed to fetch tests" });
+  //     }
+  //   });
 
-//   // Create and generate custom MCQ test
-// app.post("/api/teacher/:teacherId/generate-test", async (req, res) => {
-//   try {
-//     const { teacherId } = req.params;
-//     const {
-//       title,
-//       subject,
-//       classLevel,
-//       difficulty,
-//       syllabus,
-//       numQuestions,
-//       testType,
-//       gptModel,
-//       instructions,
-//     } = req.body;
+  //   // Create and generate custom MCQ test
+  // app.post("/api/teacher/:teacherId/generate-test", async (req, res) => {
+  //   try {
+  //     const { teacherId } = req.params;
+  //     const {
+  //       title,
+  //       subject,
+  //       classLevel,
+  //       difficulty,
+  //       syllabus,
+  //       numQuestions,
+  //       testType,
+  //       gptModel,
+  //       instructions,
+  //     } = req.body;
 
-//     // Parse topics
-//     const topics = syllabus
-//       .split(",")
-//       .map((topic: string) => topic.trim())
-//       .filter((topic: string) => topic.length > 0)
-//       .slice(0, 4);
+  //     // Parse topics
+  //     const topics = syllabus
+  //       .split(",")
+  //       .map((topic: string) => topic.trim())
+  //       .filter((topic: string) => topic.length > 0)
+  //       .slice(0, 4);
 
-//     if (topics.length === 0) {
-//       return res.status(400).json({ error: "At least one topic is required" });
-//     }
+  //     if (topics.length === 0) {
+  //       return res.status(400).json({ error: "At least one topic is required" });
+  //     }
 
-//     console.log(
-//       `[CUSTOM TEST] Generating ${numQuestions} questions for ${subject}`
-//     );
+  //     console.log(
+  //       `[CUSTOM TEST] Generating ${numQuestions} questions for ${subject}`
+  //     );
 
-//     // 1️⃣ Create custom test (your existing system)
-//     const test = await storage.createCustomTest({
-//       teacherId,
-//       title,
-//       subject,
-//       classLevel,
-//       difficulty,
-//       syllabus,
-//       numQuestions,
-//       testType: testType || "mcq",
-//       gptModel: gptModel || "gpt-4o",
-//       instructions: instructions || undefined,
-//       status: "draft",
-//     });
+  //     // 1️⃣ Create custom test (your existing system)
+  //     const test = await storage.createCustomTest({
+  //       teacherId,
+  //       title,
+  //       subject,
+  //       classLevel,
+  //       difficulty,
+  //       syllabus,
+  //       numQuestions,
+  //       testType: testType || "mcq",
+  //       gptModel: gptModel || "gpt-4o",
+  //       instructions: instructions || undefined,
+  //       status: "draft",
+  //     });
 
-//     // 2️⃣ 🔥 Insert mcq_tests ONLY ONCE (OUTSIDE LOOP)
-//     const testInsert = await pool.query(
-//       `INSERT INTO mcq_tests (class_level, subject, total_questions, generated_by)
-//        VALUES ($1, $2, $3, $4)
-//        RETURNING id`,
-//       [classLevel, subject, numQuestions, teacherId]
-//     );
+  //     // 2️⃣ 🔥 Insert mcq_tests ONLY ONCE (OUTSIDE LOOP)
+  //     const testInsert = await pool.query(
+  //       `INSERT INTO mcq_tests (class_level, subject, total_questions, generated_by)
+  //        VALUES ($1, $2, $3, $4)
+  //        RETURNING id`,
+  //       [classLevel, subject, numQuestions, teacherId]
+  //     );
 
-//     const mcqTestId = testInsert.rows[0].id;
+  //     const mcqTestId = testInsert.rows[0].id;
 
-//     const questions = [];
-//     let generatedCount = 0;
+  //     const questions = [];
+  //     let generatedCount = 0;
 
-//     // 3️⃣ Generate Questions
-//     while (generatedCount < numQuestions) {
-//       const currentTopic = topics[generatedCount % topics.length];
+  //     // 3️⃣ Generate Questions
+  //     while (generatedCount < numQuestions) {
+  //       const currentTopic = topics[generatedCount % topics.length];
 
-//       const questionData = await generateQuestion({
-//         mode: "science",
-//         scienceCategory: subject.toLowerCase(),
-//         classLevel,
-//         difficulty,
-//         chapter: 1,
-//         chapterTitle: currentTopic,
-//         questionNumber: generatedCount + 1,
-//         previousQuestions: [],
-//         isMcq: testType === "mcq",
-//         gptModel: gptModel || "gpt-4o",
-//       });
+  //       const questionData = await generateQuestion({
+  //         mode: "science",
+  //         scienceCategory: subject.toLowerCase(),
+  //         classLevel,
+  //         difficulty,
+  //         chapter: 1,
+  //         chapterTitle: currentTopic,
+  //         questionNumber: generatedCount + 1,
+  //         previousQuestions: [],
+  //         isMcq: testType === "mcq",
+  //         gptModel: gptModel || "gpt-4o",
+  //       });
 
-//       // 4️⃣ 🔥 Save to mcqs table (same test_id)
-//       if (questionData.questionType === "mcq") {
-//         await saveMCQ(
-//           questionData.question,
-//           questionData.options || [],
-//           questionData.correctAnswer,
-//           mcqTestId
-//         );
-//       }
+  //       // 4️⃣ 🔥 Save to mcqs table (same test_id)
+  //       if (questionData.questionType === "mcq") {
+  //         await saveMCQ(
+  //           questionData.question,
+  //           questionData.options || [],
+  //           questionData.correctAnswer,
+  //           mcqTestId
+  //         );
+  //       }
 
-//       // 5️⃣ Save in your existing custom_questions table
-//       const question = await storage.createCustomQuestion({
-//         testId: test.id,
-//         questionNumber: generatedCount + 1,
-//         question: questionData.question,
-//         questionType: questionData.questionType,
-//         options: questionData.options
-//           ? JSON.stringify(questionData.options)
-//           : null,
-//         correctOption: questionData.correctOption || null,
-//         correctAnswer: questionData.correctAnswer,
-//         explanation: questionData.explanation || "",
-//       });
+  //       // 5️⃣ Save in your existing custom_questions table
+  //       const question = await storage.createCustomQuestion({
+  //         testId: test.id,
+  //         questionNumber: generatedCount + 1,
+  //         question: questionData.question,
+  //         questionType: questionData.questionType,
+  //         options: questionData.options
+  //           ? JSON.stringify(questionData.options)
+  //           : null,
+  //         correctOption: questionData.correctOption || null,
+  //         correctAnswer: questionData.correctAnswer,
+  //         explanation: questionData.explanation || "",
+  //       });
 
-//       questions.push(question);
-//       generatedCount++;
-//     }
+  //       questions.push(question);
+  //       generatedCount++;
+  //     }
 
-//     // 6️⃣ Publish test
-//     await storage.updateCustomTest(test.id, { status: "published" });
+  //     // 6️⃣ Publish test
+  //     await storage.updateCustomTest(test.id, { status: "published" });
 
-//     res.json({ test, questionsGenerated: questions.length });
-//   } catch (error) {
-//     console.error("Error generating test:", error);
-//     res.status(500).json({ error: "Failed to generate test" });
-//   }
-// });
-
+  //     res.json({ test, questionsGenerated: questions.length });
+  //   } catch (error) {
+  //     console.error("Error generating test:", error);
+  //     res.status(500).json({ error: "Failed to generate test" });
+  //   }
+  // });
 
   // Create and generate custom MCQ test
   app.post("/api/teacher/:teacherId/generate-test", async (req, res) => {
     try {
       const { teacherId } = req.params;
-      const { title, subject, classLevel, difficulty, syllabus, numQuestions, medium , testType, gptModel, instructions,currentTopic } = req.body;
+      const {
+        title,
+        subject,
+        classLevel,
+        difficulty,
+        syllabus,
+        numQuestions,
+        language,
+        medium,
+        testType,
+        gptModel,
+        instructions,
+        currentTopic,
+      } = req.body;
 
       // Parse multiple topics from comma-separated syllabus input
       const topics = syllabus
-        .split(',')
+        .split(",")
         .map((topic: string) => topic.trim())
         .filter((topic: string) => topic.length > 0)
         .slice(0, 4); // Limit to maximum 4 topics
 
       if (topics.length === 0) {
-        return res.status(400).json({ error: "At least one topic is required" });
+        return res
+          .status(400)
+          .json({ error: "At least one topic is required" });
       }
 
-      console.log(`[CUSTOM TEST] Generating ${numQuestions} ${difficulty} questions for ${subject} - Topics: ${topics.join(', ')} using ${gptModel || 'gpt-4o-mini'}`);
-      console.log(`[CUSTOM TEST] Distribution: ${topics.length} topic(s), ~${Math.ceil(numQuestions / topics.length)} questions per topic`);
+      console.log(
+        `[CUSTOM TEST] Generating ${numQuestions} ${difficulty} questions for ${subject} - Topics: ${topics.join(", ")} using ${gptModel || "gpt-4o-mini"}`,
+      );
+      console.log(
+        `[CUSTOM TEST] Distribution: ${topics.length} topic(s), ~${Math.ceil(numQuestions / topics.length)} questions per topic`,
+      );
 
       // Create custom test
       const test = await storage.createCustomTest({
@@ -1050,13 +2022,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         difficulty,
         syllabus, // Store original comma-separated input
         numQuestions,
+        language,
         testType: testType || "mcq",
         gptModel: gptModel || "gpt-4o",
         instructions: instructions || undefined,
         status: "draft",
       });
 
-      console.log(`[CUSTOM TEST] Created test ${test.id} with share code: ${test.shareCode}`);
+      console.log(
+        `[CUSTOM TEST] Created test ${test.id} with share code: ${test.shareCode}`,
+      );
 
       // Generate questions using AI
       const questions = [];
@@ -1066,22 +2041,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const SIMILARITY_THRESHOLD = 0.9; // Cosine similarity threshold for duplicate detection
 
       // Determine if this is a science subject or language subject
-      const scienceSubjects = ['physics', 'chemistry', 'biology', 'general'];
+      const scienceSubjects = ["physics", "chemistry", "biology", "general"];
       const isScience = scienceSubjects.includes(subject.toLowerCase());
 
-      const totalQuestions = Number(numQuestions);
+      // const totalQuestions = Number(numQuestions);
+      const totalQuestions = Number(numQuestions) || 10;
 
       // Generate exact number of questions using queue-based round-robin retry with deduplication
       const maxAttemptsPerTopic = 5; // Increased for dedup retries
-      const maxTotalAttempts = totalQuestions * topics.length * maxAttemptsPerTopic;
+      const maxTotalAttempts =
+        totalQuestions * topics.length * maxAttemptsPerTopic;
       const perTopicFailures = new Map<string, number>(); // Track failures per topic
       let topicQueue = [...topics]; // Clone topics into a queue
       let totalAttempts = 0;
       let generatedCount = 0;
-      const {
-        selectedMedium,
-        selectedScienceCategory
-      } = req.body;
+      const { selectedMedium, selectedScienceCategory } = req.body;
 
       // const maxTotalAttempts =
       //   totalQuestions * topics.length * maxAttemptsPerTopic;
@@ -1089,75 +2063,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Initialize failure counts
       topics.forEach((topic: string) => perTopicFailures.set(topic, 0));
 
-        const studentId = req.body.studentId || "student-1";
+      const studentId = req.body.studentId || "student-1";
 
       // 🔥 Insert test ONLY ONCE
-          const testInsert = await pool.query(
-          `INSERT INTO mcq_tests 
+      const testInsert = await pool.query(
+        `INSERT INTO mcq_tests 
           (class_level, subject, difficulty, total_questions, generated_by, medium)
           VALUES ($1, $2, $3, $4, $5, $6)
           RETURNING id`,
-          [classLevel, subject, difficulty, numQuestions, studentId, selectedMedium]
-        );
-          const mcqTestId = testInsert.rows[0].id;
+        [
+          classLevel,
+          subject,
+          difficulty,
+          numQuestions,
+          studentId,
+          selectedMedium,
+        ],
+      );
+      const mcqTestId = testInsert.rows[0].id;
 
-      while (generatedCount < totalQuestions && totalAttempts < maxTotalAttempts) {
+      while (
+        generatedCount < totalQuestions &&
+        totalAttempts < maxTotalAttempts
+      ) {
         const currentQuestionNumber = generatedCount + 1;
 
-         // Pass last 5 questions to AI to avoid repetition
-            // const questionData = await generateQuestion({
+        // Pass last 5 questions to AI to avoid repetition
+        // const questionData = await generateQuestion({
 
-            //   mode: isScience ? "science" : "language",
-            //   language:  selectedMedium,
-            //   scienceCategory: isScience ? currentTopic : undefined,
-            //   classLevel,
-            //   medium,
-            //   difficulty, 
-            //   chapter: 1,
-            //   chapterTitle: currentTopic,
-            //   questionNumber: currentQuestionNumber,
-            //   previousQuestions: previousQuestionsList.slice(-5), // Last 5 questions
-            //   isMcq: testType === "mcq",
-            //   gptModel: gptModel || "gpt-4o", // Default to GPT-4o for better quality
-            // });
+        //   mode: isScience ? "science" : "language",
+        //   language:  selectedMedium,
+        //   scienceCategory: isScience ? currentTopic : undefined,
+        //   classLevel,
+        //   medium,
+        //   difficulty,
+        //   chapter: 1,
+        //   chapterTitle: currentTopic,
+        //   questionNumber: currentQuestionNumber,
+        //   previousQuestions: previousQuestionsList.slice(-5), // Last 5 questions
+        //   isMcq: testType === "mcq",
+        //   gptModel: gptModel || "gpt-4o", // Default to GPT-4o for better quality
+        // });
 
-          //   const questionData = await generateQuestion({
-          //   mode: isScience ? "science" : "language",
-          //   language: selectedMedium,
-          //   scienceCategory: isScience ? subject.toLowerCase() : undefined,
-          //   classLevel,
-          //   medium,
-          //   difficulty,
-          //   chapter: 1,
-          //   chapterTitle: currentTopic,
-          //   questionNumber: currentQuestionNumber,
-          //   previousQuestions: previousQuestionsList.slice(-5),
-          //   isMcq: testType === "mcq",
-          //   gptModel: gptModel || "gpt-4o",
-          // });
+        //   const questionData = await generateQuestion({
+        //   mode: isScience ? "science" : "language",
+        //   language: selectedMedium,
+        //   scienceCategory: isScience ? subject.toLowerCase() : undefined,
+        //   classLevel,
+        //   medium,
+        //   difficulty,
+        //   chapter: 1,
+        //   chapterTitle: currentTopic,
+        //   questionNumber: currentQuestionNumber,
+        //   previousQuestions: previousQuestionsList.slice(-5),
+        //   isMcq: testType === "mcq",
+        //   gptModel: gptModel || "gpt-4o",
+        // });
 
-          // if (!questionData) {
-          //   console.warn("Question generation returned null, retrying...");
-          //   totalAttempts++;
-          //   continue;
-          // }
+        // if (!questionData) {
+        //   console.warn("Question generation returned null, retrying...");
+        //   totalAttempts++;
+        //   continue;
+        // }
 
-          // questions.push(questionData);
+        // questions.push(questionData);
 
-          //   // 🔥 Save MCQ to database (only if it's MCQ)
-          //   if (questionData.questionType === "mcq") {
-          //     await saveMCQ(
-          //       questionData.question,
-          //       questionData.options || [],
-          //       questionData.correctAnswer,
-          //       mcqTestId
-          //     );
-          //   }
-          //   generatedCount++;
+        //   // 🔥 Save MCQ to database (only if it's MCQ)
+        //   if (questionData.questionType === "mcq") {
+        //     await saveMCQ(
+        //       questionData.question,
+        //       questionData.options || [],
+        //       questionData.correctAnswer,
+        //       mcqTestId
+        //     );
+        //   }
+        //   generatedCount++;
 
         // Check if we have any topics left to try
         if (topicQueue.length === 0) {
-          console.error(`[CUSTOM TEST] All topics exhausted. Generated ${generatedCount}/${numQuestions}`);
+          console.error(
+            `[CUSTOM TEST] All topics exhausted. Generated ${generatedCount}/${numQuestions}`,
+          );
           break;
         }
 
@@ -1165,46 +2151,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let attemptsThisQuestion = 0;
 
         // Try topics from the queue until we succeed or exhaust queue for this question
-        while (!questionGenerated && attemptsThisQuestion < topicQueue.length && topicQueue.length > 0) {
+        while (
+          !questionGenerated &&
+          attemptsThisQuestion < topicQueue.length &&
+          topicQueue.length > 0
+        ) {
           const currentTopic = topicQueue.shift()!; // Pop from front
           const failures = perTopicFailures.get(currentTopic) || 0;
 
           const questionData = await generateQuestion({
-          mode: isScience ? "science" : "language",
-          language: req.body.language ?? "english",
-          scienceCategory: isScience ? subject.toLowerCase() : undefined,
-          classLevel,
-          difficulty,
-          chapter: 1,
-          chapterTitle: currentTopic,
-          questionNumber: currentQuestionNumber,
-          previousQuestions: previousQuestionsList.slice(-5),
-          isMcq: testType === "mcq",
-          gptModel: gptModel || "gpt-4o",
-        });
+            mode: isScience ? "science" : "language",
+            // language: req.body.language ?? "english",
+            language: req.body.language || "english",
+            scienceCategory: isScience ? subject.toLowerCase() : undefined,
+            classLevel,
+            difficulty,
+            language: selectedMedium,
+            chapter: 1,
+            // chapterTitle: currentTopic,
+            chapterTitle: currentTopic ?? "General",
+            questionNumber: currentQuestionNumber,
+            previousQuestions: previousQuestionsList.slice(-5),
+            isMcq: testType === "mcq",
+            gptModel: gptModel || "gpt-4o",
+          });
 
-        if (!questionData) {
-          console.warn("[CUSTOM TEST] Question generation returned null, retrying...");
-          totalAttempts++;
-          continue;
-        }
+          if (!questionData) {
+            console.warn(
+              "[CUSTOM TEST] Question generation returned null, retrying...",
+            );
+            totalAttempts++;
+            continue;
+          }
 
           // Skip permanently exhausted topics
           if (failures >= maxAttemptsPerTopic) {
-            console.warn(`[CUSTOM TEST] Topic "${currentTopic}" permanently exhausted (${failures} failures)`);
+            console.warn(
+              `[CUSTOM TEST] Topic "${currentTopic}" permanently exhausted (${failures} failures)`,
+            );
             attemptsThisQuestion++;
             continue;
           }
 
           try {
-            const { classLevel, subject,difficulty, numQuestions } = req.body;
+            const { classLevel, subject, difficulty, numQuestions } = req.body;
             const studentId = req.body.studentId || "student-1";
             totalAttempts++;
             attemptsThisQuestion++;
-            console.log(`[CUSTOM TEST] Question ${currentQuestionNumber}/${numQuestions} - Topic "${currentTopic}" (failures: ${failures}/${maxAttemptsPerTopic}, previous questions: ${previousQuestionsList.length})`);
+            console.log(
+              `[CUSTOM TEST] Question ${currentQuestionNumber}/${numQuestions} - Topic "${currentTopic}" (failures: ${failures}/${maxAttemptsPerTopic}, previous questions: ${previousQuestionsList.length})`,
+            );
 
             //  const testInsert = await pool.query(
-            //   `INSERT INTO mcq_tests 
+            //   `INSERT INTO mcq_tests
             //   (class_level, subject, difficulty, total_questions, generated_by)
             //   VALUES ($1, $2, $3, $4, $5)
             //   RETURNING id`,
@@ -1238,24 +2237,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
             //   );
             // }
 
-
             // Check for exact duplicate
             const questionText = questionData.question.trim().toLowerCase();
             if (generatedQuestionTexts.has(questionText)) {
-              console.warn(`[CUSTOM TEST] ⚠️  EXACT DUPLICATE DETECTED: Question text already exists. Retrying...`);
+              console.warn(
+                `[CUSTOM TEST] ⚠️  EXACT DUPLICATE DETECTED: Question text already exists. Retrying...`,
+              );
               throw new Error("Exact duplicate question detected");
             }
 
             // Check for semantic similarity (paraphrased duplicates)
-            const embedding = await getEmbedding(questionData.question);
+            // const embedding = await getEmbedding(questionData.question);
+            if (!questionData?.question) {
+              throw new Error("Invalid question generated");
+            }
             for (let i = 0; i < questionEmbeddings.length; i++) {
-              const similarity = cosineSimilarity(embedding, questionEmbeddings[i]);
+              const similarity = cosineSimilarity(
+                embedding,
+                questionEmbeddings[i],
+              );
               if (similarity > SIMILARITY_THRESHOLD) {
                 console.warn(`[CUSTOM TEST] ⚠️  SEMANTIC DUPLICATE DETECTED:`);
-                console.warn(`  → New question: "${questionData.question.substring(0, 80)}..."`);
-                console.warn(`  → Similar to Q${i + 1}: "${previousQuestionsList[i].substring(0, 80)}..."`);
-                console.warn(`  → Similarity score: ${similarity.toFixed(3)} (threshold: ${SIMILARITY_THRESHOLD}). Retrying...`);
-                throw new Error(`Semantic duplicate detected (similarity: ${similarity.toFixed(3)})`);
+                console.warn(
+                  `  → New question: "${questionData.question.substring(0, 80)}..."`,
+                );
+                console.warn(
+                  `  → Similar to Q${i + 1}: "${previousQuestionsList[i].substring(0, 80)}..."`,
+                );
+                console.warn(
+                  `  → Similarity score: ${similarity.toFixed(3)} (threshold: ${SIMILARITY_THRESHOLD}). Retrying...`,
+                );
+                throw new Error(
+                  `Semantic duplicate detected (similarity: ${similarity.toFixed(3)})`,
+                );
               }
             }
 
@@ -1265,7 +2279,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               questionNumber: currentQuestionNumber,
               question: questionData.question,
               questionType: questionData.questionType,
-              options: questionData.options ? JSON.stringify(questionData.options) : null,
+              options: questionData.options
+                ? JSON.stringify(questionData.options)
+                : null,
               correctOption: questionData.correctOption || null,
               correctAnswer: questionData.correctAnswer,
               explanation: questionData.explanation || "",
@@ -1274,16 +2290,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Track this question
             questions.push(question);
             generatedQuestionTexts.add(questionText);
-            questionEmbeddings.push(embedding);
+            // questionEmbeddings.push(embedding);
             previousQuestionsList.push(questionData.question);
             generatedCount++;
             questionGenerated = true;
             perTopicFailures.set(currentTopic, 0); // Reset failures on success
             topicQueue.push(currentTopic); // Push back to end of queue
-            console.log(`[CUSTOM TEST] ✓ Question ${currentQuestionNumber}/${numQuestions} generated from topic "${currentTopic}" (unique, semantic check passed)`);
+            console.log(
+              `[CUSTOM TEST] ✓ Question ${currentQuestionNumber}/${numQuestions} generated from topic "${currentTopic}" (unique, semantic check passed)`,
+            );
           } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            console.error(`[CUSTOM TEST] ✗ Failed question ${currentQuestionNumber} with topic "${currentTopic}":`, errorMessage);
+            const errorMessage =
+              error instanceof Error ? error.message : String(error);
+            console.error(
+              `[CUSTOM TEST] ✗ Failed question ${currentQuestionNumber} with topic "${currentTopic}":`,
+              errorMessage,
+            );
 
             // Increment failure count
             const newFailures = failures + 1;
@@ -1293,160 +2315,188 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (newFailures < maxAttemptsPerTopic) {
               topicQueue.push(currentTopic);
             } else {
-              console.warn(`[CUSTOM TEST] Topic "${currentTopic}" removed from queue (reached ${maxAttemptsPerTopic} failures)`);
+              console.warn(
+                `[CUSTOM TEST] Topic "${currentTopic}" removed from queue (reached ${maxAttemptsPerTopic} failures)`,
+              );
             }
           }
         }
 
+        // if (!questionGenerated) {
+        //   console.error(
+        //     `[CUSTOM TEST] Could not generate question ${currentQuestionNumber} - all topics exhausted or failed`,
+        //   );
+        //   break;
+        // }
         if (!questionGenerated) {
-          console.error(`[CUSTOM TEST] Could not generate question ${currentQuestionNumber} - all topics exhausted or failed`);
-          break;
+          console.warn("Retrying question generation...");
+          continue;
         }
       }
 
       // If we didn't get the full count, return error
       // if (generatedCount < numQuestions) {
       //   console.error(`[CUSTOM TEST] ERROR: Only generated ${generatedCount}/${numQuestions} questions after ${totalAttempts} total attempts`);
-      //   return res.status(503).json({ 
+      //   return res.status(503).json({
       //     error: `Could only generate ${generatedCount} out of ${numQuestions} questions after multiple attempts. Please try again with simpler topics or reduce the question count.`,
       //     questionsGenerated: generatedCount,
       //     requested: numQuestions
       //   });
       // }
 
-      console.log(`[CUSTOM TEST] Generated ${questions.length}/${numQuestions} questions successfully across ${topics.length} topic(s)`);
+      console.log(
+        `[CUSTOM TEST] Generated ${questions.length}/${numQuestions} questions successfully across ${topics.length} topic(s)`,
+      );
 
       // Update test status to published
       await storage.updateCustomTest(test.id, { status: "published" });
 
       res.json({ test, questionsGenerated: questions.length });
-    } catch (error) {
-      console.error("Error generating test:", error);
-      res.status(500).json({ error: "Failed to generate test" });
+    } catch (error: any) {
+      console.error("🔥 FULL ERROR:", error);
+
+      res.status(500).json({
+        message: error?.message,
+        stack: error?.stack,
+      });
     }
   });
 
+  //   app.post("/api/student/generate-custom-test", async (req, res) => {
+  //   try {
+  //      console.log("🔥 NEW STUDENT ROUTE HIT");
+  //     const {
+  //       subject,
+  //       classLevel,
+  //       difficulty,
+  //       syllabus,
+  //       numQuestions,
+  //       testType,
+  //       gptModel,
+  //       board,
+  //       mode,
+  //       studentId
+  //     } = req.body;
 
-//   app.post("/api/student/generate-custom-test", async (req, res) => {
-//   try {
-//      console.log("🔥 NEW STUDENT ROUTE HIT");
-//     const {
-//       subject,
-//       classLevel,
-//       difficulty,
-//       syllabus,
-//       numQuestions,
-//       testType,
-//       gptModel,
-//       board,
-//       mode,
-//       studentId
-//     } = req.body;
+  //     // if (!studentId) {
+  //     //   return res.status(400).json({ error: "studentId required" });
+  //     // }
 
-//     // if (!studentId) {
-//     //   return res.status(400).json({ error: "studentId required" });
-//     // }
+  //     const finalStudentId = studentId || "guest-student";
 
-//     const finalStudentId = studentId || "guest-student";
+  //     const topics = syllabus
+  //       .split(",")
+  //       .map((t: string) => t.trim())
+  //       .filter((t: string) => t.length > 0)
+  //       .slice(0, 4);
 
-//     const topics = syllabus
-//       .split(",")
-//       .map((t: string) => t.trim())
-//       .filter((t: string) => t.length > 0)
-//       .slice(0, 4);
+  //     if (topics.length === 0) {
+  //       return res.status(400).json({ error: "At least one topic required" });
+  //     }
 
-//     if (topics.length === 0) {
-//       return res.status(400).json({ error: "At least one topic required" });
-//     }
+  //     // 🔥 INSERT TEST ONLY ONCE (OUTSIDE LOOP)
+  //     const testInsert = await pool.query(
+  //       `INSERT INTO mcq_tests (class_level, subject, total_questions, generated_by)
+  //        VALUES ($1, $2, $3, $4)
+  //        RETURNING id`,
+  //       [classLevel, subject, numQuestions, finalStudentId]
+  //     );
 
-//     // 🔥 INSERT TEST ONLY ONCE (OUTSIDE LOOP)
-//     const testInsert = await pool.query(
-//       `INSERT INTO mcq_tests (class_level, subject, total_questions, generated_by)
-//        VALUES ($1, $2, $3, $4)
-//        RETURNING id`,
-//       [classLevel, subject, numQuestions, finalStudentId]
-//     );
+  //     const mcqTestId = testInsert.rows[0].id;
 
-//     const mcqTestId = testInsert.rows[0].id;
+  //     const questions = [];
+  //     let generatedCount = 0;
 
-//     const questions = [];
-//     let generatedCount = 0;
+  //     const scienceSubjects = ["physics", "chemistry", "biology", "general"];
+  //     const isScience = scienceSubjects.includes(subject.toLowerCase());
 
-//     const scienceSubjects = ["physics", "chemistry", "biology", "general"];
-//     const isScience = scienceSubjects.includes(subject.toLowerCase());
+  //     while (generatedCount < numQuestions) {
+  //       const currentTopic = topics[generatedCount % topics.length];
 
-//     while (generatedCount < numQuestions) {
-//       const currentTopic = topics[generatedCount % topics.length];
+  //       const questionData = await generateQuestion({
+  //         mode: isScience ? "science" : "language",
+  //         language: isScience ? undefined : subject,
+  //         scienceCategory: isScience ? subject.toLowerCase() : undefined,
+  //         classLevel,
+  //         difficulty,
+  //         chapter: 1,
+  //         chapterTitle: currentTopic,
+  //         questionNumber: generatedCount + 1,
+  //         previousQuestions: [],
+  //         isMcq: testType === "mcq",
+  //         gptModel: gptModel || "gpt-4o",
+  //       });
 
-//       const questionData = await generateQuestion({
-//         mode: isScience ? "science" : "language",
-//         language: isScience ? undefined : subject,
-//         scienceCategory: isScience ? subject.toLowerCase() : undefined,
-//         classLevel,
-//         difficulty,
-//         chapter: 1,
-//         chapterTitle: currentTopic,
-//         questionNumber: generatedCount + 1,
-//         previousQuestions: [],
-//         isMcq: testType === "mcq",
-//         gptModel: gptModel || "gpt-4o",
-//       });
+  //       // 🔥 Save MCQ
+  //       if (questionData.questionType === "mcq") {
+  //         await saveMCQ(
+  //           questionData.question,
+  //           questionData.options || [],
+  //           questionData.correctAnswer,
+  //           mcqTestId
+  //         );
+  //       }
 
-//       // 🔥 Save MCQ
-//       if (questionData.questionType === "mcq") {
-//         await saveMCQ(
-//           questionData.question,
-//           questionData.options || [],
-//           questionData.correctAnswer,
-//           mcqTestId
-//         );
-//       }
+  //       questions.push({
+  //         questionNumber: generatedCount + 1,
+  //         question: questionData.question,
+  //         questionType: questionData.questionType,
+  //         options: questionData.options,
+  //       });
 
-//       questions.push({
-//         questionNumber: generatedCount + 1,
-//         question: questionData.question,
-//         questionType: questionData.questionType,
-//         options: questionData.options,
-//       });
+  //       generatedCount++;
+  //     }
 
-//       generatedCount++;
-//     }
+  //     res.json({
+  //       testId: mcqTestId,
+  //       questions,
+  //       questionsGenerated: questions.length,
+  //     });
 
-//     res.json({
-//       testId: mcqTestId,
-//       questions,
-//       questionsGenerated: questions.length,
-//     });
-
-//   } catch (error) {
-//     console.error("Student test generation error:", error);
-//     res.status(500).json({ error: "Failed to generate test" });
-//   }
-// });
+  //   } catch (error) {
+  //     console.error("Student test generation error:", error);
+  //     res.status(500).json({ error: "Failed to generate test" });
+  //   }
+  // });
 
   // Student custom test generation endpoint
   app.post("/api/student/generate-custom-test", async (req, res) => {
     try {
-      const { subject, classLevel, difficulty, syllabus, numQuestions, testType, subjectLanguage,scienceCategory, medium, gptModel, board, mode } = req.body;
-      const { sessionId } = req.body; 
+      const {
+        subject,
+        classLevel,
+        difficulty,
+        syllabus,
+        numQuestions,
+        testType,
+        subjectLanguage,
+        scienceCategory,
+        medium,
+        gptModel,
+        board,
+        mode,
+      } = req.body;
+      const { sessionId } = req.body;
       console.log("numQuestions:", numQuestions);
       console.log("numQuestions raw:", numQuestions);
       console.log("typeof numQuestions:", typeof numQuestions);
       console.log("numQuestions raw:", numQuestions);
 
-
-
-      console.log(`[STUDENT CUSTOM TEST] Generating ${numQuestions} ${difficulty} questions for ${subject} (${board} board)`);
+      console.log(
+        `[STUDENT CUSTOM TEST] Generating ${numQuestions} ${difficulty} questions for ${subject} (${board} board)`,
+      );
 
       // Parse topics from comma-separated syllabus input
       const topics = syllabus
-        .split(',')
+        .split(",")
         .map((topic: string) => topic.trim())
         .filter((topic: string) => topic.length > 0)
         .slice(0, 4);
 
       if (topics.length === 0) {
-        return res.status(400).json({ error: "At least one topic is required" });
+        return res
+          .status(400)
+          .json({ error: "At least one topic is required" });
       }
 
       // Create a temporary test session for the student
@@ -1477,7 +2527,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Generate questions using the same logic as teacher tests
-      const scienceSubjects = ['physics', 'chemistry', 'biology', 'general'];
+      const scienceSubjects = ["physics", "chemistry", "biology", "general"];
       const isScience = scienceSubjects.includes(subject.toLowerCase());
 
       const generatedQuestionTexts = new Set<string>();
@@ -1486,7 +2536,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const SIMILARITY_THRESHOLD = 0.8;
 
       const maxAttemptsPerTopic = 8;
-      const maxTotalAttempts = totalQuestions * topics.length * maxAttemptsPerTopic;
+      const maxTotalAttempts =
+        totalQuestions * topics.length * maxAttemptsPerTopic;
       const perTopicFailures = new Map<string, number>();
       let topicQueue = [...topics];
       let totalAttempts = 0;
@@ -1495,118 +2546,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       topics.forEach((topic: string) => perTopicFailures.set(topic, 0));
 
       // 🔥 INSERT TEST ONCE (BEFORE LOOP)
-        const studentId = req.body.studentId || "student-1";
+      const studentId = req.body.studentId || "student-1";
 
-        const testInsert = await pool.query(
-          `INSERT INTO mcq_tests 
+      const testInsert = await pool.query(
+        `INSERT INTO mcq_tests 
           (class_level, subject, difficulty, total_questions,medium, generated_by)
           VALUES ($1, $2, $3, $4, $5, $6)
           RETURNING id`,
-          [classLevel, subject, difficulty, numQuestions, medium, studentId]
-        );
+        [classLevel, subject, difficulty, numQuestions, medium, studentId],
+      );
 
+      const mcqTestId = testInsert.rows[0].id;
 
-        const mcqTestId = testInsert.rows[0].id;
+      const existingTexts = new Set<string>();
+      // const existingEmbeddings: number[][] = [];
 
-        // // ===== FAST BATCH GENERATION =====
+      let totalGenerated = 0;
+      let safetyCounter = 0;
+      const MAX_TOTAL_ATTEMPTS = numQuestions * 5;
+      const chunkSize = 10;
 
-        // const existingTexts = new Set<string>();
-        // const chunkSize = 10;
-        // let remaining = numQuestions;
-
-        // while (remaining > 0) {
-        //   const currentChunk = Math.min(chunkSize, remaining);
-
-        //   console.log(`🚀 Generating batch of ${currentChunk}`);
-
-        //   const response = await openai.chat.completions.create({
-        //     model: gptModel,
-        //     messages: [
-        //       {
-        //         role: "user",
-        //         content: `
-        // Generate ${currentChunk} unique ${difficulty} ${subject} MCQ questions for Class ${classLevel}.
-
-        // Return strictly in JSON array format:
-
-        // [
-        //   {
-        //     "question": "...",
-        //     "options": ["A", "B", "C", "D"],
-        //     "correctAnswer": "...",
-        //     "questionType": "mcq"
-        //   }
-        // ]
-
-        // No explanation outside JSON.
-        // `
-        //       }
-        //     ],
-        //     temperature: 0.7
-        //   });
-
-        //   const rawContent = response.choices?.[0]?.message?.content;
-
-        //   if (typeof rawContent !== "string") {
-        //     throw new Error("AI returned empty or invalid response");
-        //   }
-
-        //   let content = rawContent
-        //     .replace(/```json/g, "")
-        //     .replace(/```/g, "")
-        //     .trim();
-
-        //   // let content = response.choices[0]?.message?.content?.trim();
-        //   // content = content.replace(/```json/g, "").replace(/```/g, "").trim();
-
-        //   const questions = JSON.parse(content);
-
-        //   for (let q of questions) {
-        //     const text = q.question.trim().toLowerCase();
-
-        //     if (existingTexts.has(text)) continue;
-
-        //     await saveMCQ(
-        //       q.question,
-        //       q.options || [],
-        //       q.correctAnswer,
-        //       mcqTestId
-        //     );
-
-        //     testSession.questions.push(q);
-        //     existingTexts.add(text);
-        //   }
-
-        //   remaining -= currentChunk;
-        // }
-
-        // console.log("🎉 All questions generated");
-
-        // return res.status(200).json({
-        //   testId: testSession.id,
-        //   questions: testSession.questions,
-        //   questionsGenerated: testSession.questions.length,
-        // });
-
-        // ================================
-        // STRICT CHUNK BASED GENERATION
-        // ================================
-
-        const existingTexts = new Set<string>();
-        // const existingEmbeddings: number[][] = [];
-
-        let totalGenerated = 0;
-        let safetyCounter = 0;
-        const MAX_TOTAL_ATTEMPTS = numQuestions * 5;
-        const chunkSize = 10;
-
-        async function generateChunk(requestedCount: number) {
-
+      async function generateChunk(requestedCount: number) {
         const mediumInstruction =
-        // medium === "hindi"
-        medium?.toLowerCase() === "hindi"
-        ? "Generate all questions strictly in Hindi language."
-        : "Generate all questions strictly in English language.";
+          // medium === "hindi"
+          medium?.toLowerCase() === "hindi"
+            ? "Generate all questions strictly in Hindi language."
+            : "Generate all questions strictly in English language.";
 
         // const response = await openai.chat.completions.create({
         //   model: testSession.gptModel,
@@ -1633,8 +2598,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             temperature: 0.8,
             messages: [
               {
-              role: "user",
-              content: `
+                role: "user",
+                content: `
         // Generate ${requestedCount} unique ${difficulty} ${subject} MCQ questions for Class ${classLevel}.
         // Generate ${chunkSize} ${difficulty} questions for ${subjectLanguage || scienceCategory}.
         // Generate ${numQuestions} ${difficulty} questions for ${subject}.
@@ -1666,15 +2631,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       - No duplicate questions
       - All questions must test different concepts
       - No explanation outside JSON
-      `
-            }
-          ]
-        });
+      `,
+              },
+            ],
+          });
           raw = response.choices?.[0]?.message?.content ?? undefined;
-    }
+        }
         if (!raw) throw new Error("Empty AI response");
 
-        const clean = raw.replace(/```json/g, "").replace(/```/g, "").trim();
+        const clean = raw
+          .replace(/```json/g, "")
+          .replace(/```/g, "")
+          .trim();
         const questions = JSON.parse(clean);
 
         let saved = 0;
@@ -1682,11 +2650,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const q of questions) {
           const text = q.question.trim().toLowerCase();
 
-            const verification = await verifyAnswer(
+          const verification = await verifyAnswer(
             q.question,
             q.correctAnswer,
-            'language',
-            testSession.gptModel
+            "language",
+            testSession.gptModel,
           );
 
           if (!verification.isValid) {
@@ -1700,7 +2668,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             q.question,
             q.options || [],
             q.correctAnswer.trim(),
-            mcqTestId
+            mcqTestId,
           );
 
           existingTexts.add(text);
@@ -1715,197 +2683,197 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return saved;
       }
 
-        // ================================
-        // CONTROLLER
-        // ================================
+      // ================================
+      // CONTROLLER
+      // ================================
 
-        let remaining = numQuestions;
+      let remaining = totalQuestions;
 
-        while (remaining > 0 && safetyCounter < MAX_TOTAL_ATTEMPTS) {
-          const currentChunk = Math.min(chunkSize, remaining);
+      while (remaining > 0 && safetyCounter < MAX_TOTAL_ATTEMPTS) {
+        const currentChunk = Math.min(chunkSize, remaining);
 
-          console.log(`🚀 Generating chunk of ${currentChunk}`);
+        console.log(`🚀 Generating chunk of ${currentChunk}`);
 
-          const generatedNow = await generateChunk(currentChunk);
+        const generatedNow = await generateChunk(currentChunk);
 
-          remaining -= generatedNow;
-          safetyCounter++;
-        }
+        remaining -= generatedNow;
+        safetyCounter++;
+      }
 
-        if (totalGenerated < numQuestions) {
-          console.error("❌ Could not reach required question count");
+      if (totalGenerated < numQuestions) {
+        console.error("❌ Could not reach required question count");
 
-          return res.status(500).json({
-            error: `Only ${totalGenerated}/${numQuestions} questions generated`,
-          });
-        }
-
-        console.log("🎉 All questions generated successfully");
-
-        return res.status(200).json({
-          testId: testSession.id,
-          questions: testSession.questions,
-          questionsGenerated: totalGenerated,
+        return res.status(500).json({
+          error: `Only ${totalGenerated}/${numQuestions} questions generated`,
         });
-        } catch (error) {
-            console.error(error);
-            res.status(500).json({ error: "Failed to generate custom test" });
-        }
+      }
+
+      console.log("🎉 All questions generated successfully");
+
+      return res.status(200).json({
+        testId: testSession.id,
+        questions: testSession.questions,
+        questionsGenerated: totalGenerated,
+      });
+    } catch (error: any) {
+      console.error("FULL ERROR:", error);
+
+      res.status(500).json({
+        error: error?.message || "Server error",
+        stack: error?.stack,
+      });
+    }
   });
 
+  // async function generateChunk(chunkSize: number) {
+  //   let generated = 0;
+  //   let attempts = 0;
+  //   const maxAttempts = chunkSize * 5;
 
-        // async function generateChunk(chunkSize: number) {
-        //   let generated = 0;
-        //   let attempts = 0;
-        //   const maxAttempts = chunkSize * 5;
+  //   while (generated < chunkSize && attempts < maxAttempts) {
+  //     attempts++;
 
-        //   while (generated < chunkSize && attempts < maxAttempts) {
-        //     attempts++;
+  //         try {
+  //           const questionData = await generateQuestion({
+  //             mode: isScience ? "science" : "language",
+  //             language: isScience ? undefined : subject,
+  //             scienceCategory: isScience ? subject.toLowerCase() : undefined,
+  //             classLevel,
+  //             difficulty,
+  //             chapter: 1,
+  //             chapterTitle: subject,
+  //             questionNumber: generated + 1,
+  //             previousQuestions: testSession.questions.slice(-5),
+  //             isMcq: testType === "mcq",
+  //             gptModel: testSession.gptModel,
+  //           });
 
+  //           if (!questionData?.question) continue;
 
+  //           const text = questionData.question.trim().toLowerCase();
 
-    //         try {
-    //           const questionData = await generateQuestion({
-    //             mode: isScience ? "science" : "language",
-    //             language: isScience ? undefined : subject,
-    //             scienceCategory: isScience ? subject.toLowerCase() : undefined,
-    //             classLevel,
-    //             difficulty,
-    //             chapter: 1,
-    //             chapterTitle: subject,
-    //             questionNumber: generated + 1,
-    //             previousQuestions: testSession.questions.slice(-5),
-    //             isMcq: testType === "mcq",
-    //             gptModel: testSession.gptModel,
-    //           });
+  //           // Exact duplicate
+  //           if (existingTexts.has(text)) continue;
 
-    //           if (!questionData?.question) continue;
+  //           const embedding = await getEmbedding(questionData.question);
 
-    //           const text = questionData.question.trim().toLowerCase();
+  //           let duplicate = false;
+  //           for (let emb of existingEmbeddings) {
+  //             if (cosineSimilarity(embedding, emb) > SIMILARITY_THRESHOLD) {
+  //               duplicate = true;
+  //               break;
+  //             }
+  //           }
 
-    //           // Exact duplicate
-    //           if (existingTexts.has(text)) continue;
+  //           if (duplicate) continue;
 
-    //           const embedding = await getEmbedding(questionData.question);
+  //           // SAVE TO DB
+  //           await saveMCQ(
+  //             questionData.question,
+  //             questionData.options || [],
+  //             questionData.correctAnswer,
+  //             mcqTestId
+  //           );
 
-    //           let duplicate = false;
-    //           for (let emb of existingEmbeddings) {
-    //             if (cosineSimilarity(embedding, emb) > SIMILARITY_THRESHOLD) {
-    //               duplicate = true;
-    //               break;
-    //             }
-    //           }
+  //           existingTexts.add(text);
+  //           existingEmbeddings.push(embedding);
 
-    //           if (duplicate) continue;
+  //           testSession.questions.push({
+  //             question: questionData.question,
+  //             questionType: questionData.questionType,
+  //             options: questionData.options,
+  //             correctAnswer: questionData.correctAnswer,
+  //             explanation: questionData.explanation || "",
+  //           });
 
-    //           // SAVE TO DB
-    //           await saveMCQ(
-    //             questionData.question,
-    //             questionData.options || [],
-    //             questionData.correctAnswer,
-    //             mcqTestId
-    //           );
+  //           generated++;
 
-    //           existingTexts.add(text);
-    //           existingEmbeddings.push(embedding);
+  //           console.log(`✅ Chunk progress: ${generated}/${chunkSize}`);
 
-    //           testSession.questions.push({
-    //             question: questionData.question,
-    //             questionType: questionData.questionType,
-    //             options: questionData.options,
-    //             correctAnswer: questionData.correctAnswer,
-    //             explanation: questionData.explanation || "",
-    //           });
+  //             const response = await openai.chat.completions.create({
+  //             model: testSession.gptModel,
+  //             messages: [
+  //               {
+  //                 role: "user",
+  //                 content: `
+  //           Generate ${chunkSize} unique ${difficulty} ${subject} MCQ questions for Class ${classLevel}.
 
-    //           generated++;
+  //           Return strictly in JSON array format like:
 
-    //           console.log(`✅ Chunk progress: ${generated}/${chunkSize}`);
+  //           [
+  //             {
+  //               "question": "...",
+  //               "options": ["A", "B", "C", "D"],
+  //               "correctAnswer": "...",
+  //               "questionType": "mcq",
+  //               "qualityScore": 8
+  //             }
+  //           ]
 
-    //             const response = await openai.chat.completions.create({
-    //             model: testSession.gptModel,
-    //             messages: [
-    //               {
-    //                 role: "user",
-    //                 content: `
-    //           Generate ${chunkSize} unique ${difficulty} ${subject} MCQ questions for Class ${classLevel}.
+  //           Rules:
+  //           - No duplicates.
+  //           - Ensure correct answers are accurate.
+  //           - Quality score minimum 6.
+  //           - No explanation outside JSON.
+  //           `
+  //               }
+  //             ],
+  //             temperature: 0.7
+  //           });
 
-    //           Return strictly in JSON array format like:
+  //           let content = response.choices[0]?.message?.content?.trim();
 
-    //           [
-    //             {
-    //               "question": "...",
-    //               "options": ["A", "B", "C", "D"],
-    //               "correctAnswer": "...",
-    //               "questionType": "mcq",
-    //               "qualityScore": 8
-    //             }
-    //           ]
+  //           content = content.replace(/```json/g, "").replace(/```/g, "").trim();
 
-    //           Rules:
-    //           - No duplicates.
-    //           - Ensure correct answers are accurate.
-    //           - Quality score minimum 6.
-    //           - No explanation outside JSON.
-    //           `
-    //               }
-    //             ],
-    //             temperature: 0.7
-    //           });
+  //           const questions = JSON.parse(content);
 
-    //           let content = response.choices[0]?.message?.content?.trim();
+  //           // Controller
+  //           const chunkSize = 10;
+  //           let remaining = numQuestions;
 
-    //           content = content.replace(/```json/g, "").replace(/```/g, "").trim();
+  //           while (remaining > 0) {
+  //             const currentChunk = Math.min(chunkSize, remaining);
 
-    //           const questions = JSON.parse(content);
+  //             console.log(`🚀 Generating chunk of ${currentChunk}`);
 
-    //           // Controller
-    //           const chunkSize = 10;
-    //           let remaining = numQuestions;
+  //             await generateChunk(currentChunk);
 
-    //           while (remaining > 0) {
-    //             const currentChunk = Math.min(chunkSize, remaining);
+  //             remaining -= currentChunk;
+  //           }
 
-    //             console.log(`🚀 Generating chunk of ${currentChunk}`);
+  //     console.log("🎉 All questions generated");
 
-    //             await generateChunk(currentChunk);
+  //     // FINAL RESPONSE
+  //     return res.status(200).json({
+  //       testId: testSession.id,
+  //       questions: testSession.questions,
+  //       questionsGenerated: testSession.questions.length,
+  //     });
 
-    //             remaining -= currentChunk;
-    //           }
+  //       } catch (error) {
+  //         console.error(error);
+  //         res.status(500).json({ error: "Failed to generate custom test" });
+  //       }
 
-    //     console.log("🎉 All questions generated");
+  //    }
+  //  }
+  // });
 
-    //     // FINAL RESPONSE
-    //     return res.status(200).json({
-    //       testId: testSession.id,
-    //       questions: testSession.questions,
-    //       questionsGenerated: testSession.questions.length,
-    //     });
+  //   console.log("🎉 All questions generated");
 
-    //       } catch (error) {
-    //         console.error(error);
-    //         res.status(500).json({ error: "Failed to generate custom test" });
-    //       }
+  //   // FINAL RESPONSE
+  //   return res.status(200).json({
+  //     testId: testSession.id,
+  //     questions: testSession.questions,
+  //     questionsGenerated: testSession.questions.length,
+  //   });
 
-    //    }
-    //  }
-    // });
+  // } catch (error) {
+  //   console.error(error);
+  //   res.status(500).json({ error: "Failed to generate custom test" });
+  // }
 
-      //   console.log("🎉 All questions generated");
-
-      //   // FINAL RESPONSE
-      //   return res.status(200).json({
-      //     testId: testSession.id,
-      //     questions: testSession.questions,
-      //     questionsGenerated: testSession.questions.length,
-      //   });
-
-      // } catch (error) {
-      //   console.error(error);
-      //   res.status(500).json({ error: "Failed to generate custom test" });
-      // }
-
-
-  //       const seenQuestions = new Set<string>(); 
+  //       const seenQuestions = new Set<string>();
 
   //         async function generateChunk(
   //         chunkSize: number,
@@ -1919,7 +2887,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   //       while (generatedCount < chunkSize && totalAttempts < maxTotalAttempts) {
   //         const currentQuestionNumber = generatedCount + 1;
-
 
   //         if (topicQueue.length === 0) {
   //           console.error(`[STUDENT CUSTOM TEST] All topics exhausted. Generated ${generatedCount}/${numQuestions}`);
@@ -1956,8 +2923,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //               isMcq: testType === "mcq",
   //               gptModel: testSession.gptModel,
   //             });
-
-
 
   //             if (!questionData || !questionData.question) {
   //               console.warn("⚠ Invalid question structure");
@@ -2019,7 +2984,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //             //   }
   //             // }
 
-
   //             // 🔹 Semantic duplicate check (ONLY if exact passed)
   //               // const embedding = await getEmbedding(questionData.question);
 
@@ -2041,7 +3005,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //               }
 
   //               if (isDuplicate) continue;
-
 
   //             // 🔥 Save MCQ to database (only if it's MCQ)
   //             if (questionData.questionType === "mcq") {
@@ -2106,7 +3069,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //         });
   //       }
 
-
   //       console.log(`✅ Chunk progress: ${generatedCount}/${chunkSize}`);
   //       res.json({
   //         testId: testSession.id,
@@ -2134,7 +3096,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const questions = await storage.getCustomQuestions(testId);
 
       // Parse options for teacher view
-      const questionsWithParsedOptions = questions.map(q => ({
+      const questionsWithParsedOptions = questions.map((q) => ({
         ...q,
         options: q.options ? JSON.parse(q.options) : null,
       }));
@@ -2146,238 +3108,364 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  //   app.post("/api/student/generate-custom-test", (req, res) => {
+  //   const data = req.body;
 
-//   app.post("/api/student/generate-custom-test", (req, res) => {
-//   const data = req.body;
-
-//   res.status(200).json({
-//     msg: "custom test generated",
-//     data,
-//   });
-// });
-// app.post("/api/student/generate-custom-test", async (req, res) => {
-//   try {
-//     // full generation logic
-//   } catch (error) {
-//     res.status(500).json({ error: "Failed to generate custom test" });
-//   }
-// });
-
+  //   res.status(200).json({
+  //     msg: "custom test generated",
+  //     data,
+  //   });
+  // });
+  // app.post("/api/student/generate-custom-test", async (req, res) => {
+  //   try {
+  //     // full generation logic
+  //   } catch (error) {
+  //     res.status(500).json({ error: "Failed to generate custom test" });
+  //   }
+  // });
 
   // Manual edit question
-  app.patch("/api/teacher/:teacherId/question/:questionId/edit", async (req, res) => {
-    try {
-      const { teacherId, questionId } = req.params;
-      const { question, options, correctOption, correctAnswer, explanation } = req.body;
+  app.patch(
+    "/api/teacher/:teacherId/question/:questionId/edit",
+    async (req, res) => {
+      try {
+        const { teacherId, questionId } = req.params;
+        const { question, options, correctOption, correctAnswer, explanation } =
+          req.body;
 
-      console.log(`[QUESTION EDIT] Teacher ${teacherId} editing question ${questionId}`);
+        console.log(
+          `[QUESTION EDIT] Teacher ${teacherId} editing question ${questionId}`,
+        );
 
-      const existingQuestion = await storage.getCustomQuestion(questionId);
-      if (!existingQuestion) {
-        return res.status(404).json({ error: "Question not found" });
-      }
-
-      // Verify teacher owns this question's test
-      const test = await storage.getCustomTest(existingQuestion.testId);
-      if (!test) {
-        return res.status(404).json({ error: "Test not found" });
-      }
-      if (test.teacherId !== teacherId) {
-        return res.status(403).json({ error: "Unauthorized" });
-      }
-
-      // Validate inputs
-      if (!question || question.trim().length < 5) {
-        return res.status(400).json({ error: "Question must be at least 5 characters" });
-      }
-      if (!explanation || explanation.trim().length < 5) {
-        return res.status(400).json({ error: "Explanation must be at least 5 characters" });
-      }
-
-      const updates: Partial<typeof existingQuestion> = {
-        question: question.trim(),
-        explanation: explanation.trim(),
-      };
-
-      if (existingQuestion.questionType === "mcq") {
-        // Validate MCQ options
-        if (!options || !Array.isArray(options)) {
-          return res.status(400).json({ error: "MCQ questions must have options array" });
+        const existingQuestion = await storage.getCustomQuestion(questionId);
+        if (!existingQuestion) {
+          return res.status(404).json({ error: "Question not found" });
         }
 
-        if (!correctOption || !["A", "B", "C", "D"].includes(correctOption)) {
-          return res.status(400).json({ error: "Must select a valid correct option (A, B, C, or D)" });
+        // Verify teacher owns this question's test
+        const test = await storage.getCustomTest(existingQuestion.testId);
+        if (!test) {
+          return res.status(404).json({ error: "Test not found" });
+        }
+        if (test.teacherId !== teacherId) {
+          return res.status(403).json({ error: "Unauthorized" });
         }
 
-        // Find which option was marked as correct
-        const originalCorrectIndex = correctOption.charCodeAt(0) - 65;
-        const correctOptionText = options[originalCorrectIndex];
-
-        if (!correctOptionText || correctOptionText.trim().length === 0) {
-          return res.status(400).json({ error: "The selected correct option cannot be empty" });
+        // Validate inputs
+        if (!question || question.trim().length < 5) {
+          return res
+            .status(400)
+            .json({ error: "Question must be at least 5 characters" });
+        }
+        if (!explanation || explanation.trim().length < 5) {
+          return res
+            .status(400)
+            .json({ error: "Explanation must be at least 5 characters" });
         }
 
-        // Filter out empty options while preserving the correct option
-        const validOptions = options
-          .map((opt: string, idx: number) => ({ text: opt?.trim() || "", index: idx }))
-          .filter(opt => opt.text.length > 0);
+        const updates: Partial<typeof existingQuestion> = {
+          question: question.trim(),
+          explanation: explanation.trim(),
+        };
 
-        if (validOptions.length < 2) {
-          return res.status(400).json({ error: "MCQ questions must have at least 2 valid options" });
+        if (existingQuestion.questionType === "mcq") {
+          // Validate MCQ options
+          if (!options || !Array.isArray(options)) {
+            return res
+              .status(400)
+              .json({ error: "MCQ questions must have options array" });
+          }
+
+          if (!correctOption || !["A", "B", "C", "D"].includes(correctOption)) {
+            return res
+              .status(400)
+              .json({
+                error: "Must select a valid correct option (A, B, C, or D)",
+              });
+          }
+
+          // Find which option was marked as correct
+          const originalCorrectIndex = correctOption.charCodeAt(0) - 65;
+          const correctOptionText = options[originalCorrectIndex];
+
+          if (!correctOptionText || correctOptionText.trim().length === 0) {
+            return res
+              .status(400)
+              .json({ error: "The selected correct option cannot be empty" });
+          }
+
+          // Filter out empty options while preserving the correct option
+          const validOptions = options
+            .map((opt: string, idx: number) => ({
+              text: opt?.trim() || "",
+              index: idx,
+            }))
+            .filter((opt) => opt.text.length > 0);
+
+          if (validOptions.length < 2) {
+            return res
+              .status(400)
+              .json({
+                error: "MCQ questions must have at least 2 valid options",
+              });
+          }
+
+          // Find the new index of the correct option after filtering
+          const newCorrectIndex = validOptions.findIndex(
+            (opt) => opt.index === originalCorrectIndex,
+          );
+          if (newCorrectIndex === -1) {
+            return res
+              .status(400)
+              .json({
+                error:
+                  "The correct option was removed. Please select a different correct option.",
+              });
+          }
+
+          // Map the new correct option letter
+          const newCorrectOption = String.fromCharCode(65 + newCorrectIndex);
+          const finalOptions = validOptions.map((opt) => opt.text);
+
+          updates.options = JSON.stringify(finalOptions);
+          updates.correctOption = newCorrectOption;
+          updates.correctAnswer = finalOptions[newCorrectIndex];
+        } else {
+          // Open-ended question
+          if (!correctAnswer || correctAnswer.trim().length < 5) {
+            return res
+              .status(400)
+              .json({ error: "Correct answer must be at least 5 characters" });
+          }
+          updates.correctAnswer = correctAnswer.trim();
         }
 
-        // Find the new index of the correct option after filtering
-        const newCorrectIndex = validOptions.findIndex(opt => opt.index === originalCorrectIndex);
-        if (newCorrectIndex === -1) {
-          return res.status(400).json({ error: "The correct option was removed. Please select a different correct option." });
+        const updatedQuestion = await storage.updateCustomQuestion(
+          questionId,
+          updates,
+        );
+        if (!updatedQuestion) {
+          return res.status(500).json({ error: "Failed to update question" });
         }
 
-        // Map the new correct option letter
-        const newCorrectOption = String.fromCharCode(65 + newCorrectIndex);
-        const finalOptions = validOptions.map(opt => opt.text);
+        console.log(
+          `[QUESTION EDIT] Question ${questionId} updated successfully`,
+        );
 
-        updates.options = JSON.stringify(finalOptions);
-        updates.correctOption = newCorrectOption;
-        updates.correctAnswer = finalOptions[newCorrectIndex];
-      } else {
-        // Open-ended question
-        if (!correctAnswer || correctAnswer.trim().length < 5) {
-          return res.status(400).json({ error: "Correct answer must be at least 5 characters" });
-        }
-        updates.correctAnswer = correctAnswer.trim();
+        res.json({
+          ...updatedQuestion,
+          options: updatedQuestion.options
+            ? JSON.parse(updatedQuestion.options)
+            : null,
+        });
+      } catch (error) {
+        console.error("Error editing question:", error);
+        res.status(500).json({ error: "Failed to edit question" });
       }
-
-      const updatedQuestion = await storage.updateCustomQuestion(questionId, updates);
-      if (!updatedQuestion) {
-        return res.status(500).json({ error: "Failed to update question" });
-      }
-
-      console.log(`[QUESTION EDIT] Question ${questionId} updated successfully`);
-
-      res.json({
-        ...updatedQuestion,
-        options: updatedQuestion.options ? JSON.parse(updatedQuestion.options) : null,
-      });
-    } catch (error) {
-      console.error("Error editing question:", error);
-      res.status(500).json({ error: "Failed to edit question" });
-    }
-  });
+    },
+  );
 
   // AI-assisted edit question
-  app.post("/api/teacher/:teacherId/question/:questionId/ai-edit", async (req, res) => {
-    try {
-      const { teacherId, questionId } = req.params;
-      const { feedback } = req.body;
+  app.post(
+    "/api/teacher/:teacherId/question/:questionId/ai-edit",
+    async (req, res) => {
+      try {
+        const { teacherId, questionId } = req.params;
+        const { feedback } = req.body;
 
-      if (!feedback || feedback.trim().length < 10) {
-        return res.status(400).json({ error: "Please provide detailed feedback (at least 10 characters)" });
-      }
-
-      console.log(`[AI QUESTION EDIT] Teacher ${teacherId} requesting AI edit for question ${questionId}`);
-      console.log(`[AI QUESTION EDIT] Feedback: "${feedback.substring(0, 50)}..."`);
-
-      const existingQuestion = await storage.getCustomQuestion(questionId);
-      if (!existingQuestion) {
-        return res.status(404).json({ error: "Question not found" });
-      }
-
-      // Verify teacher owns this question's test
-      const test = await storage.getCustomTest(existingQuestion.testId);
-      if (!test) {
-        return res.status(404).json({ error: "Test not found" });
-      }
-      if (test.teacherId !== teacherId) {
-        return res.status(403).json({ error: "Unauthorized" });
-      }
-
-      // Parse options if MCQ
-      const parsedOptions = existingQuestion.options ? JSON.parse(existingQuestion.options) : undefined;
-
-      // Call AI to improve the question
-      const improvedQuestion = await improveQuestion({
-        originalQuestion: existingQuestion.question,
-        questionType: existingQuestion.questionType,
-        options: parsedOptions,
-        correctAnswer: existingQuestion.correctAnswer,
-        explanation: existingQuestion.explanation,
-        teacherFeedback: feedback.trim(),
-        subject: test.subject,
-        classLevel: test.classLevel,
-        difficulty: test.difficulty,
-        gptModel: test.gptModel,
-      });
-
-      // Validate AI response
-      if (!improvedQuestion.question || improvedQuestion.question.trim().length < 5) {
-        console.error(`[AI QUESTION EDIT] Invalid AI response: question too short`);
-        return res.status(500).json({ error: "AI generated an invalid question. Please try again with different feedback." });
-      }
-      if (!improvedQuestion.explanation || improvedQuestion.explanation.trim().length < 5) {
-        console.error(`[AI QUESTION EDIT] Invalid AI response: explanation too short`);
-        return res.status(500).json({ error: "AI generated an invalid explanation. Please try again." });
-      }
-
-      const updates: Partial<typeof existingQuestion> = {
-        question: improvedQuestion.question.trim(),
-        explanation: improvedQuestion.explanation.trim(),
-      };
-
-      if (existingQuestion.questionType === "mcq") {
-        // Validate MCQ improvements
-        if (!improvedQuestion.options || !Array.isArray(improvedQuestion.options) || improvedQuestion.options.length < 2) {
-          console.error(`[AI QUESTION EDIT] Invalid AI response: insufficient options`);
-          return res.status(500).json({ error: "AI generated invalid options. Please try again." });
-        }
-        if (!improvedQuestion.correctOption || !["A", "B", "C", "D"].includes(improvedQuestion.correctOption)) {
-          console.error(`[AI QUESTION EDIT] Invalid AI response: invalid correct option`);
-          return res.status(500).json({ error: "AI generated an invalid correct option. Please try again." });
+        if (!feedback || feedback.trim().length < 10) {
+          return res
+            .status(400)
+            .json({
+              error:
+                "Please provide detailed feedback (at least 10 characters)",
+            });
         }
 
-        const correctIndex = improvedQuestion.correctOption.charCodeAt(0) - 65;
-        if (correctIndex >= improvedQuestion.options.length) {
-          console.error(`[AI QUESTION EDIT] Invalid AI response: correct option out of bounds`);
-          return res.status(500).json({ error: "AI generated an inconsistent question. Please try again." });
+        console.log(
+          `[AI QUESTION EDIT] Teacher ${teacherId} requesting AI edit for question ${questionId}`,
+        );
+        console.log(
+          `[AI QUESTION EDIT] Feedback: "${feedback.substring(0, 50)}..."`,
+        );
+
+        const existingQuestion = await storage.getCustomQuestion(questionId);
+        if (!existingQuestion) {
+          return res.status(404).json({ error: "Question not found" });
         }
 
-        // Validate options are non-empty
-        const validOptions = improvedQuestion.options.filter((opt: string) => opt && opt.trim().length > 0);
-        if (validOptions.length < improvedQuestion.options.length) {
-          console.error(`[AI QUESTION EDIT] AI generated empty options`);
-          return res.status(500).json({ error: "AI generated empty options. Please try again." });
+        // Verify teacher owns this question's test
+        const test = await storage.getCustomTest(existingQuestion.testId);
+        if (!test) {
+          return res.status(404).json({ error: "Test not found" });
+        }
+        if (test.teacherId !== teacherId) {
+          return res.status(403).json({ error: "Unauthorized" });
         }
 
-        updates.options = JSON.stringify(improvedQuestion.options);
-        updates.correctOption = improvedQuestion.correctOption;
-        updates.correctAnswer = improvedQuestion.options[correctIndex];
-      } else {
-        // Validate open-ended improvements
-        if (!improvedQuestion.correctAnswer || improvedQuestion.correctAnswer.trim().length < 5) {
-          console.error(`[AI QUESTION EDIT] Invalid AI response: answer too short`);
-          return res.status(500).json({ error: "AI generated an invalid answer. Please try again." });
+        // Parse options if MCQ
+        const parsedOptions = existingQuestion.options
+          ? JSON.parse(existingQuestion.options)
+          : undefined;
+
+        // Call AI to improve the question
+        const improvedQuestion = await improveQuestion({
+          originalQuestion: existingQuestion.question,
+          questionType: existingQuestion.questionType,
+          options: parsedOptions,
+          correctAnswer: existingQuestion.correctAnswer,
+          explanation: existingQuestion.explanation,
+          teacherFeedback: feedback.trim(),
+          subject: test.subject,
+          classLevel: test.classLevel,
+          difficulty: test.difficulty,
+          gptModel: test.gptModel,
+        });
+
+        // Validate AI response
+        if (
+          !improvedQuestion.question ||
+          improvedQuestion.question.trim().length < 5
+        ) {
+          console.error(
+            `[AI QUESTION EDIT] Invalid AI response: question too short`,
+          );
+          return res
+            .status(500)
+            .json({
+              error:
+                "AI generated an invalid question. Please try again with different feedback.",
+            });
         }
-        updates.correctAnswer = improvedQuestion.correctAnswer.trim();
-        // Clear MCQ-specific fields for open-ended questions
-        updates.options = null;
-        updates.correctOption = null;
+        if (
+          !improvedQuestion.explanation ||
+          improvedQuestion.explanation.trim().length < 5
+        ) {
+          console.error(
+            `[AI QUESTION EDIT] Invalid AI response: explanation too short`,
+          );
+          return res
+            .status(500)
+            .json({
+              error: "AI generated an invalid explanation. Please try again.",
+            });
+        }
+
+        const updates: Partial<typeof existingQuestion> = {
+          question: improvedQuestion.question.trim(),
+          explanation: improvedQuestion.explanation.trim(),
+        };
+
+        if (existingQuestion.questionType === "mcq") {
+          // Validate MCQ improvements
+          if (
+            !improvedQuestion.options ||
+            !Array.isArray(improvedQuestion.options) ||
+            improvedQuestion.options.length < 2
+          ) {
+            console.error(
+              `[AI QUESTION EDIT] Invalid AI response: insufficient options`,
+            );
+            return res
+              .status(500)
+              .json({
+                error: "AI generated invalid options. Please try again.",
+              });
+          }
+          if (
+            !improvedQuestion.correctOption ||
+            !["A", "B", "C", "D"].includes(improvedQuestion.correctOption)
+          ) {
+            console.error(
+              `[AI QUESTION EDIT] Invalid AI response: invalid correct option`,
+            );
+            return res
+              .status(500)
+              .json({
+                error:
+                  "AI generated an invalid correct option. Please try again.",
+              });
+          }
+
+          const correctIndex =
+            improvedQuestion.correctOption.charCodeAt(0) - 65;
+          if (correctIndex >= improvedQuestion.options.length) {
+            console.error(
+              `[AI QUESTION EDIT] Invalid AI response: correct option out of bounds`,
+            );
+            return res
+              .status(500)
+              .json({
+                error:
+                  "AI generated an inconsistent question. Please try again.",
+              });
+          }
+
+          // Validate options are non-empty
+          const validOptions = improvedQuestion.options.filter(
+            (opt: string) => opt && opt.trim().length > 0,
+          );
+          if (validOptions.length < improvedQuestion.options.length) {
+            console.error(`[AI QUESTION EDIT] AI generated empty options`);
+            return res
+              .status(500)
+              .json({ error: "AI generated empty options. Please try again." });
+          }
+
+          updates.options = JSON.stringify(improvedQuestion.options);
+          updates.correctOption = improvedQuestion.correctOption;
+          updates.correctAnswer = improvedQuestion.options[correctIndex];
+        } else {
+          // Validate open-ended improvements
+          if (
+            !improvedQuestion.correctAnswer ||
+            improvedQuestion.correctAnswer.trim().length < 5
+          ) {
+            console.error(
+              `[AI QUESTION EDIT] Invalid AI response: answer too short`,
+            );
+            return res
+              .status(500)
+              .json({
+                error: "AI generated an invalid answer. Please try again.",
+              });
+          }
+          updates.correctAnswer = improvedQuestion.correctAnswer.trim();
+          // Clear MCQ-specific fields for open-ended questions
+          updates.options = null;
+          updates.correctOption = null;
+        }
+
+        const updatedQuestion = await storage.updateCustomQuestion(
+          questionId,
+          updates,
+        );
+        if (!updatedQuestion) {
+          return res
+            .status(500)
+            .json({ error: "Failed to save improved question" });
+        }
+
+        console.log(
+          `[AI QUESTION EDIT] Question ${questionId} improved successfully using AI`,
+        );
+
+        res.json({
+          ...updatedQuestion,
+          options: updatedQuestion.options
+            ? JSON.parse(updatedQuestion.options)
+            : null,
+        });
+      } catch (error: any) {
+        console.error("Error in AI-assisted edit:", error);
+        res
+          .status(500)
+          .json({
+            error: error.message || "Failed to improve question with AI",
+          });
       }
-
-      const updatedQuestion = await storage.updateCustomQuestion(questionId, updates);
-      if (!updatedQuestion) {
-        return res.status(500).json({ error: "Failed to save improved question" });
-      }
-
-      console.log(`[AI QUESTION EDIT] Question ${questionId} improved successfully using AI`);
-
-      res.json({
-        ...updatedQuestion,
-        options: updatedQuestion.options ? JSON.parse(updatedQuestion.options) : null,
-      });
-    } catch (error: any) {
-      console.error("Error in AI-assisted edit:", error);
-      res.status(500).json({ error: error.message || "Failed to improve question with AI" });
-    }
-  });
+    },
+  );
 
   // Get custom test by share code (for students)
   app.get("/api/custom-test/:shareCode", async (req, res) => {
@@ -2392,7 +3480,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const questions = await storage.getCustomQuestions(test.id);
 
       // Don't send correct answers to students
-      const questionsForStudent = questions.map(q => ({
+      const questionsForStudent = questions.map((q) => ({
         id: q.id,
         questionNumber: q.questionNumber,
         question: q.question,
@@ -2418,7 +3506,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const questions = await storage.getCustomQuestions(testId);
-      const question = questions.find(q => q.id === questionId);
+      const question = questions.find((q) => q.id === questionId);
 
       if (!question) {
         return res.status(404).json({ error: "Question not found" });
@@ -2426,7 +3514,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // For MCQ, check if answer matches
       if (question.questionType === "mcq") {
-        const isCorrect = studentAnswer.trim().toUpperCase() === question.correctOption;
+        const isCorrect =
+          studentAnswer.trim().toUpperCase() === question.correctOption;
         res.json({
           isCorrect,
           correctAnswer: question.correctAnswer,
@@ -2461,9 +3550,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Start a new test session
   app.post("/api/test/start", async (req, res) => {
     try {
-      const { mode, language, scienceCategory, class: classLevel, difficulty, medium,chapter, testLength, testType } = req.body;
+      const {
+        mode,
+        language,
+        scienceCategory,
+        class: classLevel,
+        difficulty,
+        medium,
+        chapter,
+        testLength,
+        testType,
+      } = req.body;
+      console.log("CHAPTER:", chapter);
 
-      console.log(`[TEST START] mode=${mode}, language=${language}, scienceCategory=${scienceCategory}, class=${classLevel}, difficulty=${difficulty}`);
+      console.log(
+        `[TEST START] mode=${mode}, language=${language}, scienceCategory=${scienceCategory}, class=${classLevel}, difficulty=${difficulty}`,
+      );
 
       const session = await storage.createTestSession({
         mode,
@@ -2479,8 +3581,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         correctAnswers: 0,
         conversationHistory: "[]",
       });
+      console.log("SESSION DATA:", session);
 
-      console.log(`[SESSION CREATED] mode=${session.mode}, language=${session.language}, scienceCategory=${session.scienceCategory}`);
+      console.log(
+        `[SESSION CREATED] mode=${session.mode}, language=${session.language}, scienceCategory=${session.scienceCategory}`,
+      );
 
       res.json(session);
     } catch (error) {
@@ -2489,109 +3594,140 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-
   app.post("/api/test/:sessionId/question", async (req, res) => {
-  try {
-    const { sessionId } = req.params;
-    const session = await storage.getTestSession(sessionId);
+    try {
+      const { sessionId } = req.params;
+      const session = await storage.getTestSession(sessionId);
 
-    if (!session) {
-      return res.status(404).json({ error: "Session not found" });
-    }
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
 
-    const subjectKey =
-      session.mode === "science"
-        ? (session.scienceCategory || "general").toLowerCase()
-        : (session.language || "french").toLowerCase();
+      const subjectKey =
+        session.mode === "science"
+          ? (session.scienceCategory || "general").toLowerCase()
+          : (session.language || "french").toLowerCase();
 
-    const chapters = CHAPTERS[subjectKey] || [];
-    const chapter = chapters.find((c) => c.id === session.chapter);
+      const chapters = CHAPTERS[subjectKey] || [];
+      const chapter = chapters.find((c) => c.id === session.chapter);
 
-    if (!chapter) {
-      return res.status(400).json({ error: "Invalid chapter" });
-    }
+      if (!chapter) {
+        return res.status(400).json({ error: "Invalid chapter" });
+      }
 
-    const history = JSON.parse(session.conversationHistory || "[]");
-    const previousQuestions = history.map((h: any) => h.question).filter(Boolean);
+      const history = JSON.parse(session.conversationHistory || "[]");
+      const previousQuestions = history
+        .map((h: any) => h.question)
+        .filter(Boolean);
 
-    const isMcq =
-      session.testType === "mcq-only"
-        ? true
-        : history.length % 2 === 0;
+      const isMcq =
+        session.testType === "mcq-only" ? true : history.length % 2 === 0;
 
-    const questionData = await generateQuestion({
-      mode: session.mode,
-      language: session.language || undefined,
-      scienceCategory: session.scienceCategory || undefined,
-      classLevel: session.classLevel,
-      difficulty: session.difficulty,
-      chapter: session.chapter,
-      // chapterTitle: chapter.title,
-      chapterTitle:
-      session.language === "hindi"
-        ? chapter.title.hindi
-        : chapter.title.english,
-      questionNumber: session.currentQuestion + 1,
-      previousQuestions,
-      isMcq,
-    });
-
-    // 🔥 Get mcq_test_id from session
-    const result = await pool.query(
-      `SELECT mcq_test_id FROM test_sessions WHERE id = $1`,
-      [sessionId]
-    );
-
-    const mcqTestId = result.rows[0]?.mcq_test_id;
-
-   if (!questionData) {
-      console.warn("Question generation returned null");
-
-      return res.status(500).json({
-        error: "AI could not generate a valid question. Please retry."
+      const questionData = await generateQuestion({
+        mode: session.mode,
+        // language: session.language || "english",
+        language: req.body.language || "english",
+        scienceCategory: session.scienceCategory || undefined,
+        classLevel: session.classLevel,
+        difficulty: session.difficulty,
+        chapter: session.chapter,
+        // chapterTitle: chapter.title,
+        // chapterTitle:
+        // session.language === "hindi"
+        //   ? chapter.title.hindi
+        //   : chapter.title.english,
+        chapterTitle:
+        typeof chapter?.title === "object"
+          ? chapter.title.english
+          : chapter?.title || "General",
+        questionNumber: session.currentQuestion + 1,
+        previousQuestions,
+        language: selectedMedium,
+        isMcq,
       });
-    }
 
-    const q = questionData;
-
-
-    // 🔥 Save MCQ (only if test linked)
-    if (questionData.questionType === "mcq" && mcqTestId) {
-      await saveMCQ(
-        questionData.question,
-        questionData.options || [],
-        questionData.correctAnswer,
-        mcqTestId
+      // 🔥 Get mcq_test_id from session
+      const result = await pool.query(
+        "SELECT * FROM mcqs ORDER BY RANDOM() LIMIT 1"
       );
+
+      if (!result.rows.length) {
+        return res.status(404).json({ error: "No questions found for this test" });
+      }
+
+      const mcqTestId = result.rows[0].test_id;
+
+      // if (!questionData) {
+      //   console.warn("Question generation returned null");
+
+      //   return res.status(500).json({
+      //     error: "AI could not generate a valid question. Please retry.",
+      //   });
+      // }
+
+      if (!questionData) {
+        console.warn("AI failed. Using predefined MCQ fallback");
+
+        const fallback = await pool.query(
+          "SELECT * FROM mcqs ORDER BY RANDOM() LIMIT 1"
+        );
+
+        if (!fallback.rows.length) {
+          return res.status(500).json({
+            error: "No fallback questions available",
+          });
+        }
+
+        const q = fallback.rows[0];
+
+        return res.json({
+          question: q.question,
+          questionType: "mcq",
+          options: q.options,
+          questionNumber: session.currentQuestion + 1,
+          totalQuestions: session.testLength,
+        });
+      }
+
+      const q = questionData;
+
+      // 🔥 Save MCQ (only if test linked)
+      if (questionData.questionType === "mcq" && mcqTestId) {
+        await saveMCQ(
+          questionData.question,
+          questionData.options || [],
+          questionData.correctAnswer,
+          mcqTestId,
+        );
+      }
+
+      history.push({
+        questionNumber: session.currentQuestion + 1,
+        question: questionData.question,
+        correctAnswer: questionData.correctAnswer,
+        questionType: questionData.questionType,
+        options: questionData.options,
+        correctOption: questionData.correctOption,
+        explanation: questionData.explanation,
+      });
+
+      await storage.updateTestSession(sessionId, {
+        conversationHistory: JSON.stringify(history),
+        currentQuestion: session.currentQuestion + 1,
+      });
+
+      res.json({
+        question: questionData.question,
+        questionType: questionData.questionType,
+        options: questionData.options,
+        questionNumber: session.currentQuestion + 1,
+        totalQuestions: session.testLength,
+      });
+    } catch (error) {
+      console.error("Error generating question:", error);
+      res.status(500).json({ error: "Failed to generate question" });
     }
-
-    history.push({
-      questionNumber: session.currentQuestion + 1,
-      question: questionData.question,
-      correctAnswer: questionData.correctAnswer,
-      questionType: questionData.questionType,
-      options: questionData.options,
-      correctOption: questionData.correctOption,
-      explanation: questionData.explanation,
-    });
-
-    await storage.updateTestSession(sessionId, {
-      conversationHistory: JSON.stringify(history),
-      currentQuestion: session.currentQuestion + 1,
-    });
-
-    res.json({
-      question: questionData.question,
-      questionType: questionData.questionType,
-      options: questionData.options,
-      questionNumber: session.currentQuestion + 1,
-      totalQuestions: session.testLength,
-    });
-  } catch (error) {
-    console.error("Error generating question:", error);
-    res.status(500).json({ error: "Failed to generate question" });
-  }
-});
+  });
 
   // // Generate next question
   // app.post("/api/test/:sessionId/question", async (req, res) => {
@@ -2604,8 +3740,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //     }
 
   //     // Get subject key based on mode
-  //     const subjectKey = session.mode === "science" 
-  //       ? (session.scienceCategory || "general").toLowerCase() 
+  //     const subjectKey = session.mode === "science"
+  //       ? (session.scienceCategory || "general").toLowerCase()
   //       : (session.language || "french").toLowerCase();
 
   //     const chapters = CHAPTERS[subjectKey] || [];
@@ -2654,7 +3790,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //       // );
 
   //       const testInsert = await pool.query(
-  //         `INSERT INTO mcq_tests 
+  //         `INSERT INTO mcq_tests
   //         (class_level, subject, difficulty, total_questions, generated_by)
   //         VALUES ($1, $2, $3, $4, $5)
   //         RETURNING id`,
@@ -2666,7 +3802,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //         `UPDATE test_sessions SET mcq_test_id = $1 WHERE id = $2`,
   //         [mcqTestId, sessionId]
   //       );
-
 
   //     const questionData = await generateQuestion({
   //       mode: session.mode,
@@ -2681,8 +3816,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //       previousQuestions,
   //       isMcq,
   //     });
-
-
 
   //     const sessionResult = await pool.query(
   //       `SELECT mcq_test_id FROM test_sessions WHERE id = $1`,
@@ -2716,10 +3849,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   //     await storage.updateTestSession(sessionId, {
   //       conversationHistory: JSON.stringify(history),
-  //       currentQuestion: session.currentQuestion + 1, 
+  //       currentQuestion: session.currentQuestion + 1,
   //     });
 
-  //     res.json({ 
+  //     res.json({
   //       question: questionData.question,
   //       questionType: questionData.questionType,
   //       options: questionData.options,
@@ -2745,11 +3878,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get the current question data from history
-      const conversationHistory = JSON.parse(session.conversationHistory || "[]");
-      const currentQuestionData = conversationHistory[conversationHistory.length - 1];
+      const conversationHistory = JSON.parse(
+        session.conversationHistory || "[]",
+      );
+      const currentQuestionData =
+        conversationHistory[conversationHistory.length - 1];
 
       if (!currentQuestionData) {
-        return res.status(400).json({ error: "No question found for evaluation" });
+        return res
+          .status(400)
+          .json({ error: "No question found for evaluation" });
       }
 
       let evaluation;
@@ -2761,16 +3899,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         evaluation = {
           score,
-          feedback: isCorrect 
+          feedback: isCorrect
             ? `Correct! ${currentQuestionData.explanation}`
             : `Incorrect. The correct answer is ${currentQuestionData.correctOption}: ${currentQuestionData.correctAnswer}. ${currentQuestionData.explanation}`,
           isCorrect,
-          encouragement: isCorrect 
+          encouragement: isCorrect
             ? "Excellent work! You got it right!"
             : "Keep practicing! You'll get the next one!",
         };
 
-        console.log(`[MCQ] Answer: ${answer}, Correct: ${currentQuestionData.correctOption}, Score: ${score}/10`);
+        console.log(
+          `[MCQ] Answer: ${answer}, Correct: ${currentQuestionData.correctOption}, Score: ${score}/10`,
+        );
       } else {
         // For open-ended questions, use AI evaluation
         evaluation = await evaluateAnswer({
@@ -2789,7 +3929,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       currentQuestionData.isCorrect = evaluation.isCorrect;
 
       const newTotalScore = session.totalScore + evaluation.score;
-      const newCorrectAnswers = session.correctAnswers + (evaluation.isCorrect ? 1 : 0);
+      const newCorrectAnswers =
+        session.correctAnswers + (evaluation.isCorrect ? 1 : 0);
       const newCurrentQuestion = session.currentQuestion + 1;
 
       await storage.updateTestSession(sessionId, {
@@ -2844,14 +3985,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Validate input
       if (!images || !Array.isArray(images) || images.length === 0) {
-        return res.status(400).json({ error: "At least one image is required" });
+        return res
+          .status(400)
+          .json({ error: "At least one image is required" });
       }
 
       if (images.length > 20) {
         return res.status(400).json({ error: "Maximum 20 images allowed" });
       }
 
-      console.log(`[ANSWER SHEET EVAL] Processing ${images.length} images for ${studentName || 'Anonymous'}`);
+      console.log(
+        `[ANSWER SHEET EVAL] Processing ${images.length} images for ${studentName || "Anonymous"}`,
+      );
 
       // Import the evaluation function
       const { evaluateAnswerSheet } = await import("./answerSheetEvaluator");
@@ -2875,16 +4020,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         gptModel: gptModel || "gpt-4o",
       });
 
-      console.log(`[ANSWER SHEET EVAL] ✓ Evaluation completed. ID: ${evaluationRecord.id}`);
+      console.log(
+        `[ANSWER SHEET EVAL] ✓ Evaluation completed. ID: ${evaluationRecord.id}`,
+      );
 
       res.json({
         id: evaluationRecord.id,
         ...evaluationResult,
       });
-
     } catch (error: any) {
       console.error("[ANSWER SHEET EVAL ERROR]", error.message);
-      res.status(500).json({ error: error.message || "Failed to evaluate answer sheet" });
+      res
+        .status(500)
+        .json({ error: error.message || "Failed to evaluate answer sheet" });
     }
   });
 

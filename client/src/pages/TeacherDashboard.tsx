@@ -253,25 +253,6 @@ export default function TeacherDashboard() {
         yPosition += lines.length * (fontSize * 0.35) + 2;
         return lines.length;
       };
-
-      // // Header with test title
-      // pdf.setFillColor(51, 65, 85);
-      // pdf.rect(0, 0, pageWidth, 30, 'F');
-      // pdf.setTextColor(255, 255, 255);
-      // // pdf.setFontSize(18);
-      // // pdf.setFont(undefined, 'bold');
-      // // pdf.text(data.test.title, margins.left, 12);
-      // pdf.setFontSize(20);
-      // pdf.setFont(undefined, 'bold');
-      // pdf.text(data.test.title, pageWidth / 2, 15, { align: "center" });
-
-      // // Reset text color
-      // pdf.setTextColor(0, 0, 0);
-      // yPosition = 40;
-
-      // ======= PROFESSIONAL HEADER =======
-
-      // Dark header background
      // ===== HEADER BACKGROUND =====
       // ======= HEADER SECTION =======
       pdf.setFillColor(30, 41, 59); // dark navy background

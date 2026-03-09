@@ -43,6 +43,8 @@ export const testSessions = pgTable("test_sessions", {
   correctAnswers: integer("correct_answers").notNull().default(0),
   conversationHistory: text("conversation_history").notNull().default("[]"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+
+   mcqTestId: integer("mcq_test_id"),
 });
 
 export const insertTestSessionSchema = createInsertSchema(testSessions).omit({
@@ -82,6 +84,7 @@ export const customTests = pgTable("custom_tests", {
   difficulty: text("difficulty").notNull(), // easy, medium, hard
   syllabus: text("syllabus").notNull(), // CBSE topic/chapter
   numQuestions: integer("num_questions").notNull(),
+  language: text("language").default("english"),
   testType: text("test_type").notNull().default("mcq"), // mcq, open-ended, mixed
   gptModel: text("gpt_model").notNull().default("gpt-4o-mini"), // GPT model selection
   shareCode: text("share_code").notNull().unique(), // For students to access
@@ -136,6 +139,26 @@ export const answerSheetEvaluations = pgTable("answer_sheet_evaluations", {
 export const insertAnswerSheetEvaluationSchema = createInsertSchema(answerSheetEvaluations).omit({
   id: true,
   createdAt: true,
+});
+
+export const mcqTests = pgTable("mcq_tests", {
+  id: serial("id").primaryKey(),
+  classLevel: integer("class_level"),
+  subject: text("subject"),
+  totalQuestions: integer("total_questions"),
+  generatedBy: text("generated_by"),
+  difficulty: text("difficulty"),
+  medium: varchar("medium", { length: 20 }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const mcqs = pgTable("mcqs", {
+  id: serial("id").primaryKey(),
+  question: text("question").notNull(),
+  options: json("options").notNull(),
+  correctAnswer: text("correct_answer").notNull(),
+  testId: integer("test_id"),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export type InsertAnswerSheetEvaluation = z.infer<typeof insertAnswerSheetEvaluationSchema>;

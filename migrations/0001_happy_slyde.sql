@@ -1,0 +1,1 @@
+ALTER TABLE "test_sessions" ADD COLUMN "mcq_test_id" integer;
