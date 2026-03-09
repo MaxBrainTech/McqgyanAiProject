@@ -729,18 +729,41 @@ VALIDATION CHECKLIST before responding:
 
   const guidelines = CBSE_CLASS_GUIDELINES[classLevel as keyof typeof CBSE_CLASS_GUIDELINES];
 
-  const prompt = `You are a strict CBSE ${language} teacher for Class ${classLevel} following the official CBSE curriculum.
-Generate a ${difficulty} level ${language} MCQ question.
+//   const prompt = `You are a strict CBSE ${language} teacher for Class ${classLevel} following the official CBSE curriculum.
+// Generate a ${difficulty} level ${language} MCQ question.
 
-The question, options, explanation and answer must be in ${language} language.
+// The question, options, explanation and answer must be in ${language} language.
 
-Return in JSON format.
-Return in JSON format.
-  Language Selected: ${language}
-  IMPORTANT LANGUAGE RULE:
-  - If language is Hindi, generate question, options, correct answer and explanation ONLY in Hindi.
-  - Do NOT use English words when language is Hindi.
-  - If language is English, generate everything strictly in English.
+// Return in JSON format.
+// Return in JSON format.
+//   Language Selected: ${language}
+//   IMPORTANT LANGUAGE RULE:
+//   - If language is Hindi, generate question, options, correct answer and explanation ONLY in Hindi.
+//   - Do NOT use English words when language is Hindi.
+//   - If language is English, generate everything strictly in English.
+
+  const prompt = `
+  Generate a ${difficulty} level ${isMcq ? "MCQ" : "question"} for Class ${classLevel}.
+
+  Topic: ${chapterTitle}
+
+  Language: ${language}
+
+  RULES:
+  - If language is English → question, options and explanation must be in English.
+  - If language is Hindi → question, options and explanation must be in Hindi.
+  - Do NOT mix languages.
+
+  Return JSON format:
+  {
+    "question": "",
+    "options": ["", "", "", ""],
+    "correctOption": "A",
+    "correctAnswer": "",
+    "explanation": ""
+  }
+  IMPORTANT:
+  Strictly generate the question in ${language}. Do not switch languages.
 
   Chapter: ${chapterTitle}
   Difficulty: ${difficulty}
@@ -1254,23 +1277,24 @@ export async function generateScienceQuestion(params: {
       ? "Generate the question strictly in Hindi."
       : "Generate the question strictly in English.";
 
-  const prompt = `
-  Generate a ${difficulty} science question for class ${classLevel}.
-
-  Language: ${lang}
-
+ const prompt = `
+  Generate a ${difficulty} MCQ for Class ${classLevel}.
+  
+  Subject: ${scienceCategory || "Science"}
+  Language: ${language}
+  Respond ONLY in ${language}. If the language is Hindi, do not use English words.
+  
   IMPORTANT:
-  If language is English then the question, options, and answer MUST be strictly in English.
-  Do NOT use Hindi.
-
-  Science Category: ${scienceCategory}
+  If language is Hindi → return everything in Hindi.
+  If language is English → return everything in English.
   
   Return JSON format:
   {
-    question:"",
-    options:[],
-    correctOption:"",
-    explanation:""
+   "question": "",
+   "options": ["", "", "", ""],
+   "correctOption": "A",
+   "correctAnswer": "",
+   "explanation": ""
   }
       {
 

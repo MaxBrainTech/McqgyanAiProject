@@ -226,7 +226,15 @@ export default function TeacherDashboard() {
   async function downloadQuestionPaper(testId: string) {
     try {
       // Fetch test details if not already loaded
+      // const response = await fetch(`/api/teacher/${teacherData.id}/tests/${testId}`);
+      // const data = await response.json();
+
       const response = await fetch(`/api/teacher/${teacherData.id}/tests/${testId}`);
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch test data");
+      }
+
       const data = await response.json();
 
       // Create PDF with jsPDF for professional formatting

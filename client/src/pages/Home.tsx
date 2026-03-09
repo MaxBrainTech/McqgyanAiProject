@@ -279,11 +279,11 @@ useLayoutEffect(() => {
 
 
   // Helper function to scroll to top smoothly
-  const ScrollRestoration = () => {
-    setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 50);
-  };
+  // const ScrollRestoration = () => {
+  //   setTimeout(() => {
+  //     window.scrollTo({ top: 0, behavior: 'smooth' });
+  //   }, 50);
+  // };
 
   const handleModeSelect = (mode: string) => {
     setSelectedMode(mode);
@@ -292,7 +292,7 @@ useLayoutEffect(() => {
     } else {
       setStep("subject");
     }
-    ScrollRestoration();  
+    // ScrollRestoration();  
   };
 
   const handleMediumSelect = (medium: "english" | "hindi") => {
@@ -503,11 +503,22 @@ useLayoutEffect(() => {
               </div>
 
               <div className="space-y-3 sm:space-y-4">
-                <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold leading-tight">
-                  Master Languages & Ace Science
+                {/* <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold leading-tight">
+                  Smart AI-Based Practice & Evaluation Tool for Students
+                </h1> */}
+                <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight tracking-tight">
+                  <span className="block text-white">Smart</span>
+
+                  <span className="block bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent">
+                    AI-Based Practice & Evaluation
+                  </span>
+
+                  <span className="block text-purple-200">
+                    Tool for Students
+                  </span>
                 </h1>
                 <p className="text-lg sm:text-xl text-white/90 max-w-xl">
-                  Free AI-powered mock tests for CBSE students. Learn 6 languages, master 4 science subjects, and achieve your academic goals.
+                  Free AI-powered mock tests for Rajasthan State Board/CBSE students. Learn 6 languages, master 4 science subjects, and achieve your academic goals.
                 </p>
               </div>
 

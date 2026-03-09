@@ -2024,7 +2024,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         numQuestions,
         language,
         testType: testType || "mcq",
-        gptModel: gptModel || "gpt-4o",
+        gptModel: gptModel || "gpt-4o-mini",
         instructions: instructions || undefined,
         status: "draft",
       });
@@ -2048,7 +2048,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const totalQuestions = Number(numQuestions) || 10;
 
       // Generate exact number of questions using queue-based round-robin retry with deduplication
-      const maxAttemptsPerTopic = 5; // Increased for dedup retries
+      // const maxAttemptsPerTopic = 5; // Increased for dedup retries
+      const maxAttemptsPerTopic = 2;
       const maxTotalAttempts =
         totalQuestions * topics.length * maxAttemptsPerTopic;
       const perTopicFailures = new Map<string, number>(); // Track failures per topic
@@ -2066,21 +2067,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const studentId = req.body.studentId || "student-1";
 
       // 🔥 Insert test ONLY ONCE
-      const testInsert = await pool.query(
-        `INSERT INTO mcq_tests 
-          (class_level, subject, difficulty, total_questions, generated_by, medium)
-          VALUES ($1, $2, $3, $4, $5, $6)
-          RETURNING id`,
-        [
-          classLevel,
-          subject,
-          difficulty,
-          numQuestions,
-          studentId,
-          selectedMedium,
-        ],
-      );
-      const mcqTestId = testInsert.rows[0].id;
+      // const testInsert = await pool.query(
+      //   `INSERT INTO mcq_tests 
+      //     (class_level, subject, difficulty, total_questions, generated_by, medium)
+      //     VALUES ($1, $2, $3, $4, $5, $6)
+      //     RETURNING id`,
+      //   [
+      //     classLevel,
+      //     subject,
+      //     difficulty,
+      //     numQuestions,
+      //     studentId,
+      //     selectedMedium,
+      //   ],
+      // );
+      // const mcqTestId = testInsert.rows[0].id;
 
       while (
         generatedCount < totalQuestions &&
@@ -2162,18 +2163,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const questionData = await generateQuestion({
             mode: isScience ? "science" : "language",
             // language: req.body.language ?? "english",
-            language: req.body.language || "english",
+            // language: req.body.language || "english",
+            language: req.body.language || req.body.selectedMedium || "english",
             scienceCategory: isScience ? subject.toLowerCase() : undefined,
             classLevel,
             difficulty,
-            language: selectedMedium,
             chapter: 1,
             // chapterTitle: currentTopic,
             chapterTitle: currentTopic ?? "General",
             questionNumber: currentQuestionNumber,
             previousQuestions: previousQuestionsList.slice(-5),
             isMcq: testType === "mcq",
-            gptModel: gptModel || "gpt-4o",
+            gptModel: gptModel || "gpt-4o-mini",
           });
 
           if (!questionData) {
@@ -2251,27 +2252,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (!questionData?.question) {
               throw new Error("Invalid question generated");
             }
-            for (let i = 0; i < questionEmbeddings.length; i++) {
-              const similarity = cosineSimilarity(
-                embedding,
-                questionEmbeddings[i],
-              );
-              if (similarity > SIMILARITY_THRESHOLD) {
-                console.warn(`[CUSTOM TEST] ⚠️  SEMANTIC DUPLICATE DETECTED:`);
-                console.warn(
-                  `  → New question: "${questionData.question.substring(0, 80)}..."`,
-                );
-                console.warn(
-                  `  → Similar to Q${i + 1}: "${previousQuestionsList[i].substring(0, 80)}..."`,
-                );
-                console.warn(
-                  `  → Similarity score: ${similarity.toFixed(3)} (threshold: ${SIMILARITY_THRESHOLD}). Retrying...`,
-                );
-                throw new Error(
-                  `Semantic duplicate detected (similarity: ${similarity.toFixed(3)})`,
-                );
-              }
-            }
+            // for (let i = 0; i < questionEmbeddings.length; i++) {
+            //   const similarity = cosineSimilarity(
+            //     embedding,
+            //     questionEmbeddings[i],
+            //   );
+            //   if (similarity > SIMILARITY_THRESHOLD) {
+            //     console.warn(`[CUSTOM TEST] ⚠️  SEMANTIC DUPLICATE DETECTED:`);
+            //     console.warn(
+            //       `  → New question: "${questionData.question.substring(0, 80)}..."`,
+            //     );
+            //     console.warn(
+            //       `  → Similar to Q${i + 1}: "${previousQuestionsList[i].substring(0, 80)}..."`,
+            //     );
+            //     console.warn(
+            //       `  → Similarity score: ${similarity.toFixed(3)} (threshold: ${SIMILARITY_THRESHOLD}). Retrying...`,
+            //     );
+            //     throw new Error(
+            //       `Semantic duplicate detected (similarity: ${similarity.toFixed(3)})`,
+            //     );
+            //   }
+            // }
 
             // Save question to database
             const question = await storage.createCustomQuestion({
@@ -2288,11 +2289,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
 
             // Track this question
-            questions.push(question);
+            // questions.push(question);
+            questions.push(questionData);
             generatedQuestionTexts.add(questionText);
             // questionEmbeddings.push(embedding);
             previousQuestionsList.push(questionData.question);
             generatedCount++;
+            
             questionGenerated = true;
             perTopicFailures.set(currentTopic, 0); // Reset failures on success
             topicQueue.push(currentTopic); // Push back to end of queue
@@ -3084,9 +3087,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // });
 
   // Get test details for teacher (with full questions and answers)
+  // app.get("/api/teacher/:teacherId/tests/:testId", async (req, res) => {
+  //   try {
+  //     const { teacherId, testId } = req.params;
+  //     const test = await storage.getCustomTest(testId);
+
+  //     if (!test || test.teacherId !== teacherId) {
+  //       return res.status(404).json({ error: "Test not found" });
+  //     }
+
+  //     const questions = await storage.getCustomQuestions(testId);
+
+  //     // Parse options for teacher view
+  //     const questionsWithParsedOptions = questions.map((q) => ({
+  //       ...q,
+  //       options: q.options ? JSON.parse(q.options) : null,
+  //     }));
+
+  //     res.json({ test, questions: questionsWithParsedOptions });
+  //   } catch (error) {
+  //     console.error("Error fetching test details:", error);
+  //     res.status(500).json({ error: "Failed to fetch test details" });
+  //   }
+  // });
+
   app.get("/api/teacher/:teacherId/tests/:testId", async (req, res) => {
     try {
       const { teacherId, testId } = req.params;
+
       const test = await storage.getCustomTest(testId);
 
       if (!test || test.teacherId !== teacherId) {
@@ -3095,16 +3123,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const questions = await storage.getCustomQuestions(testId);
 
-      // Parse options for teacher view
-      const questionsWithParsedOptions = questions.map((q) => ({
+      const parsedQuestions = questions.map((q) => ({
         ...q,
         options: q.options ? JSON.parse(q.options) : null,
       }));
 
-      res.json({ test, questions: questionsWithParsedOptions });
+      res.json({
+        test,
+        questions: parsedQuestions,
+      });
+
     } catch (error) {
-      console.error("Error fetching test details:", error);
-      res.status(500).json({ error: "Failed to fetch test details" });
+      console.error("Error fetching test:", error);
+      res.status(500).json({ error: "Failed to fetch test" });
+    }
+  });
+
+  app.get("/api/teacher/:teacherId/tests", async (req, res) => {
+    try {
+      const { teacherId } = req.params;
+
+      const tests = await storage.getCustomTestsByTeacher(teacherId);
+
+      res.json(tests);
+    } catch (error) {
+      console.error("Error fetching teacher tests:", error);
+      res.status(500).json({ error: "Failed to fetch tests" });
     }
   });
 
@@ -3550,22 +3594,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Start a new test session
   app.post("/api/test/start", async (req, res) => {
     try {
-      const {
-        mode,
-        language,
-        scienceCategory,
-        class: classLevel,
-        difficulty,
-        medium,
-        chapter,
-        testLength,
-        testType,
-      } = req.body;
-      console.log("CHAPTER:", chapter);
+      const { mode, language, scienceCategory, class: classLevel, difficulty, medium,chapter, testLength, testType } = req.body;
 
-      console.log(
-        `[TEST START] mode=${mode}, language=${language}, scienceCategory=${scienceCategory}, class=${classLevel}, difficulty=${difficulty}`,
-      );
+      console.log(`[TEST START] mode=${mode}, language=${language}, scienceCategory=${scienceCategory}, class=${classLevel}, difficulty=${difficulty}`);
 
       const session = await storage.createTestSession({
         mode,
@@ -3581,11 +3612,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         correctAnswers: 0,
         conversationHistory: "[]",
       });
-      console.log("SESSION DATA:", session);
 
-      console.log(
-        `[SESSION CREATED] mode=${session.mode}, language=${session.language}, scienceCategory=${session.scienceCategory}`,
-      );
+      console.log(`[SESSION CREATED] mode=${session.mode}, language=${session.language}, scienceCategory=${session.scienceCategory}`);
 
       res.json(session);
     } catch (error) {
@@ -3594,7 +3622,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/test/:sessionId/question", async (req, res) => {
+  // app.post("/api/test/start", async (req, res) => {
+  //   try {
+  //     const { mode, language, scienceCategory, class: classLevel, difficulty, medium, chapter, testLength, testType } = req.body;
+
+  //     // Yahan ensure karein ki language "hindi" ya "english" sahi se pick ho rahi hai
+  //     // Agar body mein medium hai toh usse le, varna language ko
+  //     const finalLanguage = language || medium || "hindi";
+
+  //     const session = await storage.createTestSession({
+  //       mode,
+  //       language: finalLanguage, // Fix: Use the computed language
+  //       scienceCategory: mode === "science" ? scienceCategory : null,
+  //       classLevel,
+  //       difficulty,
+  //       testType: testType || "mcq-only",
+  //       chapter,
+  //       testLength: testLength || 10,
+  //       currentQuestion: 0,
+  //       totalScore: 0,
+  //       correctAnswers: 0,
+  //       conversationHistory: "[]",
+  //     });
+
+  //     res.json(session);
+  //   } catch (error) {
+  //     res.status(500).json({ error: "Failed to start test" });
+  //   }
+  // });
+   app.post("/api/test/:sessionId/question", async (req, res) => {
     try {
       const { sessionId } = req.params;
       const session = await storage.getTestSession(sessionId);
@@ -3616,80 +3672,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const history = JSON.parse(session.conversationHistory || "[]");
-      const previousQuestions = history
-        .map((h: any) => h.question)
-        .filter(Boolean);
+      const previousQuestions = history.map((h: any) => h.question).filter(Boolean);
 
       const isMcq =
-        session.testType === "mcq-only" ? true : history.length % 2 === 0;
+        session.testType === "mcq-only"
+          ? true
+          : history.length % 2 === 0;
 
       const questionData = await generateQuestion({
         mode: session.mode,
-        // language: session.language || "english",
-        language: req.body.language || "english",
+        language: session.language || undefined,
         scienceCategory: session.scienceCategory || undefined,
         classLevel: session.classLevel,
         difficulty: session.difficulty,
         chapter: session.chapter,
         // chapterTitle: chapter.title,
-        // chapterTitle:
-        // session.language === "hindi"
-        //   ? chapter.title.hindi
-        //   : chapter.title.english,
         chapterTitle:
-        typeof chapter?.title === "object"
-          ? chapter.title.english
-          : chapter?.title || "General",
+        session.language === "hindi"
+          ? chapter.title.hindi
+          : chapter.title.english,
         questionNumber: session.currentQuestion + 1,
         previousQuestions,
-        language: selectedMedium,
         isMcq,
       });
+      // const questionData = await generateQuestion({
+      //   mode: session.mode,
+      //   // Fix: null ko undefined mein convert karein ya default "hindi" dein
+      //   language: session.language ?? "hindi", 
+
+      //   scienceCategory: session.scienceCategory ?? undefined,
+      //   classLevel: session.classLevel,
+      //   difficulty: session.difficulty,
+      //   chapter: session.chapter,
+
+      //   chapterTitle: session.language === "hindi" 
+      //     ? (chapter.title.hindi || chapter.title.english) 
+      //     : (chapter.title.english || chapter.title.hindi),
+
+      //   questionNumber: session.currentQuestion + 1,
+      //   previousQuestions,
+      //   isMcq,
+      // });
 
       // 🔥 Get mcq_test_id from session
       const result = await pool.query(
-        "SELECT * FROM mcqs ORDER BY RANDOM() LIMIT 1"
+        `SELECT mcq_test_id FROM test_sessions WHERE id = $1`,
+        [sessionId]
       );
 
-      if (!result.rows.length) {
-        return res.status(404).json({ error: "No questions found for this test" });
-      }
+      const mcqTestId = result.rows[0]?.mcq_test_id;
 
-      const mcqTestId = result.rows[0].test_id;
+     if (!questionData) {
+        console.warn("Question generation returned null");
 
-      // if (!questionData) {
-      //   console.warn("Question generation returned null");
-
-      //   return res.status(500).json({
-      //     error: "AI could not generate a valid question. Please retry.",
-      //   });
-      // }
-
-      if (!questionData) {
-        console.warn("AI failed. Using predefined MCQ fallback");
-
-        const fallback = await pool.query(
-          "SELECT * FROM mcqs ORDER BY RANDOM() LIMIT 1"
-        );
-
-        if (!fallback.rows.length) {
-          return res.status(500).json({
-            error: "No fallback questions available",
-          });
-        }
-
-        const q = fallback.rows[0];
-
-        return res.json({
-          question: q.question,
-          questionType: "mcq",
-          options: q.options,
-          questionNumber: session.currentQuestion + 1,
-          totalQuestions: session.testLength,
+        return res.status(500).json({
+          error: "AI could not generate a valid question. Please retry."
         });
       }
 
       const q = questionData;
+
 
       // 🔥 Save MCQ (only if test linked)
       if (questionData.questionType === "mcq" && mcqTestId) {
@@ -3697,7 +3739,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           questionData.question,
           questionData.options || [],
           questionData.correctAnswer,
-          mcqTestId,
+          mcqTestId
         );
       }
 
@@ -3999,15 +4041,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       // Import the evaluation function
-      const { evaluateAnswerSheet } = await import("./answerSheetEvaluator");
+      // const { evaluateAnswerSheet } = await import("./answerSheetEvaluator");
+      // Import the evaluation function
+      const module = await import("./answerSheetEvaluator");
+      const evaluateAnswerSheet = module.evaluateAnswerSheet;
 
-      // Evaluate all images
+      if (typeof evaluateAnswerSheet !== 'function') {
+          throw new Error("evaluateAnswerSheet is not exported correctly from the module");
+      }
+
       const evaluationResult = await evaluateAnswerSheet({
-        images,
-        studentName: studentName || "Anonymous",
-        classLevel,
-        subject,
-        gptModel: gptModel || "gpt-4o",
+          images,
+          studentName: studentName || "Anonymous",
+          classLevel,
+          subject,
+          gptModel: gptModel || "gpt-4o",
       });
 
       // Save evaluation to database (optional, for history tracking)
