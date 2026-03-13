@@ -1737,67 +1737,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // app.post("/api/teacher/register", async (req, res) => {
-  //   try {
-  //     const { fullName, username, password, email, school } = req.body;
-
-  //     // Validate required fields
-  //     if (!username || !password || !fullName || !email) {
-  //       return res.status(400).json({ error: "All fields except school are required" });
-  //     }
-
-  //     // Check if username or email already exists
-  //     const existingUsername = await storage.getTeacherByUsername(username);
-  //     if (existingUsername) {
-  //       return res.status(400).json({ error: "Username already exists" });
-  //     }
-
-  //     const existingEmail = await storage.getTeacherByEmail(email);
-  //     if (existingEmail) {
-  //       return res.status(400).json({ error: "Email already exists" });
-  //     }
-
-  //     // For security, you'd normally hash the password here
-  //     // For simplicity, we'll store it as-is (NOT recommended for production)
-  //     // const teacher = await storage.createTeacher({
-  //     //   username,
-  //     //   password,
-  //     //   fullName,
-  //     //   email,
-  //     //   school: school || undefined,
-  //     // });
-
-  //     const hashedPassword = await bcrypt.hash(password, 10);
-
-  //     const teacher = await storage.createTeacher({
-  //       username,
-  //       password: hashedPassword,
-  //       fullName,
-  //       email,
-  //       school: school || undefined,
-  //     });
-
-  //     // Don't send password back
-  //     const { password: _, ...teacherData } = teacher;
-  //     res.json(teacherData);
-  //   } catch (error) {
-  //     console.error("Error registering teacher:", error);
-  //     res.status(500).json({ error: "Failed to register teacher" });
-  //   }
-  // });
-
-  // Teacher Login
-
   app.post("/api/teacher/login", async (req, res) => {
     const { username, password } = req.body;
 
     const result = await pool.query(
-      "SELECT * FROM teachers WHERE username = $1",
-      [username],
+      "SELECT * FROM teachers WHERE username=$1",
+      [username]
     );
 
     if (result.rows.length === 0) {
-      return res.status(401).json({ error: "Invalid username or password" });
+      return res.status(401).json({ error: "Teacher not found" });
     }
 
     const teacher = result.rows[0];
@@ -1805,14 +1754,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const isMatch = await bcrypt.compare(password, teacher.password);
 
     if (!isMatch) {
-      return res.status(401).json({ error: "Invalid username or password" });
+      return res.status(401).json({ error: "Invalid password" });
     }
 
-    const { password: _, ...teacherData } = teacher;
-    res.json(teacherData);
-
-    // res.json(teacher);
+    res.json({
+      id: teacher.id,
+      username: teacher.username,
+      email: teacher.email
+    });
   });
+
+  // app.post("/api/teacher/register", async (req, res) => {
+  //   try {
+  //     const { fullName, username, password, email, school } = req.body;
+
+  //     const hashedPassword = await bcrypt.hash(password, 10);
+
+  //     const result = await pool.query(
+  //       `INSERT INTO teachers (fullname, username, password, email, school)
+  //        VALUES ($1,$2,$3,$4,$5)
+  //        RETURNING id, fullname, username, email`,
+  //       [fullName, username, hashedPassword, email, school]
+  //     );
+
+  //     res.json(result.rows[0]);
+  //   } catch (error) {
+  //     console.error(error);
+  //     res.status(500).json({ error: "Failed to register teacher" });
+  //   }
+  // });
+
+  // Teacher Login
+
+  // app.post("/api/teacher/login", async (req, res) => {
+  //   const { username, password } = req.body;
+
+  //   const result = await pool.query(
+  //     "SELECT * FROM teachers WHERE username = $1",
+  //     [username],
+  //   );
+
+  //   if (result.rows.length === 0) {
+  //     return res.status(401).json({ error: "Invalid username or password" });
+  //   }
+
+  //   const teacher = result.rows[0];
+
+  //   const isMatch = await bcrypt.compare(password, teacher.password);
+
+  //   if (!isMatch) {
+  //     return res.status(401).json({ error: "Invalid username or password" });
+  //   }
+
+  //   const { password: _, ...teacherData } = teacher;
+  //   res.json(teacherData);
+
+  //   // res.json(teacher);
+  // });
 
   // app.post("/api/teacher/login", async (req, res) => {
   //   try {
@@ -1861,120 +1859,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //   });
 
   //   // Create and generate custom MCQ test
-  // app.post("/api/teacher/:teacherId/generate-test", async (req, res) => {
-  //   try {
-  //     const { teacherId } = req.params;
-  //     const {
-  //       title,
-  //       subject,
-  //       classLevel,
-  //       difficulty,
-  //       syllabus,
-  //       numQuestions,
-  //       testType,
-  //       gptModel,
-  //       instructions,
-  //     } = req.body;
-
-  //     // Parse topics
-  //     const topics = syllabus
-  //       .split(",")
-  //       .map((topic: string) => topic.trim())
-  //       .filter((topic: string) => topic.length > 0)
-  //       .slice(0, 4);
-
-  //     if (topics.length === 0) {
-  //       return res.status(400).json({ error: "At least one topic is required" });
-  //     }
-
-  //     console.log(
-  //       `[CUSTOM TEST] Generating ${numQuestions} questions for ${subject}`
-  //     );
-
-  //     // 1️⃣ Create custom test (your existing system)
-  //     const test = await storage.createCustomTest({
-  //       teacherId,
-  //       title,
-  //       subject,
-  //       classLevel,
-  //       difficulty,
-  //       syllabus,
-  //       numQuestions,
-  //       testType: testType || "mcq",
-  //       gptModel: gptModel || "gpt-4o",
-  //       instructions: instructions || undefined,
-  //       status: "draft",
-  //     });
-
-  //     // 2️⃣ 🔥 Insert mcq_tests ONLY ONCE (OUTSIDE LOOP)
-  //     const testInsert = await pool.query(
-  //       `INSERT INTO mcq_tests (class_level, subject, total_questions, generated_by)
-  //        VALUES ($1, $2, $3, $4)
-  //        RETURNING id`,
-  //       [classLevel, subject, numQuestions, teacherId]
-  //     );
-
-  //     const mcqTestId = testInsert.rows[0].id;
-
-  //     const questions = [];
-  //     let generatedCount = 0;
-
-  //     // 3️⃣ Generate Questions
-  //     while (generatedCount < numQuestions) {
-  //       const currentTopic = topics[generatedCount % topics.length];
-
-  //       const questionData = await generateQuestion({
-  //         mode: "science",
-  //         scienceCategory: subject.toLowerCase(),
-  //         classLevel,
-  //         difficulty,
-  //         chapter: 1,
-  //         chapterTitle: currentTopic,
-  //         questionNumber: generatedCount + 1,
-  //         previousQuestions: [],
-  //         isMcq: testType === "mcq",
-  //         gptModel: gptModel || "gpt-4o",
-  //       });
-
-  //       // 4️⃣ 🔥 Save to mcqs table (same test_id)
-  //       if (questionData.questionType === "mcq") {
-  //         await saveMCQ(
-  //           questionData.question,
-  //           questionData.options || [],
-  //           questionData.correctAnswer,
-  //           mcqTestId
-  //         );
-  //       }
-
-  //       // 5️⃣ Save in your existing custom_questions table
-  //       const question = await storage.createCustomQuestion({
-  //         testId: test.id,
-  //         questionNumber: generatedCount + 1,
-  //         question: questionData.question,
-  //         questionType: questionData.questionType,
-  //         options: questionData.options
-  //           ? JSON.stringify(questionData.options)
-  //           : null,
-  //         correctOption: questionData.correctOption || null,
-  //         correctAnswer: questionData.correctAnswer,
-  //         explanation: questionData.explanation || "",
-  //       });
-
-  //       questions.push(question);
-  //       generatedCount++;
-  //     }
-
-  //     // 6️⃣ Publish test
-  //     await storage.updateCustomTest(test.id, { status: "published" });
-
-  //     res.json({ test, questionsGenerated: questions.length });
-  //   } catch (error) {
-  //     console.error("Error generating test:", error);
-  //     res.status(500).json({ error: "Failed to generate test" });
-  //   }
-  // });
-
-  // Create and generate custom MCQ test
   app.post("/api/teacher/:teacherId/generate-test", async (req, res) => {
     try {
       const { teacherId } = req.params;
@@ -1985,386 +1869,516 @@ export async function registerRoutes(app: Express): Promise<Server> {
         difficulty,
         syllabus,
         numQuestions,
-        language,
-        medium,
         testType,
         gptModel,
         instructions,
-        currentTopic,
       } = req.body;
 
-      // Parse multiple topics from comma-separated syllabus input
       const topics = syllabus
         .split(",")
         .map((topic: string) => topic.trim())
         .filter((topic: string) => topic.length > 0)
-        .slice(0, 4); // Limit to maximum 4 topics
+        .slice(0, 4);
 
       if (topics.length === 0) {
-        return res
-          .status(400)
-          .json({ error: "At least one topic is required" });
+        return res.status(400).json({ error: "At least one topic is required" });
       }
 
-      console.log(
-        `[CUSTOM TEST] Generating ${numQuestions} ${difficulty} questions for ${subject} - Topics: ${topics.join(", ")} using ${gptModel || "gpt-4o-mini"}`,
-      );
-      console.log(
-        `[CUSTOM TEST] Distribution: ${topics.length} topic(s), ~${Math.ceil(numQuestions / topics.length)} questions per topic`,
-      );
+      console.log(`[CUSTOM TEST] Generating ${numQuestions} questions`);
 
-      // Create custom test
+      // Generate share code
+      const shareCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+      // Create test
       const test = await storage.createCustomTest({
         teacherId,
         title,
         subject,
         classLevel,
         difficulty,
-        syllabus, // Store original comma-separated input
+        syllabus,
         numQuestions,
-        language,
         testType: testType || "mcq",
-        gptModel: gptModel || "gpt-4o-mini",
+        gptModel: gptModel || "gpt-4o",
         instructions: instructions || undefined,
         status: "draft",
+        shareCode,
       });
 
-      console.log(
-        `[CUSTOM TEST] Created test ${test.id} with share code: ${test.shareCode}`,
+      // Ensure shareCode present in response
+      test.shareCode = shareCode;
+
+      // Insert mcq_tests
+      const testInsert = await pool.query(
+        `INSERT INTO mcq_tests (class_level, subject, total_questions, generated_by)
+         VALUES ($1, $2, $3, $4)
+         RETURNING id`,
+        [classLevel, subject, numQuestions, teacherId]
       );
 
-      // Generate questions using AI
+      const mcqTestId = testInsert.rows[0].id;
+
       const questions = [];
-      const generatedQuestionTexts = new Set<string>(); // Track exact question texts for deduplication
-      const questionEmbeddings: number[][] = []; // Track embeddings for semantic similarity
-      const previousQuestionsList: string[] = []; // Track last 5 questions for AI context
-      const SIMILARITY_THRESHOLD = 0.9; // Cosine similarity threshold for duplicate detection
-
-      // Determine if this is a science subject or language subject
-      const scienceSubjects = ["physics", "chemistry", "biology", "general"];
-      const isScience = scienceSubjects.includes(subject.toLowerCase());
-
-      // const totalQuestions = Number(numQuestions);
-      const totalQuestions = Number(numQuestions) || 10;
-
-      // Generate exact number of questions using queue-based round-robin retry with deduplication
-      // const maxAttemptsPerTopic = 5; // Increased for dedup retries
-      const maxAttemptsPerTopic = 2;
-      const maxTotalAttempts =
-        totalQuestions * topics.length * maxAttemptsPerTopic;
-      const perTopicFailures = new Map<string, number>(); // Track failures per topic
-      let topicQueue = [...topics]; // Clone topics into a queue
-      let totalAttempts = 0;
       let generatedCount = 0;
-      const { selectedMedium, selectedScienceCategory } = req.body;
 
-      // const maxTotalAttempts =
-      //   totalQuestions * topics.length * maxAttemptsPerTopic;
+      while (generatedCount < numQuestions) {
+        const currentTopic = topics[generatedCount % topics.length];
 
-      // Initialize failure counts
-      topics.forEach((topic: string) => perTopicFailures.set(topic, 0));
+        const questionData = await generateQuestion({
+          mode: "science",
+          scienceCategory: subject.toLowerCase(),
+          classLevel,
+          difficulty,
+          chapter: 1,
+          chapterTitle: currentTopic,
+          questionNumber: generatedCount + 1,
+          previousQuestions: [],
+          isMcq: true,
+          gptModel: gptModel || "gpt-4o",
+        });
 
-      const studentId = req.body.studentId || "student-1";
+        if (!questionData) continue;
 
-      // 🔥 Insert test ONLY ONCE
-      // const testInsert = await pool.query(
-      //   `INSERT INTO mcq_tests 
-      //     (class_level, subject, difficulty, total_questions, generated_by, medium)
-      //     VALUES ($1, $2, $3, $4, $5, $6)
-      //     RETURNING id`,
-      //   [
-      //     classLevel,
-      //     subject,
-      //     difficulty,
-      //     numQuestions,
-      //     studentId,
-      //     selectedMedium,
-      //   ],
-      // );
-      // const mcqTestId = testInsert.rows[0].id;
+        // Ensure options exist
+        let options = questionData.options;
 
-      while (
-        generatedCount < totalQuestions &&
-        totalAttempts < maxTotalAttempts
-      ) {
-        const currentQuestionNumber = generatedCount + 1;
+        if (!options || options.length !== 4) {
+          options = ["Option A", "Option B", "Option C", "Option D"];
+        }
 
-        // Pass last 5 questions to AI to avoid repetition
-        // const questionData = await generateQuestion({
-
-        //   mode: isScience ? "science" : "language",
-        //   language:  selectedMedium,
-        //   scienceCategory: isScience ? currentTopic : undefined,
-        //   classLevel,
-        //   medium,
-        //   difficulty,
-        //   chapter: 1,
-        //   chapterTitle: currentTopic,
-        //   questionNumber: currentQuestionNumber,
-        //   previousQuestions: previousQuestionsList.slice(-5), // Last 5 questions
-        //   isMcq: testType === "mcq",
-        //   gptModel: gptModel || "gpt-4o", // Default to GPT-4o for better quality
-        // });
-
-        //   const questionData = await generateQuestion({
-        //   mode: isScience ? "science" : "language",
-        //   language: selectedMedium,
-        //   scienceCategory: isScience ? subject.toLowerCase() : undefined,
-        //   classLevel,
-        //   medium,
-        //   difficulty,
-        //   chapter: 1,
-        //   chapterTitle: currentTopic,
-        //   questionNumber: currentQuestionNumber,
-        //   previousQuestions: previousQuestionsList.slice(-5),
-        //   isMcq: testType === "mcq",
-        //   gptModel: gptModel || "gpt-4o",
-        // });
-
-        // if (!questionData) {
-        //   console.warn("Question generation returned null, retrying...");
-        //   totalAttempts++;
-        //   continue;
-        // }
-
-        // questions.push(questionData);
-
-        //   // 🔥 Save MCQ to database (only if it's MCQ)
-        //   if (questionData.questionType === "mcq") {
-        //     await saveMCQ(
-        //       questionData.question,
-        //       questionData.options || [],
-        //       questionData.correctAnswer,
-        //       mcqTestId
-        //     );
-        //   }
-        //   generatedCount++;
-
-        // Check if we have any topics left to try
-        if (topicQueue.length === 0) {
-          console.error(
-            `[CUSTOM TEST] All topics exhausted. Generated ${generatedCount}/${numQuestions}`,
+        if (questionData.questionType === "mcq") {
+          await saveMCQ(
+            questionData.question,
+            options,
+            questionData.correctAnswer,
+            mcqTestId
           );
-          break;
         }
 
-        let questionGenerated = false;
-        let attemptsThisQuestion = 0;
+        const question = await storage.createCustomQuestion({
+          testId: test.id,
+          questionNumber: generatedCount + 1,
+          question: questionData.question,
+          questionType: "mcq",
+          options: JSON.stringify(options),
+          correctOption: questionData.correctOption || "A",
+          correctAnswer: questionData.correctAnswer,
+          explanation: questionData.explanation || "",
+        });
 
-        // Try topics from the queue until we succeed or exhaust queue for this question
-        while (
-          !questionGenerated &&
-          attemptsThisQuestion < topicQueue.length &&
-          topicQueue.length > 0
-        ) {
-          const currentTopic = topicQueue.shift()!; // Pop from front
-          const failures = perTopicFailures.get(currentTopic) || 0;
-
-          const questionData = await generateQuestion({
-            mode: isScience ? "science" : "language",
-            // language: req.body.language ?? "english",
-            // language: req.body.language || "english",
-            language: req.body.language || req.body.selectedMedium || "english",
-            scienceCategory: isScience ? subject.toLowerCase() : undefined,
-            classLevel,
-            difficulty,
-            chapter: 1,
-            // chapterTitle: currentTopic,
-            chapterTitle: currentTopic ?? "General",
-            questionNumber: currentQuestionNumber,
-            previousQuestions: previousQuestionsList.slice(-5),
-            isMcq: testType === "mcq",
-            gptModel: gptModel || "gpt-4o-mini",
-          });
-
-          if (!questionData) {
-            console.warn(
-              "[CUSTOM TEST] Question generation returned null, retrying...",
-            );
-            totalAttempts++;
-            continue;
-          }
-
-          // Skip permanently exhausted topics
-          if (failures >= maxAttemptsPerTopic) {
-            console.warn(
-              `[CUSTOM TEST] Topic "${currentTopic}" permanently exhausted (${failures} failures)`,
-            );
-            attemptsThisQuestion++;
-            continue;
-          }
-
-          try {
-            const { classLevel, subject, difficulty, numQuestions } = req.body;
-            const studentId = req.body.studentId || "student-1";
-            totalAttempts++;
-            attemptsThisQuestion++;
-            console.log(
-              `[CUSTOM TEST] Question ${currentQuestionNumber}/${numQuestions} - Topic "${currentTopic}" (failures: ${failures}/${maxAttemptsPerTopic}, previous questions: ${previousQuestionsList.length})`,
-            );
-
-            //  const testInsert = await pool.query(
-            //   `INSERT INTO mcq_tests
-            //   (class_level, subject, difficulty, total_questions, generated_by)
-            //   VALUES ($1, $2, $3, $4, $5)
-            //   RETURNING id`,
-            //   [classLevel, subject, difficulty, numQuestions, studentId]
-            // );
-            // const mcqTestId = testInsert.rows[0].id;
-
-            // // Pass last 5 questions to AI to avoid repetition
-            // const questionData = await generateQuestion({
-
-            //   mode: isScience ? "science" : "language",
-            //   language: isScience ? undefined : subject,
-            //   scienceCategory: isScience ? subject.toLowerCase() : undefined,
-            //   classLevel,
-            //   difficulty,
-            //   chapter: 1,
-            //   chapterTitle: currentTopic,
-            //   questionNumber: currentQuestionNumber,
-            //   previousQuestions: previousQuestionsList.slice(-5), // Last 5 questions
-            //   isMcq: testType === "mcq",
-            //   gptModel: gptModel || "gpt-4o", // Default to GPT-4o for better quality
-            // });
-
-            // // 🔥 Save MCQ to database (only if it's MCQ)
-            // if (questionData.questionType === "mcq") {
-            //   await saveMCQ(
-            //     questionData.question,
-            //     questionData.options || [],
-            //     questionData.correctAnswer,
-            //     mcqTestId
-            //   );
-            // }
-
-            // Check for exact duplicate
-            const questionText = questionData.question.trim().toLowerCase();
-            if (generatedQuestionTexts.has(questionText)) {
-              console.warn(
-                `[CUSTOM TEST] ⚠️  EXACT DUPLICATE DETECTED: Question text already exists. Retrying...`,
-              );
-              throw new Error("Exact duplicate question detected");
-            }
-
-            // Check for semantic similarity (paraphrased duplicates)
-            // const embedding = await getEmbedding(questionData.question);
-            if (!questionData?.question) {
-              throw new Error("Invalid question generated");
-            }
-            // for (let i = 0; i < questionEmbeddings.length; i++) {
-            //   const similarity = cosineSimilarity(
-            //     embedding,
-            //     questionEmbeddings[i],
-            //   );
-            //   if (similarity > SIMILARITY_THRESHOLD) {
-            //     console.warn(`[CUSTOM TEST] ⚠️  SEMANTIC DUPLICATE DETECTED:`);
-            //     console.warn(
-            //       `  → New question: "${questionData.question.substring(0, 80)}..."`,
-            //     );
-            //     console.warn(
-            //       `  → Similar to Q${i + 1}: "${previousQuestionsList[i].substring(0, 80)}..."`,
-            //     );
-            //     console.warn(
-            //       `  → Similarity score: ${similarity.toFixed(3)} (threshold: ${SIMILARITY_THRESHOLD}). Retrying...`,
-            //     );
-            //     throw new Error(
-            //       `Semantic duplicate detected (similarity: ${similarity.toFixed(3)})`,
-            //     );
-            //   }
-            // }
-
-            // Save question to database
-            const question = await storage.createCustomQuestion({
-              testId: test.id,
-              questionNumber: currentQuestionNumber,
-              question: questionData.question,
-              questionType: questionData.questionType,
-              options: questionData.options
-                ? JSON.stringify(questionData.options)
-                : null,
-              correctOption: questionData.correctOption || null,
-              correctAnswer: questionData.correctAnswer,
-              explanation: questionData.explanation || "",
-            });
-
-            // Track this question
-            // questions.push(question);
-            questions.push(questionData);
-            generatedQuestionTexts.add(questionText);
-            // questionEmbeddings.push(embedding);
-            previousQuestionsList.push(questionData.question);
-            generatedCount++;
-            
-            questionGenerated = true;
-            perTopicFailures.set(currentTopic, 0); // Reset failures on success
-            topicQueue.push(currentTopic); // Push back to end of queue
-            console.log(
-              `[CUSTOM TEST] ✓ Question ${currentQuestionNumber}/${numQuestions} generated from topic "${currentTopic}" (unique, semantic check passed)`,
-            );
-          } catch (error) {
-            const errorMessage =
-              error instanceof Error ? error.message : String(error);
-            console.error(
-              `[CUSTOM TEST] ✗ Failed question ${currentQuestionNumber} with topic "${currentTopic}":`,
-              errorMessage,
-            );
-
-            // Increment failure count
-            const newFailures = failures + 1;
-            perTopicFailures.set(currentTopic, newFailures);
-
-            // Only push back if still has retry budget
-            if (newFailures < maxAttemptsPerTopic) {
-              topicQueue.push(currentTopic);
-            } else {
-              console.warn(
-                `[CUSTOM TEST] Topic "${currentTopic}" removed from queue (reached ${maxAttemptsPerTopic} failures)`,
-              );
-            }
-          }
-        }
-
-        // if (!questionGenerated) {
-        //   console.error(
-        //     `[CUSTOM TEST] Could not generate question ${currentQuestionNumber} - all topics exhausted or failed`,
-        //   );
-        //   break;
-        // }
-        if (!questionGenerated) {
-          console.warn("Retrying question generation...");
-          continue;
-        }
+        questions.push(question);
+        generatedCount++;
       }
 
-      // If we didn't get the full count, return error
-      // if (generatedCount < numQuestions) {
-      //   console.error(`[CUSTOM TEST] ERROR: Only generated ${generatedCount}/${numQuestions} questions after ${totalAttempts} total attempts`);
-      //   return res.status(503).json({
-      //     error: `Could only generate ${generatedCount} out of ${numQuestions} questions after multiple attempts. Please try again with simpler topics or reduce the question count.`,
-      //     questionsGenerated: generatedCount,
-      //     requested: numQuestions
-      //   });
-      // }
-
-      console.log(
-        `[CUSTOM TEST] Generated ${questions.length}/${numQuestions} questions successfully across ${topics.length} topic(s)`,
-      );
-
-      // Update test status to published
       await storage.updateCustomTest(test.id, { status: "published" });
 
-      res.json({ test, questionsGenerated: questions.length });
-    } catch (error: any) {
-      console.error("🔥 FULL ERROR:", error);
-
-      res.status(500).json({
-        message: error?.message,
-        stack: error?.stack,
+      res.json({
+        test: {
+          ...test,
+          shareCode
+        },
+        questionsGenerated: questions.length,
       });
+
+    } catch (error) {
+      console.error("Error generating test:", error);
+      res.status(500).json({ error: "Failed to generate test" });
     }
   });
 
+  // Create and generate custom MCQ test
+  // app.post("/api/teacher/:teacherId/generate-test", async (req, res) => {
+  //   try {
+  //     const { teacherId } = req.params;
+  //     const {
+  //       title,
+  //       subject,
+  //       classLevel,
+  //       difficulty,
+  //       syllabus,
+  //       numQuestions,
+  //       language,
+  //       medium,
+  //       testType,
+  //       gptModel,
+  //       instructions,
+  //       currentTopic,
+  //     } = req.body;
+
+  //     // Parse multiple topics from comma-separated syllabus input
+  //     const topics = syllabus
+  //       .split(",")
+  //       .map((topic: string) => topic.trim())
+  //       .filter((topic: string) => topic.length > 0)
+  //       .slice(0, 4); // Limit to maximum 4 topics
+
+  //     if (topics.length === 0) {
+  //       return res
+  //         .status(400)
+  //         .json({ error: "At least one topic is required" });
+  //     }
+
+  //     console.log(
+  //       `[CUSTOM TEST] Generating ${numQuestions} ${difficulty} questions for ${subject} - Topics: ${topics.join(", ")} using ${gptModel || "gpt-4o-mini"}`,
+  //     );
+  //     console.log(
+  //       `[CUSTOM TEST] Distribution: ${topics.length} topic(s), ~${Math.ceil(numQuestions / topics.length)} questions per topic`,
+  //     );
+
+  //     const shareCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+  //     // Create custom test
+  //     const test = await storage.createCustomTest({
+  //       teacherId,
+  //       title,
+  //       subject,
+  //       classLevel,
+  //       difficulty,
+  //       syllabus, // Store original comma-separated input
+  //       numQuestions,
+  //       language,
+  //       testType: testType || "mcq",
+  //       gptModel: gptModel || "gpt-4o-mini",
+  //       instructions: instructions || undefined,
+  //       status: "draft",
+  //       shareCode ,
+  //     });
+
+  //     console.log(
+  //       `[CUSTOM TEST] Created test ${test.id} with share code: ${test.shareCode}`,
+  //     );
+
+  //     // Generate questions using AI
+  //     const questions = [];
+  //     const generatedQuestionTexts = new Set<string>(); // Track exact question texts for deduplication
+  //     const questionEmbeddings: number[][] = []; // Track embeddings for semantic similarity
+  //     const previousQuestionsList: string[] = []; // Track last 5 questions for AI context
+  //     const SIMILARITY_THRESHOLD = 0.9; // Cosine similarity threshold for duplicate detection
+
+  //     // Determine if this is a science subject or language subject
+  //     const scienceSubjects = ["physics", "chemistry", "biology", "general"];
+  //     const isScience = scienceSubjects.includes(subject.toLowerCase());
+
+  //     // const totalQuestions = Number(numQuestions);
+  //     const totalQuestions = Number(numQuestions) || 10;
+
+  //     // Generate exact number of questions using queue-based round-robin retry with deduplication
+  //     // const maxAttemptsPerTopic = 5; // Increased for dedup retries
+  //     const maxAttemptsPerTopic = 2;
+  //     const maxTotalAttempts =
+  //       totalQuestions * topics.length * maxAttemptsPerTopic;
+  //     const perTopicFailures = new Map<string, number>(); // Track failures per topic
+  //     let topicQueue = [...topics]; // Clone topics into a queue
+  //     let totalAttempts = 0;
+  //     let generatedCount = 0;
+  //     const { selectedMedium, selectedScienceCategory } = req.body;
+
+  //     // const maxTotalAttempts =
+  //     //   totalQuestions * topics.length * maxAttemptsPerTopic;
+
+  //     // Initialize failure counts
+  //     topics.forEach((topic: string) => perTopicFailures.set(topic, 0));
+
+  //     const studentId = req.body.studentId || "student-1";
+
+  //     // 🔥 Insert test ONLY ONCE
+  //     // const testInsert = await pool.query(
+  //     //   `INSERT INTO mcq_tests 
+  //     //     (class_level, subject, difficulty, total_questions, generated_by, medium)
+  //     //     VALUES ($1, $2, $3, $4, $5, $6)
+  //     //     RETURNING id`,
+  //     //   [
+  //     //     classLevel,
+  //     //     subject,
+  //     //     difficulty,
+  //     //     numQuestions,
+  //     //     studentId,
+  //     //     selectedMedium,
+  //     //   ],
+  //     // );
+  //     // const mcqTestId = testInsert.rows[0].id;
+
+  //     while (
+  //       generatedCount < totalQuestions &&
+  //       totalAttempts < maxTotalAttempts
+  //     ) {
+  //       const currentQuestionNumber = generatedCount + 1;
+
+  //       // Pass last 5 questions to AI to avoid repetition
+  //       // const questionData = await generateQuestion({
+
+  //       //   mode: isScience ? "science" : "language",
+  //       //   language:  selectedMedium,
+  //       //   scienceCategory: isScience ? currentTopic : undefined,
+  //       //   classLevel,
+  //       //   medium,
+  //       //   difficulty,
+  //       //   chapter: 1,
+  //       //   chapterTitle: currentTopic,
+  //       //   questionNumber: currentQuestionNumber,
+  //       //   previousQuestions: previousQuestionsList.slice(-5), // Last 5 questions
+  //       //   isMcq: testType === "mcq",
+  //       //   gptModel: gptModel || "gpt-4o", // Default to GPT-4o for better quality
+  //       // });
+
+  //       //   const questionData = await generateQuestion({
+  //       //   mode: isScience ? "science" : "language",
+  //       //   language: selectedMedium,
+  //       //   scienceCategory: isScience ? subject.toLowerCase() : undefined,
+  //       //   classLevel,
+  //       //   medium,
+  //       //   difficulty,
+  //       //   chapter: 1,
+  //       //   chapterTitle: currentTopic,
+  //       //   questionNumber: currentQuestionNumber,
+  //       //   previousQuestions: previousQuestionsList.slice(-5),
+  //       //   isMcq: testType === "mcq",
+  //       //   gptModel: gptModel || "gpt-4o",
+  //       // });
+
+  //       // if (!questionData) {
+  //       //   console.warn("Question generation returned null, retrying...");
+  //       //   totalAttempts++;
+  //       //   continue;
+  //       // }
+
+  //       // questions.push(questionData);
+
+  //       //   // 🔥 Save MCQ to database (only if it's MCQ)
+  //       //   if (questionData.questionType === "mcq") {
+  //       //     await saveMCQ(
+  //       //       questionData.question,
+  //       //       questionData.options || [],
+  //       //       questionData.correctAnswer,
+  //       //       mcqTestId
+  //       //     );
+  //       //   }
+  //       //   generatedCount++;
+
+  //       // Check if we have any topics left to try
+  //       if (topicQueue.length === 0) {
+  //         console.error(
+  //           `[CUSTOM TEST] All topics exhausted. Generated ${generatedCount}/${numQuestions}`,
+  //         );
+  //         break;
+  //       }
+
+  //       let questionGenerated = false;
+  //       let attemptsThisQuestion = 0;
+
+  //       // Try topics from the queue until we succeed or exhaust queue for this question
+  //       while (
+  //         !questionGenerated &&
+  //         attemptsThisQuestion < topicQueue.length &&
+  //         topicQueue.length > 0
+  //       ) {
+  //         const currentTopic = topicQueue.shift()!; // Pop from front
+  //         const failures = perTopicFailures.get(currentTopic) || 0;
+
+  //         const questionData = await generateQuestion({
+  //           mode: isScience ? "science" : "language",
+  //           // language: req.body.language ?? "english",
+  //           // language: req.body.language || "english",
+  //           language: req.body.language || req.body.selectedMedium || "english",
+  //           scienceCategory: isScience ? subject.toLowerCase() : undefined,
+  //           classLevel,
+  //           difficulty,
+  //           chapter: 1,
+  //           // chapterTitle: currentTopic,
+  //           chapterTitle: currentTopic ?? "General",
+  //           questionNumber: currentQuestionNumber,
+  //           previousQuestions: previousQuestionsList.slice(-5),
+  //           isMcq: testType === "mcq",
+  //           gptModel: gptModel || "gpt-4o-mini",
+  //         });
+
+  //         if (!questionData) {
+  //           console.warn(
+  //             "[CUSTOM TEST] Question generation returned null, retrying...",
+  //           );
+  //           totalAttempts++;
+  //           continue;
+  //         }
+
+  //         // Skip permanently exhausted topics
+  //         if (failures >= maxAttemptsPerTopic) {
+  //           console.warn(
+  //             `[CUSTOM TEST] Topic "${currentTopic}" permanently exhausted (${failures} failures)`,
+  //           );
+  //           attemptsThisQuestion++;
+  //           continue;
+  //         }
+
+  //         try {
+  //           const { classLevel, subject, difficulty, numQuestions } = req.body;
+  //           const studentId = req.body.studentId || "student-1";
+  //           totalAttempts++;
+  //           attemptsThisQuestion++;
+  //           console.log(
+  //             `[CUSTOM TEST] Question ${currentQuestionNumber}/${numQuestions} - Topic "${currentTopic}" (failures: ${failures}/${maxAttemptsPerTopic}, previous questions: ${previousQuestionsList.length})`,
+  //           );
+
+  //           //  const testInsert = await pool.query(
+  //           //   `INSERT INTO mcq_tests
+  //           //   (class_level, subject, difficulty, total_questions, generated_by)
+  //           //   VALUES ($1, $2, $3, $4, $5)
+  //           //   RETURNING id`,
+  //           //   [classLevel, subject, difficulty, numQuestions, studentId]
+  //           // );
+  //           // const mcqTestId = testInsert.rows[0].id;
+
+  //           // // Pass last 5 questions to AI to avoid repetition
+  //           // const questionData = await generateQuestion({
+
+  //           //   mode: isScience ? "science" : "language",
+  //           //   language: isScience ? undefined : subject,
+  //           //   scienceCategory: isScience ? subject.toLowerCase() : undefined,
+  //           //   classLevel,
+  //           //   difficulty,
+  //           //   chapter: 1,
+  //           //   chapterTitle: currentTopic,
+  //           //   questionNumber: currentQuestionNumber,
+  //           //   previousQuestions: previousQuestionsList.slice(-5), // Last 5 questions
+  //           //   isMcq: testType === "mcq",
+  //           //   gptModel: gptModel || "gpt-4o", // Default to GPT-4o for better quality
+  //           // });
+
+  //           // // 🔥 Save MCQ to database (only if it's MCQ)
+  //           // if (questionData.questionType === "mcq") {
+  //           //   await saveMCQ(
+  //           //     questionData.question,
+  //           //     questionData.options || [],
+  //           //     questionData.correctAnswer,
+  //           //     mcqTestId
+  //           //   );
+  //           // }
+
+  //           // Check for exact duplicate
+  //           const questionText = questionData.question.trim().toLowerCase();
+  //           if (generatedQuestionTexts.has(questionText)) {
+  //             console.warn(
+  //               `[CUSTOM TEST] ⚠️  EXACT DUPLICATE DETECTED: Question text already exists. Retrying...`,
+  //             );
+  //             throw new Error("Exact duplicate question detected");
+  //           }
+
+  //           // Check for semantic similarity (paraphrased duplicates)
+  //           // const embedding = await getEmbedding(questionData.question);
+  //           if (!questionData?.question) {
+  //             throw new Error("Invalid question generated");
+  //           }
+  //           // for (let i = 0; i < questionEmbeddings.length; i++) {
+  //           //   const similarity = cosineSimilarity(
+  //           //     embedding,
+  //           //     questionEmbeddings[i],
+  //           //   );
+  //           //   if (similarity > SIMILARITY_THRESHOLD) {
+  //           //     console.warn(`[CUSTOM TEST] ⚠️  SEMANTIC DUPLICATE DETECTED:`);
+  //           //     console.warn(
+  //           //       `  → New question: "${questionData.question.substring(0, 80)}..."`,
+  //           //     );
+  //           //     console.warn(
+  //           //       `  → Similar to Q${i + 1}: "${previousQuestionsList[i].substring(0, 80)}..."`,
+  //           //     );
+  //           //     console.warn(
+  //           //       `  → Similarity score: ${similarity.toFixed(3)} (threshold: ${SIMILARITY_THRESHOLD}). Retrying...`,
+  //           //     );
+  //           //     throw new Error(
+  //           //       `Semantic duplicate detected (similarity: ${similarity.toFixed(3)})`,
+  //           //     );
+  //           //   }
+  //           // }
+
+  //           // Save question to database
+  //           const question = await storage.createCustomQuestion({
+  //             testId: test.id,
+  //             questionNumber: currentQuestionNumber,
+  //             question: questionData.question,
+  //             questionType: questionData.questionType,
+  //             options: questionData.options
+  //               ? JSON.stringify(questionData.options)
+  //               : null,
+  //             correctOption: questionData.correctOption || null,
+  //             correctAnswer: questionData.correctAnswer,
+  //             explanation: questionData.explanation || "",
+  //           });
+
+  //           // Track this question
+  //           // questions.push(question);
+  //           questions.push(questionData);
+  //           generatedQuestionTexts.add(questionText);
+  //           // questionEmbeddings.push(embedding);
+  //           previousQuestionsList.push(questionData.question);
+  //           generatedCount++;
+            
+  //           questionGenerated = true;
+  //           perTopicFailures.set(currentTopic, 0); // Reset failures on success
+  //           topicQueue.push(currentTopic); // Push back to end of queue
+  //           console.log(
+  //             `[CUSTOM TEST] ✓ Question ${currentQuestionNumber}/${numQuestions} generated from topic "${currentTopic}" (unique, semantic check passed)`,
+  //           );
+  //         } catch (error) {
+  //           const errorMessage =
+  //             error instanceof Error ? error.message : String(error);
+  //           console.error(
+  //             `[CUSTOM TEST] ✗ Failed question ${currentQuestionNumber} with topic "${currentTopic}":`,
+  //             errorMessage,
+  //           );
+
+  //           // Increment failure count
+  //           const newFailures = failures + 1;
+  //           perTopicFailures.set(currentTopic, newFailures);
+
+  //           // Only push back if still has retry budget
+  //           if (newFailures < maxAttemptsPerTopic) {
+  //             topicQueue.push(currentTopic);
+  //           } else {
+  //             console.warn(
+  //               `[CUSTOM TEST] Topic "${currentTopic}" removed from queue (reached ${maxAttemptsPerTopic} failures)`,
+  //             );
+  //           }
+  //         }
+  //       }
+
+  //       // if (!questionGenerated) {
+  //       //   console.error(
+  //       //     `[CUSTOM TEST] Could not generate question ${currentQuestionNumber} - all topics exhausted or failed`,
+  //       //   );
+  //       //   break;
+  //       // }
+  //       if (!questionGenerated) {
+  //         console.warn("Retrying question generation...");
+  //         continue;
+  //       }
+  //     }
+
+  //     // If we didn't get the full count, return error
+  //     // if (generatedCount < numQuestions) {
+  //     //   console.error(`[CUSTOM TEST] ERROR: Only generated ${generatedCount}/${numQuestions} questions after ${totalAttempts} total attempts`);
+  //     //   return res.status(503).json({
+  //     //     error: `Could only generate ${generatedCount} out of ${numQuestions} questions after multiple attempts. Please try again with simpler topics or reduce the question count.`,
+  //     //     questionsGenerated: generatedCount,
+  //     //     requested: numQuestions
+  //     //   });
+  //     // }
+
+  //     console.log(
+  //       `[CUSTOM TEST] Generated ${questions.length}/${numQuestions} questions successfully across ${topics.length} topic(s)`,
+  //     );
+
+  //     // Update test status to published
+  //     await storage.updateCustomTest(test.id, { status: "published" });
+
+  //     res.json({ test, questionsGenerated: questions.length });
+  //   } catch (error: any) {
+  //     console.error("🔥 FULL ERROR:", error);
+
+  //     res.status(500).json({
+  //       message: error?.message,
+  //       stack: error?.stack,
+  //     });
+  //   }
+  // });
+  
   //   app.post("/api/student/generate-custom-test", async (req, res) => {
   //   try {
   //      console.log("🔥 NEW STUDENT ROUTE HIT");
@@ -3111,13 +3125,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //   }
   // });
 
+  // app.get("/api/teacher/:teacherId/tests/:testId", async (req, res) => {
+  //   try {
+  //     const { teacherId, testId } = req.params;
+
+  //     const test = await storage.getCustomTest(testId);
+
+  //     if (!test || test.teacherId !== teacherId) {
+  //       return res.status(404).json({ error: "Test not found" });
+  //     }
+
+  //     const questions = await storage.getCustomQuestions(testId);
+
+  //     const parsedQuestions = questions.map((q) => ({
+  //       ...q,
+  //       options: q.options ? JSON.parse(q.options) : null,
+  //     }));
+
+  //     res.json({
+  //       test,
+  //       questions: parsedQuestions,
+  //     });
+
+  //   } catch (error) {
+  //     console.error("Error fetching test:", error);
+  //     res.status(500).json({ error: "Failed to fetch test" });
+  //   }
+  // });
+
   app.get("/api/teacher/:teacherId/tests/:testId", async (req, res) => {
     try {
       const { teacherId, testId } = req.params;
 
       const test = await storage.getCustomTest(testId);
 
-      if (!test || test.teacherId !== teacherId) {
+      if (!test) {
         return res.status(404).json({ error: "Test not found" });
       }
 
@@ -3134,11 +3176,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error) {
-      console.error("Error fetching test:", error);
-      res.status(500).json({ error: "Failed to fetch test" });
+      console.error("Error fetching test questions:", error);
+
+      res.status(500).json({
+        error: "Failed to fetch test questions",
+      });
     }
   });
-
   app.get("/api/teacher/:teacherId/tests", async (req, res) => {
     try {
       const { teacherId } = req.params;
@@ -3169,8 +3213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // });
 
   // Manual edit question
-  app.patch(
-    "/api/teacher/:teacherId/question/:questionId/edit",
+  app.patch("/api/teacher/:teacherId/question/:questionId/edit",
     async (req, res) => {
       try {
         const { teacherId, questionId } = req.params;
@@ -3310,8 +3353,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // AI-assisted edit question
-  app.post(
-    "/api/teacher/:teacherId/question/:questionId/ai-edit",
+  app.post("/api/teacher/:teacherId/question/:questionId/ai-edit",
     async (req, res) => {
       try {
         const { teacherId, questionId } = req.params;
@@ -3515,6 +3557,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/custom-test/:shareCode", async (req, res) => {
     try {
       const { shareCode } = req.params;
+      
       const test = await storage.getCustomTestByShareCode(shareCode);
 
       if (!test) {
@@ -3524,7 +3567,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const questions = await storage.getCustomQuestions(test.id);
 
       // Don't send correct answers to students
-      const questionsForStudent = questions.map((q) => ({
+      const questionsForStudent = questions.map(q => ({
         id: q.id,
         questionNumber: q.questionNumber,
         question: q.question,

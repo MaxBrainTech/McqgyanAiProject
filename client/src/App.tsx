@@ -28,9 +28,7 @@ import CustomTestPage from "@/pages/CustomTestPage";
 import AnswerSheetEvaluator from "@/pages/AnswerSheetEvaluator";
 import Signup from "@/pages/Signup";
 
-
 // <Route path="/signup" element={<Signup />} />
-
 
 export default function App() {
   return (
@@ -50,7 +48,7 @@ export default function App() {
                 <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
+                <Route path="/signup" element={<Signup />} />
                 <Route path="/about-us" element={<AboutUs />} />
 
                 {/* Legal Pages */}
@@ -62,9 +60,15 @@ export default function App() {
                 {/* MCQ System Pages */}
                 <Route path="/test" element={<TestPage />} />
                 <Route path="/teacher-auth" element={<TeacherAuth />} />
-                <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
+                <Route
+                  path="/teacher-dashboard"
+                  element={<TeacherDashboard />}
+                />
                 <Route path="/custom-test" element={<CustomTestPage />} />
-                <Route path="/answer-evaluator" element={<AnswerSheetEvaluator />} />
+                <Route
+                  path="/answer-evaluator"
+                  element={<AnswerSheetEvaluator />}
+                />
               </Routes>
             </main>
 

@@ -513,33 +513,49 @@ export default function AnswerSheetEvaluator() {
             Download PDF Report
           </Button> */}
 
-         <Button
-          size="lg"
-          className="w-full mb-4"
-          onClick={async () => {
+            <Button
+              size="lg"
+              className="w-full mb-4"
+              onClick={async () => {
+                try {
 
-            const res = await fetch("/api/download-evaluation-pdf", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                ...evaluationResult,
-                studentName: studentName,
-                classLevel: classLevel,
-                subject: subject
-              }),
-            });
+                  const res = await fetch("/api/download-evaluation-pdf", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                      ...evaluationResult,
+                      studentName,
+                      classLevel,
+                      subject
+                    })
+                  });
 
-            const blob = await res.blob();
-            const url = window.URL.createObjectURL(blob);
+                  if (!res.ok) {
+                    throw new Error("PDF generation failed");
+                  }
 
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "evaluation-report.pdf";
-            a.click();
-          }}
-        >
-          Download PDF Report
-        </Button>
+                  const blob = await res.blob();
+                  const url = window.URL.createObjectURL(blob);
+
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = "evaluation-report.pdf";
+                  document.body.appendChild(a);
+                  a.click();
+
+                  a.remove();
+                  window.URL.revokeObjectURL(url);
+
+                } catch (error) {
+                  console.error("PDF download error:", error);
+                  alert("Failed to download PDF");
+                }
+              }}
+            >
+              Download PDF Report
+            </Button>
             {/* Reset Button */}
             <Button
               size="lg"

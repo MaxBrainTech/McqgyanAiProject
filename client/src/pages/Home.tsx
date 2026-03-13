@@ -495,32 +495,30 @@ useLayoutEffect(() => {
 
         <div className="relative container mx-auto px-4 sm:px-6 py-6 sm:py-8 lg:py-12 max-w-7xl">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+
             {/* Left Content */}
             <div className="text-white space-y-6 sm:space-y-8">
+
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full border border-white/30">
                 <GraduationCap className="w-5 h-5" />
                 <span className="text-sm font-semibold">AI-Powered Learning Platform</span>
               </div>
 
-              <div className="space-y-3 sm:space-y-4">
-                {/* <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold leading-tight">
-                  Smart AI-Based Practice & Evaluation Tool for Students
-                </h1> */}
-                <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight tracking-tight">
-                  <span className="block text-white">Smart</span>
+              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight tracking-tight">
+                <span className="block text-white">Smart</span>
 
-                  <span className="block bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent">
-                    AI-Based Practice & Evaluation
-                  </span>
+                <span className="block bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent">
+                  AI-Based Practice & Evaluation
+                </span>
 
-                  <span className="block text-purple-200">
-                    Tool for Students
-                  </span>
-                </h1>
-                <p className="text-lg sm:text-xl text-white/90 max-w-xl">
-                  Free AI-powered mock tests for Rajasthan State Board/CBSE students. Learn 6 languages, master 4 science subjects, and achieve your academic goals.
-                </p>
-              </div>
+                <span className="block text-purple-200">
+                  Tool for Students
+                </span>
+              </h1>
+
+              <p className="text-lg sm:text-xl text-white/90 max-w-xl">
+                Free AI-powered mock tests for CBSE students. Learn 6 languages, master 4 science subjects, and achieve your academic goals.
+              </p>
 
               <div className="flex flex-wrap gap-3">
                 <Badge variant="secondary" className="text-sm font-semibold bg-white/20 text-white border-white/30 hover:bg-white/30">✓ 6 Languages</Badge>
@@ -535,6 +533,7 @@ useLayoutEffect(() => {
                 >
                   Start Learning Now
                 </Button>
+
                 <Button 
                   variant="outline"
                   onClick={() => navigate("/features")}
@@ -543,34 +542,43 @@ useLayoutEffect(() => {
                   Explore Features
                 </Button>
               </div>
+
             </div>
+
 
             {/* Right Stats */}
             <div className="hidden lg:grid grid-cols-2 gap-6">
+
               <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6 text-white text-center hover:bg-white/20 transition">
                 <Sparkles className="w-10 h-10 mx-auto mb-2 text-yellow-300" />
                 <p className="text-3xl font-bold">10,000+</p>
                 <p className="text-white/80">AI-Generated Questions</p>
               </Card>
+
               <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6 text-white text-center hover:bg-white/20 transition">
                 <Trophy className="w-10 h-10 mx-auto mb-2 text-orange-300" />
                 <p className="text-3xl font-bold">5,000+</p>
                 <p className="text-white/80">Active Students</p>
               </Card>
+
               <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6 text-white text-center hover:bg-white/20 transition">
                 <BookOpen className="w-10 h-10 mx-auto mb-2 text-green-300" />
                 <p className="text-3xl font-bold">150+</p>
                 <p className="text-white/80">Chapters & Topics</p>
               </Card>
+
               <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6 text-white text-center hover:bg-white/20 transition">
                 <Zap className="w-10 h-10 mx-auto mb-2 text-blue-300" />
                 <p className="text-3xl font-bold">Real-Time</p>
                 <p className="text-white/80">AI Feedback</p>
               </Card>
+
             </div>
+
+          </div>
           </div>
         </div>
-      </div>
+ 
 
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-6xl" data-section="mode-selection">
         {step === "mode" && (

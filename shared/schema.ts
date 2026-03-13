@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { pgTable, text, varchar, integer, timestamp, serial, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-
+import { index } from "drizzle-orm/pg-core";
 
 export const tests = pgTable("tests", {
   id: serial("id").primaryKey(),
@@ -152,14 +152,29 @@ export const mcqTests = pgTable("mcq_tests", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const mcqs = pgTable("mcqs", {
-  id: serial("id").primaryKey(),
-  question: text("question").notNull(),
-  options: json("options").notNull(),
-  correctAnswer: text("correct_answer").notNull(),
-  testId: integer("test_id"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+// export const mcqs = pgTable("mcqs", {
+//   id: serial("id").primaryKey(),
+//   question: text("question").notNull(),
+//   options: json("options").notNull(),
+//   correctAnswer: text("correct_answer").notNull(),
+//   testId: integer("test_id"),
+//   createdAt: timestamp("created_at").defaultNow(),
+// });
+
+export const mcqs = pgTable(
+  "mcqs",
+  {
+    id: serial("id").primaryKey(),
+    question: text("question").notNull(),
+    options: json("options").$type<string[]>().notNull(),
+    correctAnswer: text("correct_answer").notNull(),
+    testId: integer("test_id").references(() => mcqTests.id),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => ({
+    testIndex: index("mcq_test_idx").on(table.testId),
+  })
+);
 
 export type InsertAnswerSheetEvaluation = z.infer<typeof insertAnswerSheetEvaluationSchema>;
 export type AnswerSheetEvaluation = typeof answerSheetEvaluations.$inferSelect;

@@ -18,7 +18,7 @@ export const openai = new OpenAI({
 // Priority: Use your own OPENAI_API_KEY if provided, otherwise fall back to Replit's AI Integrations
 
 export const AI_CONFIG = {
-  temperature: 0.7,
+  temperature: 0.4,
   max_tokens: 2500,
 };
 
@@ -456,8 +456,8 @@ export async function generateMCQs(
 ): Promise<MCQ[]> {
 
   const BATCH_SIZE = 10;
-  const MAX_TOKENS = 800;
-  const TEMPERATURE = 0.6;
+  const MAX_TOKENS = 2000;
+  const TEMPERATURE = 0.4;
 
   let allQuestions: MCQ[] = [];
   let attempts = 0;
@@ -468,30 +468,38 @@ export async function generateMCQs(
     const currentBatch = Math.min(BATCH_SIZE, remaining);
 
     const prompt = `
-${basePrompt}
+    ${basePrompt}
 
-Generate ${currentBatch} MCQs only.
-Rules:
-- Each MCQ must have:
-  - question
-  - 4 options
-  - correctAnswer
-- Output STRICT JSON only
+    Generate ${currentBatch} CBSE style MCQs.
 
-{
-  "questions": [
+    STRICT RULES:
+    - Language must be English only
+    - Do NOT translate to Hindi
+    - Each question must contain:
+
+    1. question
+    2. 4 options
+    3. correctAnswer
+    4. explanation
+
+    Return ONLY JSON:
+
     {
-      "question": "",
-      "options": ["", "", "", ""],
-      "correctAnswer": ""
+     "questions":[
+      {
+       "question":"",
+       "options":["A. ","B. ","C. ","D. "],
+       "correctAnswer":"",
+       "explanation":""
+      }
+     ]
     }
-  ]
-}
-  IMPORTANT:
-- Respond ONLY with JSON
-- No extra text
-- No markdown
-`;
+
+    IMPORTANT:
+    - No markdown
+    - No extra text
+    - Only JSON
+    `;
 
 //     try {
 //       const response = await openai.chat.completions.create({
@@ -608,9 +616,15 @@ Rules:
     }
 
     let parsed: any;
+    // Clean the content to remove any markdown or extra text
+    let cleaned = content.trim();
+
+    if (cleaned.startsWith("```")) {
+      cleaned = cleaned.replace(/```json/g, "").replace(/```/g, "");
+    }
 
     try {
-      parsed = JSON.parse(content);
+      parsed = JSON.parse(cleaned);
     } catch (err) {
       console.error("Invalid JSON, retrying...", err);
       continue;
@@ -743,31 +757,39 @@ VALIDATION CHECKLIST before responding:
 //   - If language is English, generate everything strictly in English.
 
   const prompt = `
-  Generate a ${difficulty} level ${isMcq ? "MCQ" : "question"} for Class ${classLevel}.
+  You are an expert CBSE exam question generator.
 
-  Topic: ${chapterTitle}
+  Generate ONE ${difficulty} level MCQ for CBSE Class ${classLevel}.
 
-  Language: ${language}
+  Subject: ${scienceCategory || "Science"}
 
-  RULES:
-  - If language is English → question, options and explanation must be in English.
-  - If language is Hindi → question, options and explanation must be in Hindi.
-  - Do NOT mix languages.
+  Language rule:
+  ${language === "hindi"
+    ? "Generate everything strictly in Hindi."
+    : "Generate everything strictly in English."}
 
-  Return JSON format:
+  STRICT REQUIREMENTS:
+  - Exactly 4 options
+  - Label options A, B, C, D
+  - Only ONE correct answer
+  - Provide a short explanation
+  - Never translate English question to Hindi unless language = Hindi
+
+  Return ONLY valid JSON.
+
   {
-    "question": "",
-    "options": ["", "", "", ""],
-    "correctOption": "A",
-    "correctAnswer": "",
-    "explanation": ""
+   "question":"question text",
+   "options":[
+    "A. option 1",
+    "B. option 2",
+    "C. option 3",
+    "D. option 4"
+   ],
+   "correctOption":"A",
+   "correctAnswer":"full correct answer",
+   "explanation":"short explanation",
+   "questionType":"mcq"
   }
-  IMPORTANT:
-  Strictly generate the question in ${language}. Do not switch languages.
-
-  Chapter: ${chapterTitle}
-  Difficulty: ${difficulty}
-  IMPORTANT: Return ONLY valid JSON. Do not include explanations or text like "I'm sorry".
 
 
 🎯 CBSE CLASS ${classLevel} BLUEPRINT REQUIREMENTS:
@@ -1083,23 +1105,51 @@ Make the question challenging but fair for Class ${classLevel} CBSE level (age $
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     const content = response.choices[0]?.message?.content?.trim();
 
+    function cleanAIJSON(content: string) {
+      let cleaned = content.trim();
+
+      // remove markdown
+      cleaned = cleaned
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
+        .trim();
+
+      // extract JSON if extra text exists
+      const match = cleaned.match(/\{[\s\S]*\}/);
+      if (match) cleaned = match[0];
+
+      return cleaned;
+    }
+
     if (!content) {
       throw new Error("AI returned empty response");
     }
+    const cleaned = cleanAIJSON(content);
+    const result = JSON.parse(cleaned);
 
-    let cleanContent = content
-    .replace(/```json/g, "")
-    .replace(/```/g, "")
-    .trim();
+    // if (!content) {
+    //   throw new Error("AI returned empty response");
+    // }
 
-    const result = JSON.parse(cleanContent);
+    // let cleanContent = content
+    // .replace(/```json/g, "")
+    // .replace(/```/g, "")
+    // .trim();
+
+    // const result = JSON.parse(cleanContent);
     console.log("RAW AI RESPONSE:", content);
     console.log(`[AI] MCQ generated in ${elapsed}s using ${modelToUse}: ${result.question.substring(0, 50)}...`);
 
     // Validate MCQ response
     if (!Array.isArray(result.options) || result.options.length !== 4) {
-      console.error("[AI ERROR] MCQ must have exactly 4 options, got:", result.options?.length);
-      throw new Error("Invalid MCQ format: must have 4 options");
+      console.warn("AI returned invalid options. Regenerating fallback options.");
+
+      result.options = [
+        "A. Option A",
+        "B. Option B",
+        "C. Option C",
+        "D. Option D"
+      ];
     }
 
     if (!["A", "B", "C", "D"].includes(result.correctOption)) {
@@ -1277,41 +1327,79 @@ export async function generateScienceQuestion(params: {
       ? "Generate the question strictly in Hindi."
       : "Generate the question strictly in English.";
 
- const prompt = `
-  Generate a ${difficulty} MCQ for Class ${classLevel}.
+//  const prompt = `
+//   Generate a ${difficulty} MCQ for Class ${classLevel}.
   
+//   Subject: ${scienceCategory || "Science"}
+//   Language: ${language}
+//   Respond ONLY in ${language}. If the language is Hindi, do not use English words.
+  
+//   IMPORTANT:
+//   If language is Hindi → return everything in Hindi.
+//   If language is English → return everything in English.
+  
+//   Return JSON format:
+//   {
+//    "question": "",
+//    "options": ["", "", "", ""],
+//    "correctOption": "A",
+//    "correctAnswer": "",
+//    "explanation": ""
+//   }
+//       {
+
+//       IMPORTANT RULE:
+//       If language = English then output ONLY in English.
+//       Hindi or any other language is NOT allowed.
+
+//     // IMPORTANT LANGUAGE RULE:
+//     // Generate question, options, correct answer and explanation ONLY in Hindi.
+//     // Do NOT use English words.
+
+// 🎯 CBSE CLASS ${classLevel} BLUEPRINT REQUIREMENTS:
+// - Bloom's Taxonomy Level: ${guidelines.bloomLevel}
+// - Vocabulary Level: ${guidelines.vocabulary}
+// - Cognitive Skills: ${guidelines.cognitiveLevel}
+// - Question Type Examples: ${guidelines.examples}
+// - Typical Mark Allocation: ${guidelines.marks}
+
+  const prompt = `
+  Generate 1 ${difficulty} multiple choice question for CBSE Class ${classLevel}.
+
   Subject: ${scienceCategory || "Science"}
-  Language: ${language}
-  Respond ONLY in ${language}. If the language is Hindi, do not use English words.
-  
+
+  Language Rule:
+  ${language === "hindi"
+    ? "Generate the question, options, correct answer and explanation strictly in Hindi."
+    : "Generate the question, options, correct answer and explanation strictly in English."}
+
   IMPORTANT:
-  If language is Hindi → return everything in Hindi.
-  If language is English → return everything in English.
-  
-  Return JSON format:
+  - Always generate exactly 4 options.
+  - Label options as A, B, C, D.
+  - Only one option must be correct.
+  - Explanation must be 1–2 lines.
+
+  Return ONLY valid JSON in this format:
+
   {
-   "question": "",
-   "options": ["", "", "", ""],
-   "correctOption": "A",
-   "correctAnswer": "",
-   "explanation": ""
+    "question": "question text",
+    "options": [
+      "A. option one",
+      "B. option two",
+      "C. option three",
+      "D. option four"
+    ],
+    "correctOption": "A",
+    "correctAnswer": "full correct answer text",
+    "explanation": "short explanation"
   }
-      {
 
-      IMPORTANT RULE:
-      If language = English then output ONLY in English.
-      Hindi or any other language is NOT allowed.
-
-    // IMPORTANT LANGUAGE RULE:
-    // Generate question, options, correct answer and explanation ONLY in Hindi.
-    // Do NOT use English words.
-
-🎯 CBSE CLASS ${classLevel} BLUEPRINT REQUIREMENTS:
-- Bloom's Taxonomy Level: ${guidelines.bloomLevel}
-- Vocabulary Level: ${guidelines.vocabulary}
-- Cognitive Skills: ${guidelines.cognitiveLevel}
-- Question Type Examples: ${guidelines.examples}
-- Typical Mark Allocation: ${guidelines.marks}
+  🎯 CBSE CLASS ${classLevel} BLUEPRINT REQUIREMENTS:
+  - Bloom's Taxonomy Level: ${guidelines.bloomLevel}
+  - Vocabulary Level: ${guidelines.vocabulary}
+  - Cognitive Skills: ${guidelines.cognitiveLevel}
+  - Question Type Examples: ${guidelines.examples}
+  - Typical Mark Allocation: ${guidelines.marks}
 
 ${questionTypeInstruction} for ${scienceCategory} on topic "${chapterTitle}" at ${difficulty} difficulty level.${adaptiveContext}${previousQuestionsContext}
 
@@ -1395,17 +1483,36 @@ Make the question challenging but fair for Class ${classLevel} CBSE students. En
       throw new Error("AI returned empty response");
     }
 
-    let cleanContent = content;
+    // let cleanContent = content;
 
-    if (cleanContent.includes("```json")) {
-      const match = cleanContent.match(/```json\s*([\s\S]*?)\s*```/);
-      if (match) cleanContent = match[1];
-    } else if (cleanContent.includes("```")) {
-      const match = cleanContent.match(/```\s*([\s\S]*?)\s*```/);
-      if (match) cleanContent = match[1];
+    // if (cleanContent.includes("```json")) {
+    //   const match = cleanContent.match(/```json\s*([\s\S]*?)\s*```/);
+    //   if (match) cleanContent = match[1];
+    // } else if (cleanContent.includes("```")) {
+    //   const match = cleanContent.match(/```\s*([\s\S]*?)\s*```/);
+    //   if (match) cleanContent = match[1];
+    // }
+
+    function cleanAIJSON(content: string) {
+      let cleaned = content.trim();
+
+      // remove markdown
+      cleaned = cleaned
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
+        .trim();
+
+      // extract JSON if extra text exists
+      const match = cleaned.match(/\{[\s\S]*\}/);
+      if (match) cleaned = match[0];
+
+      return cleaned;
     }
 
-    const result = JSON.parse(cleanContent);
+    const cleaned = cleanAIJSON(content);
+    const result = JSON.parse(cleaned);
+
+    // const result = JSON.parse(cleanContent);
     // console.log(`[AI] Science ${isMcq ? 'MCQ' : 'open-ended'} generated in ${elapsed}s using ${modelToUse}: ${result.question.substring(0, 50)}...`);
     const { difficulty, questionNumber, scienceCategory, chapterTitle,language } = params;
     const category = scienceCategory || chapterTitle || "general science";
@@ -1413,7 +1520,14 @@ Make the question challenging but fair for Class ${classLevel} CBSE students. En
     if (isMcq) {
       // Validate MCQ format
       if (!Array.isArray(result.options) || result.options.length !== 4) {
-        throw new Error("Invalid MCQ format: must have exactly 4 options");
+        console.warn("AI returned invalid options. Regenerating fallback options.");
+
+        result.options = [
+          "A. Option A",
+          "B. Option B",
+          "C. Option C",
+          "D. Option D"
+        ];
       }
 
       if (!["A", "B", "C", "D"].includes(result.correctOption)) {

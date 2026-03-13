@@ -111,11 +111,24 @@ export default function TeacherDashboard() {
 
   const { data: tests = [], isLoading } = useQuery<any[]>({
     queryKey: [`/api/teacher/${teacherData.id}/tests`],
+    queryFn: async () => {
+      const res = await fetch(`/api/teacher/${teacherData.id}/tests`);
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch tests");
+      }
+
+      return res.json();
+    },
   });
 
   const { data: testDetails } = useQuery<any>({
     queryKey: [`/api/teacher/${teacherData.id}/tests/${selectedTestId}`],
     enabled: !!selectedTestId,
+    queryFn: async () => {
+      const res = await fetch(`/api/teacher/${teacherData.id}/tests/${selectedTestId}`);
+      return res.json();
+    },
   });
 
   const generateMutation = useMutation({
@@ -146,7 +159,7 @@ export default function TeacherDashboard() {
         title: "Test Generated!",
         description: `Successfully created ${result.questionsGenerated} questions. Share code: ${result.test.shareCode}`,
       });
-      queryClient.refetchQueries({ queryKey: [`/api/teacher/${teacherData.id}/tests`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teacher/${teacherData.id}/tests`] }); 
       form.reset();
       setShowForm(false);
       // Show the questions dialog
@@ -378,7 +391,7 @@ export default function TeacherDashboard() {
         yPosition += questionLines.length * 3.5 + 2;
 
         // Options for MCQ
-        if (q.questionType === 'mcq' && q.options) {
+        if (q.options && q.options.length === 4) {
           pdf.setFontSize(8.5);
           q.options.forEach((opt: string, optIdx: number) => {
             if (yPosition > pageHeight - margins.bottom - 10) {
@@ -811,7 +824,9 @@ export default function TeacherDashboard() {
             </Card>
           ) : (
             <div className="grid gap-4">
-              {tests.map((test: any) => (
+              {[...tests]
+                .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                .map((test: any) => (
                 <Card key={test.id} data-testid={`test-card-${test.id}`}>
                   <CardHeader>
                     <div className="flex justify-between items-start">
@@ -859,7 +874,7 @@ export default function TeacherDashboard() {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          onClick={() => copyShareCode(test.shareCode)}
+                          onClick={() => copyShareCode(test.shareCode || "")}
                           data-testid={`button-copy-${test.id}`}
                         >
                           <Share2 className="h-4 w-4 mr-1" />

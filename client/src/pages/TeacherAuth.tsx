@@ -307,6 +307,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Eye, EyeOff, GraduationCap } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -314,7 +315,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { GraduationCap } from "lucide-react";
 
 
 // ================== SCHEMAS ==================
@@ -342,6 +342,9 @@ export default function TeacherAuth() {
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const { toast } = useToast();
+
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
 
   const loginForm = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -448,7 +451,21 @@ export default function TeacherAuth() {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="Enter password" {...field} />
+                        <div className="relative">
+                          <Input
+                            type={showLoginPassword ? "text" : "password"}
+                            placeholder="Enter password"
+                            {...field}
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() => setShowLoginPassword(!showLoginPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                          >
+                            {showLoginPassword ? <EyeOff size={18}/> : <Eye size={18}/>}
+                          </button>
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -515,7 +532,21 @@ export default function TeacherAuth() {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="Minimum 6 characters" {...field} />
+                        <div className="relative">
+                          <Input
+                            type={showRegisterPassword ? "text" : "password"}
+                            placeholder="Minimum 6 characters"
+                            {...field}
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                          >
+                            {showLoginPassword ? <EyeOff size={18}/> : <Eye size={18}/>}
+                          </button>
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
