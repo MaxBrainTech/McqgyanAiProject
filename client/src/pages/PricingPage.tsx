@@ -66,23 +66,31 @@ export default function PricingPage() {
   ];
 
   const comparisonFeatures = [
-    "Language Learning Modes",
-    "Science Quiz Categories",
-    "Custom MCQ Generation",
-    "GPT Model Selection",
-    "Answer Sheet Evaluation",
-    "Offline Access",
-    "API Access",
-    "Priority Support",
+    t("comparison_language_learning"),
+    t("comparison_science_quiz"),
+    t("comparison_custom_mcq"),
+    t("comparison_gpt_model"),
+    t("comparison_answer_evaluation"),
+    t("comparison_offline_access"),
+    t("comparison_api_access"),
+    t("comparison_priority_support"),
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Header Section */}
-      <div className="container mx-auto px-4 sm:px-6 py-12 sm:py-20 text-center">
-        <p className="text-sm font-semibold text-green-700 dark:text-green-400">
-          {t("free_access_notice")}
-        </p>
+        <div className="container mx-auto px-4 sm:px-6 py-12 sm:py-20 text-center">
+          <h1 className="text-4xl sm:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            {t("pricing_title")}
+          </h1>
+
+          <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
+            {t("pricing_desc_before")}
+            <span className="font-bold text-blue-600 dark:text-blue-400">
+              {t("pricing_free_date")}
+            </span>
+            {t("pricing_desc_after")}
+          </p>
 
         {/* Free Until Badge */}
         <div className="inline-block bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-full px-6 py-3 mb-12">
@@ -128,7 +136,7 @@ export default function PricingPage() {
                     )}
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
-                    Free until Dec 31, 2025
+                    {t("free_until_date")}
                   </p>
                 </div>
 
@@ -223,25 +231,32 @@ export default function PricingPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <Card className="p-6 sm:p-8">
-              <h3 className="font-bold text-lg mb-3">Are all features free until Dec 31, 2025?</h3>
+              <h3 className="font-bold text-lg mb-3">
+                {t("faq_free_features")}
+              </h3>
+
               <p className="text-gray-600 dark:text-gray-400 text-sm">
-                Yes! All pricing tiers are completely free for all users until December 31, 2025. 
-                After that date, paid plans will be activated.
+                {t("faq_free_features_desc")}
               </p>
             </Card>
 
             <Card className="p-6 sm:p-8">
-              <h3 className="font-bold text-lg mb-3">Can I change my plan anytime?</h3>
+              <h3 className="font-bold text-lg mb-3">
+                {t("faq_change_plan")}
+              </h3>
+
               <p className="text-gray-600 dark:text-gray-400 text-sm">
-                Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately.
+                {t("faq_change_plan_desc")}
               </p>
             </Card>
 
             <Card className="p-6 sm:p-8">
-              <h3 className="font-bold text-lg mb-3">Do you offer refunds?</h3>
+              <h3 className="font-bold text-lg mb-3">
+                {t("faq_refund")}
+              </h3>
+
               <p className="text-gray-600 dark:text-gray-400 text-sm">
-                We offer a 7-day money-back guarantee if you're not satisfied with our service. 
-                No questions asked!
+                {t("faq_refund_desc")}
               </p>
             </Card>
 

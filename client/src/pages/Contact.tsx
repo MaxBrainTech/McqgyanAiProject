@@ -9,6 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Phone, MapPin, Clock, Send, MessageSquare } from "lucide-react";
+import { useTranslation } from "react-i18next";
+
+const { t } = useTranslation();
 
 const contactSchema = z.object({
   fullName: z.string().min(2, "Name must be at least 2 characters"),
@@ -100,10 +103,11 @@ export default function Contact() {
 
         <div className="relative container mx-auto px-4 sm:px-6 py-16 sm:py-24 text-center">
           <h1 className="text-5xl sm:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Get In Touch
+            {t("contact_title")}
           </h1>
+
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
-            Have questions about MCQGyaan AI? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
+            {t("contact_desc")}
           </p>
         </div>
       </div>
@@ -138,10 +142,11 @@ export default function Contact() {
         <div className="container mx-auto px-4 sm:px-6">
           <div className="mb-12">
             <h2 className="text-4xl font-bold text-center mb-4">
-              Send us a Message
+              {t("send_message")}
             </h2>
+
             <p className="text-center text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Fill out the form below and we'll get back to you shortly. All fields are required unless marked optional.
+              {t("send_message_desc")}
             </p>
           </div>
 
@@ -150,9 +155,12 @@ export default function Contact() {
             <div className="lg:col-span-1">
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-bold mb-2 text-gray-900 dark:text-white">Why Contact Us?</h3>
+                  <h3 className="text-lg font-bold mb-2 text-gray-900 dark:text-white">
+                    {t("why_contact")}
+                  </h3>
+
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Whether you have questions, suggestions, or need support, our team is here to help you get the most out of MCQGyaan AI.
+                    {t("why_contact_desc")}
                   </p>
                 </div>
 
@@ -164,19 +172,22 @@ export default function Contact() {
                   <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                     <li className="flex items-center gap-2">
                       <div className="h-1.5 w-1.5 bg-blue-600 rounded-full"></div>
-                      Technical Support
+                      {t("contact_support")}
                     </li>
+
                     <li className="flex items-center gap-2">
                       <div className="h-1.5 w-1.5 bg-purple-600 rounded-full"></div>
-                      Partnership Opportunities
+                      {t("contact_partnership")}
                     </li>
+
                     <li className="flex items-center gap-2">
                       <div className="h-1.5 w-1.5 bg-blue-600 rounded-full"></div>
-                      Feature Requests
+                      {t("contact_feature_request")}
                     </li>
+
                     <li className="flex items-center gap-2">
                       <div className="h-1.5 w-1.5 bg-purple-600 rounded-full"></div>
-                      Account Related Issues
+                      {t("contact_account_issue")}
                     </li>
                   </ul>
                 </div>
@@ -195,7 +206,7 @@ export default function Contact() {
                         name="fullName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Full Name</FormLabel>
+                            <FormLabel>{t("form_email")}</FormLabel>
                             <FormControl>
                               <Input
                                 placeholder="John Doe"
@@ -213,7 +224,7 @@ export default function Contact() {
                         name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Email Address</FormLabel>
+                            <FormLabel>{t("form_email")}</FormLabel>
                             <FormControl>
                               <Input
                                 type="email"
@@ -235,7 +246,7 @@ export default function Contact() {
                         name="phoneNumber"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Phone Number (Optional)</FormLabel>
+                            <FormLabel>{t("form_phone")}</FormLabel>
                             <FormControl>
                               <Input
                                 type="tel"
@@ -254,17 +265,17 @@ export default function Contact() {
                         name="category"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Category</FormLabel>
+                            <FormLabel>{t("form_category")}</FormLabel>
                             <FormControl>
                               <select
                                 {...field}
                                 className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                                 data-testid="select-category"
                               >
-                                <option value="support">Technical Support</option>
-                                <option value="partnership">Partnership</option>
-                                <option value="feedback">Feedback</option>
-                                <option value="other">Other</option>
+                                <option value="support">{t("contact_support")}</option>
+                                <option value="partnership">{t("contact_partnership")}</option>
+                                <option value="feedback">{t("contact_feedback")}</option>
+                                <option value="other">{t("contact_other")}</option>
                               </select>
                             </FormControl>
                             <FormMessage />
@@ -298,7 +309,7 @@ export default function Contact() {
                       name="message"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Message</FormLabel>
+                          <FormLabel>{t("form_message")}</FormLabel>
                           <FormControl>
                             <Textarea
                               placeholder="Tell us what's on your mind... (minimum 10 characters)"
@@ -322,12 +333,12 @@ export default function Contact() {
                       {isSubmitting ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Sending...
+                          {t("sending")}
                         </>
                       ) : (
                         <>
                           <Send className="h-4 w-4 mr-2" />
-                          Send Message
+                          {t("send_message_btn")}
                         </>
                       )}
                     </Button>
@@ -346,17 +357,17 @@ export default function Contact() {
       {/* FAQ Section */}
       <div className="container mx-auto px-4 sm:px-6 py-16">
         <h2 className="text-3xl font-bold text-center mb-12">
-          Frequently Asked Questions
+          {t("faq_title")}
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {[
-            { q: "How quickly will I get a response?", a: "We aim to respond to all inquiries within 24 business hours. For urgent issues, please call us directly." },
-            { q: "Do you offer school/institutional discounts?", a: "Yes! We offer special rates for schools and institutions. Contact our partnership team for details." },
-            { q: "Can I use MCQGyaan AI offline?", a: "Currently, MCQGyaan AI requires an internet connection. We're working on offline features for future releases." },
-            { q: "Is there a free trial available?", a: "Yes! All features are free until December 31, 2025. After that, we offer flexible paid plans." },
-            { q: "Do you offer API access?", a: "API access is available on our Premium plan. Contact us to discuss your integration needs." },
-            { q: "How is my data protected?", a: "We use enterprise-grade encryption and comply with all data protection regulations. Your data is secure with us." },
+            { q: t("faq_response_time_q"), a: t("faq_response_time_a") },
+            { q: t("faq_school_discount_q"), a: t("faq_school_discount_a") },
+            { q: t("faq_offline_q"), a: t("faq_offline_a") },
+            { q: t("faq_free_trial_q"), a: t("faq_free_trial_a") },
+            { q: t("faq_api_q"), a: t("faq_api_a") },
+            { q: t("faq_data_security_q"), a: t("faq_data_security_a") }
           ].map((item, idx) => (
             <Card key={idx} className="p-6">
               <h3 className="font-bold text-lg mb-2 text-gray-900 dark:text-white">{item.q}</h3>

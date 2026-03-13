@@ -253,7 +253,6 @@
     "feature_student_progress": "छात्र प्रगति ट्रैकिंग",
     "feature_download_reports": "रिपोर्ट डाउनलोड",
 
-  {
     "pricing_title": "सरल और पारदर्शी प्राइसिंग",
     "pricing_desc": "31 दिसंबर 2025 तक सभी उपयोगकर्ताओं के लिए सभी सुविधाएँ मुफ्त हैं। अपनी योजना चुनें और आज ही सीखना शुरू करें!",
     "free_access_notice": "🎉 31 दिसंबर 2025 तक मुफ्त एक्सेस",
@@ -285,8 +284,97 @@
     "faq_payment_methods": "आप कौन से भुगतान तरीके स्वीकार करते हैं?",
     "faq_payment_methods_desc": "हम क्रेडिट कार्ड, UPI और डिजिटल वॉलेट स्वीकार करते हैं।",
 
-    "start_free_now": "मुफ्त में शुरू करें"
-  }
+    "start_free_now": "मुफ्त में शुरू करें",
 
-  
+    "feature_10_questions": "प्रति टेस्ट 10 प्रश्न",
+    "feature_50_questions": "प्रति टेस्ट 50 प्रश्न",
+    "feature_100_questions": "प्रति टेस्ट 100 प्रश्न",
+
+    "feature_difficulty_levels": "कई कठिनाई स्तर",
+    "feature_instant_feedback": "उत्तर पर तुरंत फीडबैक",
+
+    "feature_custom_tests_limit": "कस्टम टेस्ट (प्रति माह 3)",
+    "feature_unlimited_custom_tests": "अनलिमिटेड कस्टम टेस्ट",
+
+    "feature_answer_sheet_evaluator": "उत्तर पुस्तिका मूल्यांकन",
+    "feature_answer_eval_10": "उत्तर पुस्तिका मूल्यांकन (10/माह)",
+    "feature_unlimited_answer_eval": "अनलिमिटेड उत्तर पुस्तिका मूल्यांकन",
+
+    "feature_teacher_dashboard": "टीचर डैशबोर्ड",
+    "feature_teacher_dashboard_basic": "टीचर डैशबोर्ड (बेसिक)",
+    "feature_teacher_dashboard_advanced": "टीचर डैशबोर्ड (एडवांस)",
+
+  "pricing_title": "सरल और पारदर्शी प्राइसिंग",
+  "pricing_desc_before": "31 दिसंबर 2025 तक सभी उपयोगकर्ताओं के लिए सभी संस्करण मुफ्त हैं ",
+  "pricing_free_date": "31 दिसंबर 2025",
+  "pricing_desc_after": "। अपनी योजना चुनें और आज ही सीखना शुरू करें!",
+
+    "comparison_language_learning": "भाषा सीखने के मोड",
+    "comparison_science_quiz": "विज्ञान क्विज़ श्रेणियाँ",
+    "comparison_custom_mcq": "कस्टम MCQ जनरेशन",
+    "comparison_gpt_model": "GPT मॉडल चयन",
+    "comparison_answer_evaluation": "उत्तर पुस्तिका मूल्यांकन",
+    "comparison_offline_access": "ऑफलाइन एक्सेस",
+    "comparison_api_access": "API एक्सेस",
+    "comparison_priority_support": "प्राथमिक सहायता",
+
+    "faq_refund": "क्या आप रिफंड देते हैं?",
+    "faq_refund_desc": "यदि आप हमारी सेवा से संतुष्ट नहीं हैं तो हम 7-दिन की मनी-बैक गारंटी देते हैं। बिना किसी सवाल के!",
+
+    "cta_ready_learning": "क्या आप सीखना शुरू करने के लिए तैयार हैं?",
+    "cta_join_students": "MCQGyaan AI का उपयोग करने वाले हजारों छात्रों और शिक्षकों से जुड़ें",
+
+  "free_until_date": "31 दिसंबर 2025 तक मुफ्त",
+
+  "faq_free_features": "क्या 31 दिसंबर 2025 तक सभी फीचर्स मुफ्त हैं?",
+  "faq_free_features_desc": "हाँ! 31 दिसंबर 2025 तक सभी उपयोगकर्ताओं के लिए सभी प्लान पूरी तरह से मुफ्त हैं। उसके बाद पेड प्लान लागू होंगे।",
+
+  "faq_change_plan": "क्या मैं अपनी योजना कभी भी बदल सकता हूँ?",
+  "faq_change_plan_desc": "हाँ, आप किसी भी समय अपनी योजना अपग्रेड या डाउनग्रेड कर सकते हैं। बदलाव तुरंत प्रभावी हो जाते हैं।",
+  "contact_title": "संपर्क करें",
+  "contact_desc": "MCQGyaan AI के बारे में कोई प्रश्न है? हमें आपसे सुनकर खुशी होगी। हमें संदेश भेजें और हम जल्द ही जवाब देंगे।",
+
+  "send_message": "हमें संदेश भेजें",
+  "send_message_desc": "नीचे दिया गया फॉर्म भरें और हम जल्द ही आपसे संपर्क करेंगे।",
+
+  "why_contact": "हमसे संपर्क क्यों करें?",
+  "why_contact_desc": "यदि आपके पास प्रश्न, सुझाव या सहायता की आवश्यकता है, तो हमारी टीम आपकी मदद के लिए यहाँ है।",
+
+  "contact_support": "तकनीकी सहायता",
+  "contact_partnership": "साझेदारी के अवसर",
+  "contact_feature_request": "फीचर अनुरोध",
+  "contact_account_issue": "अकाउंट से जुड़ी समस्याएँ",
+
+  "form_full_name": "पूरा नाम",
+  "form_email": "ईमेल पता",
+  "form_phone": "फोन नंबर (वैकल्पिक)",
+  "form_category": "श्रेणी",
+  "form_message": "संदेश",
+
+  "contact_feedback": "फीडबैक",
+  "contact_other": "अन्य",
+
+  "sending": "भेजा जा रहा है...",
+  "send_message_btn": "संदेश भेजें",
+
+  "faq_title": "अक्सर पूछे जाने वाले प्रश्न",
+
+  "faq_response_time_q": "मुझे जवाब कितनी जल्दी मिलेगा?",
+  "faq_response_time_a": "हम 24 कार्य घंटों के भीतर सभी प्रश्नों का उत्तर देने का प्रयास करते हैं।",
+
+  "faq_school_discount_q": "क्या स्कूलों के लिए छूट है?",
+  "faq_school_discount_a": "हाँ! स्कूलों और संस्थानों के लिए विशेष छूट उपलब्ध है।",
+
+  "faq_offline_q": "क्या मैं MCQGyaan AI को ऑफलाइन उपयोग कर सकता हूँ?",
+  "faq_offline_a": "फिलहाल MCQGyaan AI के लिए इंटरनेट कनेक्शन आवश्यक है।",
+
+  "faq_free_trial_q": "क्या फ्री ट्रायल उपलब्ध है?",
+  "faq_free_trial_a": "हाँ! सभी फीचर्स 31 दिसंबर 2025 तक मुफ्त हैं।",
+
+  "faq_api_q": "क्या API एक्सेस उपलब्ध है?",
+  "faq_api_a": "API एक्सेस हमारे Premium प्लान में उपलब्ध है।",
+
+  "faq_data_security_q": "मेरा डेटा कितना सुरक्षित है?",
+  "faq_data_security_a": "हम एंटरप्राइज़ स्तर की एन्क्रिप्शन का उपयोग करते हैं।"
+
 }

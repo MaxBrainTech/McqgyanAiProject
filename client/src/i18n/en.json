@@ -252,7 +252,6 @@
     "feature_student_progress": "Student Progress Tracking",
     "feature_download_reports": "Download Reports",
 
-  {
     "pricing_title": "Simple, Transparent Pricing",
     "pricing_desc": "All versions are free for all users until December 31, 2025. Choose your plan and start learning today!",
     "free_access_notice": "🎉 FREE ACCESS UNTIL DEC 31, 2025",
@@ -260,6 +259,30 @@
     "plan_free": "Free",
     "plan_pro": "Pro",
     "plan_premium": "Premium",
+
+  "feature_10_questions": "10 questions per test",
+  "feature_50_questions": "50 questions per test",
+  "feature_100_questions": "100 questions per test",
+
+  "feature_difficulty_levels": "Multiple difficulty levels",
+  "feature_instant_feedback": "Instant feedback on answers",
+
+  "feature_custom_tests_limit": "Custom Tests (3 per month)",
+  "feature_unlimited_custom_tests": "Unlimited Custom Tests",
+
+  "feature_answer_sheet_evaluator": "Answer Sheet Evaluator",
+  "feature_answer_eval_10": "Answer Sheet Evaluator (10/month)",
+  "feature_unlimited_answer_eval": "Unlimited Answer Sheet Evaluator",
+
+  "feature_teacher_dashboard": "Teacher Dashboard",
+  "feature_teacher_dashboard_basic": "Teacher Dashboard (Basic)",
+  "feature_teacher_dashboard_advanced": "Teacher Dashboard (Advanced)",
+
+    "pricing_title": "Simple, Transparent Pricing",
+    "pricing_desc_before": "All versions are free for all users until ",
+    "pricing_free_date": "December 31, 2025",
+    "pricing_desc_after": ". Choose your plan and start learning today!",
+
 
     "plan_free_desc": "Perfect for students exploring",
     "plan_pro_desc": "For serious learners and teachers",
@@ -284,6 +307,65 @@
     "faq_payment_methods": "What payment methods do you accept?",
     "faq_payment_methods_desc": "We accept credit cards, UPI, and digital wallets.",
 
-    "start_free_now": "Start for Free Now"
-  }
+    "start_free_now": "Start for Free Now",
+
+
+    "faq_refund": "Do you offer refunds?",
+    "faq_refund_desc": "We offer a 7-day money-back guarantee if you're not satisfied with our service. No questions asked!",
+
+    "cta_ready_learning": "Ready to start learning?",
+    "cta_join_students": "Join thousands of students and teachers using MCQGyaan AI",
+  "free_until_date": "Free until Dec 31, 2025",
+
+  "faq_free_features": "Are all features free until Dec 31, 2025?",
+  "faq_free_features_desc": "Yes! All pricing tiers are completely free for all users until December 31, 2025. After that date, paid plans will be activated.",
+
+  "faq_change_plan": "Can I change my plan anytime?",
+  "faq_change_plan_desc": "Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately.",
+  "contact_title": "Get In Touch",
+  "contact_desc": "Have questions about MCQGyaan AI? We'd love to hear from you. Send us a message and we'll respond as soon as possible.",
+
+  "send_message": "Send us a Message",
+  "send_message_desc": "Fill out the form below and we'll get back to you shortly. All fields are required unless marked optional.",
+
+  "why_contact": "Why Contact Us?",
+  "why_contact_desc": "Whether you have questions, suggestions, or need support, our team is here to help you get the most out of MCQGyaan AI.",
+
+  "contact_support": "Technical Support",
+  "contact_partnership": "Partnership Opportunities",
+  "contact_feature_request": "Feature Requests",
+  "contact_account_issue": "Account Related Issues",
+
+  "form_full_name": "Full Name",
+  "form_email": "Email Address",
+  "form_phone": "Phone Number (Optional)",
+  "form_category": "Category",
+  "form_message": "Message",
+
+  "contact_feedback": "Feedback",
+  "contact_other": "Other",
+
+  "sending": "Sending...",
+  "send_message_btn": "Send Message",
+
+  "faq_title": "Frequently Asked Questions",
+
+  "faq_response_time_q": "How quickly will I get a response?",
+  "faq_response_time_a": "We aim to respond to all inquiries within 24 business hours. For urgent issues, please call us directly.",
+
+  "faq_school_discount_q": "Do you offer school/institutional discounts?",
+  "faq_school_discount_a": "Yes! We offer special rates for schools and institutions.",
+
+  "faq_offline_q": "Can I use MCQGyaan AI offline?",
+  "faq_offline_a": "Currently, MCQGyaan AI requires an internet connection.",
+
+  "faq_free_trial_q": "Is there a free trial available?",
+  "faq_free_trial_a": "Yes! All features are free until December 31, 2025.",
+
+  "faq_api_q": "Do you offer API access?",
+  "faq_api_a": "API access is available on our Premium plan.",
+
+  "faq_data_security_q": "How is my data protected?",
+  "faq_data_security_a": "We use enterprise-grade encryption and comply with all data protection regulations."
+
 }
