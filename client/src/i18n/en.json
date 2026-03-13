@@ -1,0 +1,289 @@
+{
+  "home": "Home",
+  "features": "Features",
+  "pricing": "Pricing",
+  "contact": "Contact",
+  "login": "Login",
+  "logout": "Logout",
+
+  "hero_title": "Smart AI-Based Practice & Evaluation Tool for Students",
+
+  "get_started": "Get Started Free",
+
+  "features_title": "Powerful Features for Smarter Learning",
+  "pricing_title": "Simple, Transparent Pricing",
+  "contact_title": "Get In Touch",
+
+  "ai_platform": "AI-Powered Learning Platform",
+
+  "hero_smart": "Smart",
+  "hero_ai_practice": "AI-Based Practice & Evaluation",
+  "hero_students": "Tool for Students",
+
+  "hero_desc": "Free AI-powered mock tests for CBSE students. Learn 6 languages, master 4 science subjects, and achieve your academic goals.",
+
+  "six_languages": "6 Languages",
+  "four_subjects": "4 Science Subjects",
+  "free_until": "Free Until Dec 31",
+
+  "start_learning": "Start Learning Now",
+  "explore_features": "Explore Features",
+
+  "ai_questions": "AI-Generated Questions",
+  "active_students": "Active Students",
+  "chapters_topics": "Chapters & Topics",
+  "realtime": "Real-Time",
+  "ai_feedback": "AI Feedback",
+
+  "choose_quiz_mode": "Choose Your Quiz Mode",
+  "quiz_mode_desc": "Select between language learning or science quizzes",
+
+  "language_learning": "Language Learning",
+  "language_learning_desc": "Practice French, German, Spanish, Hindi, Marathi, and Kannada",
+
+  "science_quiz": "General Science Quiz",
+  "science_quiz_desc": "Test your knowledge in Physics, Chemistry, Biology, and more",
+
+  "custom_mcq": "Custom MCQ",
+  "custom_mcq_desc": "Teachers create tests, students take them",
+
+  "answer_sheet": "Answer Sheet Evaluator",
+  "answer_sheet_desc": "AI-powered evaluation of handwritten answer sheets",
+
+  "four_categories": "4 Categories",
+  "teacher_student": "Teacher/Student",
+  "upload_evaluate": "Upload & Evaluate",
+
+  "best_scores": "Your Best Scores",
+  "reset_scores": "Reset Scores",
+  "back": "Back",
+
+  "custom_mcq_platform": "Custom MCQ Platform",
+  "choose_role": "Choose your role to continue",
+
+  "teacher_role": "I'm a Teacher",
+  "teacher_role_desc": "Create and manage custom MCQ tests for your students",
+
+  "student_role": "I'm a Student",
+  "student_role_desc": "Take custom tests using a share code from your teacher",
+
+  "aligned": "Aligned",
+  "aligned_desc": "Official curriculum coverage",
+
+  "ai_powered": "AI Powered",
+  "ai_powered_desc": "Adaptive question generation",
+
+  "track_progress": "Track Progress",
+  "track_progress_desc": "Monitor your improvement",
+
+  "choose_language": "Choose Your Language",
+  "six_languages_available": "6 Languages Available",
+  "choose_category": "Choose a category",
+
+  "select_science_category": "Select Science Category",
+  "science_categories": "4 Categories • 25 Chapters",
+
+  "step_1_4": "Step 1 of 4",
+  "step_2_5": "Step 2 of 5",
+  "step_3_5": "Step 3 of 5",
+  "step_4_5": "Step 4 of 5",
+  "step_5_6": "Step 5 of 6",
+  "step_6_settings": "Step 6 of 6 - Enter your topics and settings",
+
+  "select_test_type": "Select Test Type",
+  "select_test_length": "Select Test Length",
+  "choose_test_mode": "Choose Test Mode",
+  "select_test_creation": "Select How You Want to Create Your Test",
+  "create_custom_test": "Create Your Custom Test",
+
+  "test_topics": "Test Topics",
+  "topics_desc": "Enter topics you want to focus on (Topic 1 is mandatory, others are optional)",
+
+  "topic1_required": "Topic 1 (Required)",
+  "topic2_required": "Topic 2 (Required)",
+  "topic3_required": "Topic 3 (Required)",
+  "topic4_optional": "Topic 4 (Optional)",
+  "topic5_optional": "Topic 5 (Optional)",
+  "topic6_optional": "Topic 6 (Optional)",
+
+  "ai_model_quality": "AI Model Quality",
+  "ai_model_desc": "Higher quality models generate better questions but take longer",
+
+  "education_board": "Education Board",
+  "board_desc": "Questions will align with your board's curriculum",
+
+  "test_config_summary": "Test Configuration Summary",
+
+  "type": "Type",
+  "topics": "Topics",
+  "class": "Class",
+  "subject": "Subject",
+
+  "generating_test": "Generating Your Test...",
+  "generate_custom_test": "Generate Custom Test",
+
+  "features_hero_title": "Powerful Features for Smarter Learning",
+  "features_hero_desc": "MCQGyaan AI combines AI-powered learning, comprehensive assessments, and intuitive tools to help students excel and teachers teach effectively.",
+
+  "get_started_free": "Get Started Free",
+
+  "core_features": "Core Features",
+  "core_features_desc": "Everything you need for comprehensive learning and assessment",
+
+  "advanced_capabilities": "Advanced Capabilities",
+  "advanced_capabilities_desc": "Beyond the basics: what makes MCQGyaan AI stand out",
+
+  "built_for_teachers": "Built for Teachers",
+  "built_for_teachers_desc": "Streamline assessment and boost classroom efficiency",
+
+  "powered_by_ai": "Powered by Advanced AI",
+  "powered_by_ai_desc": "MCQGyaan uses cutting-edge GPT models to generate high-quality questions, provide intelligent feedback, and adapt to student learning patterns.",
+
+  "gpt4o_desc": "Multi-language support with proper transliteration",
+  "gpt4o_mini_desc": "Fast & affordable",
+  "gpt35_desc": "Budget option",
+
+  "quality_control": "Quality Control",
+  "quality_control_desc": "100% verified",
+
+  "feature_comparison": "Feature Comparison",
+
+  "feature": "Feature",
+  "student": "Student",
+  "teacher": "Teacher",
+  "parent": "Parent",
+
+  "experience_mcqgyaan": "Experience MCQGyaan AI Today",
+  "experience_desc": "Start with free access to all features until December 31, 2025. No credit card required.",
+
+  "start_learning_free": "Start Learning Free",
+  "view_pricing": "View Pricing",
+
+  "smart_question_generation": "Smart question generation with anti-duplication",
+  "context_aware_feedback": "Context-aware explanations and feedback",
+  "adaptive_difficulty": "Adaptive difficulty based on performance",
+  "multilanguage_support": "Multi-language support with proper transliteration",
+
+    "feature_language_learning_title": "6 Language Learning Modes",
+    "feature_language_learning_desc": "Master French, German, Spanish, Hindi, Marathi, and Kannada with AI-powered interactive lessons tailored to your level.",
+
+    "benefit_real_pronunciation": "Real pronunciations",
+    "benefit_cultural_context": "Cultural context",
+    "benefit_grammar_explanation": "Grammar explanations",
+    "benefit_progressive_difficulty": "Progressive difficulty",
+
+    "feature_science_quiz_title": "Comprehensive Science Quizzes",
+    "feature_science_quiz_desc": "Deep dive into Physics, Chemistry, Biology, and General Science with questions aligned to CBSE curriculum.",
+
+    "benefit_real_world": "Real-world applications",
+    "benefit_concept_clarity": "Concept clarity",
+    "benefit_step_solution": "Step-by-step solutions",
+    "benefit_visual_diagrams": "Visual diagrams",
+
+    "feature_custom_tests_title": "AI-Powered Custom Tests",
+    "feature_custom_tests_desc": "Generate unlimited personalized MCQ tests by selecting topics, difficulty, and preferred GPT model.",
+
+    "benefit_gpt_quality": "GPT-4o quality",
+    "benefit_cost_effective": "Cost-effective options",
+    "benefit_no_duplication": "No question duplication",
+    "benefit_instant_feedback": "Instant feedback",
+
+    "feature_answer_eval_title": "Answer Sheet Evaluator",
+    "feature_answer_eval_desc": "Upload answer sheets for automatic AI evaluation with detailed feedback and improvement suggestions.",
+
+    "benefit_batch_processing": "Batch processing",
+    "benefit_quality_assessment": "Quality assessment",
+    "benefit_detailed_analysis": "Detailed analysis",
+    "benefit_score_tracking": "Score tracking",
+
+    "premium_adaptive_difficulty": "Adaptive Difficulty Levels",
+    "premium_progress_tracking": "Real-time Progress Tracking",
+    "premium_leaderboard": "Comprehensive Leaderboard",
+    "premium_multiboard": "Multi-Board Support (CBSE/ICSE/IB)",
+    "premium_ai_feedback": "AI Feedback & Explanations",
+    "premium_pdf_reports": "Downloadable Reports & PDFs",
+    "premium_teacher_dashboard": "Teacher Dashboard",
+    "premium_anti_duplication": "Anti-Duplication Controls",
+    "premium_custom_content": "Custom Educational Content",
+    "premium_analytics": "Advanced Analytics",
+
+    "student_self_paced": "Self-Paced Learning",
+    "student_self_paced_desc": "Learn at your own speed with 24/7 access to all resources",
+
+    "student_instant_feedback": "Instant Feedback",
+    "student_instant_feedback_desc": "Get immediate explanations for every answer you give",
+
+    "student_performance_tracking": "Performance Tracking",
+    "student_performance_tracking_desc": "Monitor your progress with detailed analytics and reports",
+
+    "student_confidence": "Confidence Building",
+    "student_confidence_desc": "Master topics with progressively challenging questions",
+
+    "student_exam_prep": "Exam Preparation",
+    "student_exam_prep_desc": "Practice with questions that match your board's pattern",
+
+    "student_doubt_clarification": "Doubt Clarification",
+    "student_doubt_clarification_desc": "AI-powered explanations for complex concepts",
+
+    "teacher_test_creation": "Custom Test Creation",
+    "teacher_test_creation_desc": "Generate tests in seconds without manual question writing",
+
+    "teacher_time_saving": "Time Saving",
+    "teacher_time_saving_desc": "Automate assessment with zero effort",
+
+    "teacher_student_analytics": "Student Analytics",
+    "teacher_student_analytics_desc": "Track individual and class performance at a glance",
+
+    "teacher_flexible_assessment": "Flexible Assessment",
+    "teacher_flexible_assessment_desc": "Mix MCQ, open-ended, and custom question types",
+
+    "teacher_class_management": "Class Management",
+    "teacher_class_management_desc": "Organize students, share codes, and track submissions",
+
+    "teacher_answer_evaluation": "Answer Evaluation",
+    "teacher_answer_evaluation_desc": "Auto-evaluate answer sheets with detailed feedback",
+
+    "feature_language_learning": "Language Learning",
+    "feature_science_quizzes": "Science Quizzes",
+    "feature_performance_analytics": "Performance Analytics",
+    "feature_custom_test_creation": "Custom Test Creation",
+    "feature_answer_evaluation": "Answer Sheet Evaluation",
+    "feature_class_management": "Class Management",
+    "feature_student_progress": "Student Progress Tracking",
+    "feature_download_reports": "Download Reports",
+
+  {
+    "pricing_title": "Simple, Transparent Pricing",
+    "pricing_desc": "All versions are free for all users until December 31, 2025. Choose your plan and start learning today!",
+    "free_access_notice": "🎉 FREE ACCESS UNTIL DEC 31, 2025",
+
+    "plan_free": "Free",
+    "plan_pro": "Pro",
+    "plan_premium": "Premium",
+
+    "plan_free_desc": "Perfect for students exploring",
+    "plan_pro_desc": "For serious learners and teachers",
+    "plan_premium_desc": "For educators and institutions",
+
+    "month": "month",
+
+    "cta_get_started": "Get Started",
+    "cta_upgrade_pro": "Upgrade to Pro",
+    "cta_upgrade_premium": "Upgrade to Premium",
+
+    "recommended": "RECOMMENDED",
+
+    "faq_title": "Frequently Asked Questions",
+
+    "faq_change_plan": "Can I change my plan anytime?",
+    "faq_change_plan_desc": "Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately.",
+
+    "faq_teacher_discount": "Is there a teacher discount?",
+    "faq_teacher_discount_desc": "Yes! Teachers get a 30% discount on Pro and Premium plans.",
+
+    "faq_payment_methods": "What payment methods do you accept?",
+    "faq_payment_methods_desc": "We accept credit cards, UPI, and digital wallets.",
+
+    "start_free_now": "Start for Free Now"
+  }
+}

@@ -1,0 +1,292 @@
+{
+  "home": "होम",
+  "features": "फीचर्स",
+  "pricing": "प्राइसिंग",
+  "contact": "संपर्क",
+  "login": "लॉगिन",
+  "logout": "लॉगआउट",
+
+  "hero_title": "छात्रों के लिए स्मार्ट AI आधारित प्रैक्टिस और मूल्यांकन टूल",
+
+  "hero_desc": "CBSE छात्रों के लिए मुफ्त AI आधारित मॉक टेस्ट। 6 भाषाएँ सीखें, 4 विज्ञान विषयों में महारत हासिल करें और अपने शैक्षणिक लक्ष्य प्राप्त करें।",
+
+  "get_started": "मुफ्त शुरू करें",
+
+  "features_title": "बेहतर सीखने के लिए शक्तिशाली फीचर्स",
+  "pricing_title": "सरल और पारदर्शी प्राइसिंग",
+  "contact_title": "संपर्क करें",
+
+  "ai_platform": "AI आधारित लर्निंग प्लेटफॉर्म",
+
+  "hero_smart": "स्मार्ट",
+  "hero_ai_practice": "AI आधारित प्रैक्टिस और मूल्यांकन",
+  "hero_students": "छात्रों के लिए टूल",
+
+  "six_languages": "6 भाषाएँ",
+  "four_subjects": "4 विज्ञान विषय",
+  "free_until": "31 दिसंबर तक मुफ्त",
+
+  "start_learning": "अभी सीखना शुरू करें",
+  "explore_features": "फीचर्स देखें",
+
+  "ai_questions": "AI द्वारा बनाए गए प्रश्न",
+  "active_students": "सक्रिय छात्र",
+  "chapters_topics": "अध्याय और टॉपिक्स",
+  "realtime": "रियल-टाइम",
+  "ai_feedback": "AI फीडबैक",
+
+  "choose_quiz_mode": "अपना क्विज़ मोड चुनें",
+  "quiz_mode_desc": "भाषा सीखने या विज्ञान क्विज़ में से चुनें",
+
+  "language_learning": "भाषा सीखना",
+  "language_learning_desc": "फ्रेंच, जर्मन, स्पेनिश, हिंदी, मराठी और कन्नड़ का अभ्यास करें",
+
+  "science_quiz": "सामान्य विज्ञान क्विज़",
+  "science_quiz_desc": "भौतिकी, रसायन विज्ञान, जीवविज्ञान और अन्य विषयों में अपना ज्ञान परखें",
+
+  "custom_mcq": "कस्टम MCQ",
+  "custom_mcq_desc": "शिक्षक टेस्ट बनाते हैं, छात्र उन्हें देते हैं",
+
+  "answer_sheet": "उत्तर पुस्तिका मूल्यांकन",
+  "answer_sheet_desc": "हाथ से लिखी उत्तर पुस्तिकाओं का AI आधारित मूल्यांकन",
+
+  "four_categories": "4 श्रेणियाँ",
+  "teacher_student": "शिक्षक/छात्र",
+  "upload_evaluate": "अपलोड और मूल्यांकन",
+
+  "best_scores": "आपके सर्वश्रेष्ठ स्कोर",
+  "reset_scores": "स्कोर रीसेट करें",
+  "back": "वापस",
+
+  "custom_mcq_platform": "कस्टम MCQ प्लेटफॉर्म",
+  "choose_role": "जारी रखने के लिए अपनी भूमिका चुनें",
+
+  "teacher_role": "मैं एक शिक्षक हूँ",
+  "teacher_role_desc": "अपने छात्रों के लिए कस्टम MCQ टेस्ट बनाएं और मैनेज करें",
+
+  "student_role": "मैं एक छात्र हूँ",
+  "student_role_desc": "अपने शिक्षक के शेयर कोड का उपयोग करके टेस्ट दें",
+
+  "aligned": "पाठ्यक्रम के अनुसार",
+  "aligned_desc": "आधिकारिक पाठ्यक्रम कवरेज",
+
+  "ai_powered": "AI आधारित",
+  "ai_powered_desc": "एडैप्टिव प्रश्न जनरेशन",
+
+  "track_progress": "प्रगति ट्रैक करें",
+  "track_progress_desc": "अपनी प्रगति की निगरानी करें",
+
+  "choose_language": "अपनी भाषा चुनें",
+  "six_languages_available": "6 भाषाएँ उपलब्ध",
+
+  "choose_category": "एक श्रेणी चुनें",
+
+  "select_science_category": "विज्ञान श्रेणी चुनें",
+  "science_categories": "4 श्रेणियाँ • 25 अध्याय",
+
+  "step_1_4": "स्टेप 1 में से 4",
+  "step_2_5": "स्टेप 2 में से 5",
+  "step_3_5": "स्टेप 3 में से 5",
+  "step_4_5": "स्टेप 4 में से 5",
+  "step_5_6": "स्टेप 5 में से 6",
+  "step_6_settings": "स्टेप 6 में से 6 - अपने टॉपिक्स और सेटिंग दर्ज करें",
+
+  "select_test_type": "टेस्ट प्रकार चुनें",
+  "select_test_length": "टेस्ट लंबाई चुनें",
+  "choose_test_mode": "टेस्ट मोड चुनें",
+  "select_test_creation": "अपना टेस्ट बनाने का तरीका चुनें",
+  "create_custom_test": "अपना कस्टम टेस्ट बनाएं",
+
+  "test_topics": "टेस्ट टॉपिक्स",
+  "topics_desc": "वे टॉपिक्स दर्ज करें जिन पर आप ध्यान देना चाहते हैं",
+
+  "topic1_required": "टॉपिक 1 (आवश्यक)",
+  "topic2_required": "टॉपिक 2 (आवश्यक)",
+  "topic3_required": "टॉपिक 3 (आवश्यक)",
+  "topic4_optional": "टॉपिक 4 (वैकल्पिक)",
+  "topic5_optional": "टॉपिक 5 (वैकल्पिक)",
+  "topic6_optional": "टॉपिक 6 (वैकल्पिक)",
+
+  "ai_model_quality": "AI मॉडल क्वालिटी",
+  "ai_model_desc": "बेहतर मॉडल बेहतर प्रश्न बनाते हैं लेकिन समय अधिक लेते हैं",
+
+  "education_board": "शिक्षा बोर्ड",
+  "board_desc": "प्रश्न आपके बोर्ड के पाठ्यक्रम के अनुसार होंगे",
+
+  "test_config_summary": "टेस्ट कॉन्फ़िगरेशन सारांश",
+
+  "type": "प्रकार",
+  "topics": "टॉपिक्स",
+  "class": "कक्षा",
+  "subject": "विषय",
+
+  "generating_test": "आपका टेस्ट बनाया जा रहा है...",
+  "generate_custom_test": "कस्टम टेस्ट बनाएं",
+
+  "features_hero_title": "बेहतर सीखने के लिए शक्तिशाली फीचर्स",
+  "features_hero_desc": "MCQGyaan AI AI-आधारित लर्निंग, व्यापक आकलन और सहज टूल्स को मिलाकर छात्रों को बेहतर सीखने और शिक्षकों को प्रभावी ढंग से पढ़ाने में मदद करता है।",
+
+  "get_started_free": "मुफ्त शुरू करें",
+
+  "core_features": "मुख्य फीचर्स",
+  "core_features_desc": "व्यापक सीखने और आकलन के लिए आपको जो कुछ चाहिए, सब कुछ",
+
+  "advanced_capabilities": "उन्नत क्षमताएँ",
+  "advanced_capabilities_desc": "बुनियादी सुविधाओं से आगे: क्या चीज़ MCQGyaan AI को खास बनाती है",
+
+  "built_for_teachers": "शिक्षकों के लिए बनाया गया",
+  "built_for_teachers_desc": "आकलन प्रक्रिया को आसान बनाएं और कक्षा की दक्षता बढ़ाएं",
+
+  "powered_by_ai": "उन्नत AI द्वारा संचालित",
+  "powered_by_ai_desc": "MCQGyaan अत्याधुनिक GPT मॉडलों का उपयोग करके उच्च-गुणवत्ता के प्रश्न बनाता है, बुद्धिमान फीडबैक देता है और छात्रों की सीखने की शैली के अनुसार खुद को अनुकूलित करता है।",
+
+  "gpt4o_desc": "सही लिप्यंतरण के साथ बहुभाषी समर्थन",
+  "gpt4o_mini_desc": "तेज़ और किफायती",
+  "gpt35_desc": "कम लागत वाला विकल्प",
+
+  "quality_control": "गुणवत्ता नियंत्रण",
+  "quality_control_desc": "100% सत्यापित",
+
+  "feature_comparison": "फीचर तुलना",
+
+  "feature": "फीचर",
+  "student": "छात्र",
+  "teacher": "शिक्षक",
+  "parent": "अभिभावक",
+
+  "experience_mcqgyaan": "आज ही MCQGyaan AI का अनुभव लें",
+  "experience_desc": "31 दिसंबर 2025 तक सभी फीचर्स का मुफ्त उपयोग शुरू करें। किसी क्रेडिट कार्ड की आवश्यकता नहीं है।",
+
+  "start_learning_free": "मुफ्त सीखना शुरू करें",
+  "view_pricing": "प्राइसिंग देखें",
+
+  "smart_question_generation": "डुप्लिकेट से बचाव के साथ स्मार्ट प्रश्न निर्माण",
+  "context_aware_feedback": "संदर्भ आधारित व्याख्या और फीडबैक",
+  "adaptive_difficulty": "प्रदर्शन के आधार पर अनुकूली कठिनाई",
+  "multilanguage_support": "सही लिप्यंतरण के साथ बहुभाषी समर्थन",
+  
+    "feature_language_learning_title": "6 भाषा सीखने के मोड",
+    "feature_language_learning_desc": "AI आधारित इंटरैक्टिव लेसन्स के साथ फ्रेंच, जर्मन, स्पेनिश, हिंदी, मराठी और कन्नड़ सीखें।",
+
+    "benefit_real_pronunciation": "सही उच्चारण",
+    "benefit_cultural_context": "सांस्कृतिक संदर्भ",
+    "benefit_grammar_explanation": "व्याकरण की व्याख्या",
+    "benefit_progressive_difficulty": "क्रमिक कठिनाई स्तर",
+
+    "feature_science_quiz_title": "समग्र विज्ञान क्विज़",
+    "feature_science_quiz_desc": "CBSE पाठ्यक्रम के अनुसार भौतिकी, रसायन विज्ञान, जीवविज्ञान और सामान्य विज्ञान के प्रश्न।",
+
+    "benefit_real_world": "वास्तविक जीवन के उदाहरण",
+    "benefit_concept_clarity": "संकल्पना की स्पष्टता",
+    "benefit_step_solution": "स्टेप-बाय-स्टेप समाधान",
+    "benefit_visual_diagrams": "दृश्य आरेख",
+
+    "feature_custom_tests_title": "AI आधारित कस्टम टेस्ट",
+    "feature_custom_tests_desc": "विषय, कठिनाई और GPT मॉडल चुनकर असीमित MCQ टेस्ट बनाएं।",
+
+    "benefit_gpt_quality": "GPT-4o गुणवत्ता",
+    "benefit_cost_effective": "कम लागत विकल्प",
+    "benefit_no_duplication": "प्रश्नों की पुनरावृत्ति नहीं",
+    "benefit_instant_feedback": "तुरंत फीडबैक",
+
+    "feature_answer_eval_title": "उत्तर पुस्तिका मूल्यांकन",
+    "feature_answer_eval_desc": "उत्तर पुस्तिका अपलोड करें और AI से विस्तृत मूल्यांकन प्राप्त करें।",
+
+    "benefit_batch_processing": "बैच प्रोसेसिंग",
+    "benefit_quality_assessment": "गुणवत्ता मूल्यांकन",
+    "benefit_detailed_analysis": "विस्तृत विश्लेषण",
+    "benefit_score_tracking": "स्कोर ट्रैकिंग",
+
+    "premium_adaptive_difficulty": "अनुकूली कठिनाई स्तर",
+    "premium_progress_tracking": "रीयल-टाइम प्रगति ट्रैकिंग",
+    "premium_leaderboard": "लीडरबोर्ड",
+    "premium_multiboard": "मल्टी-बोर्ड सपोर्ट (CBSE/ICSE/IB)",
+    "premium_ai_feedback": "AI फीडबैक और व्याख्या",
+    "premium_pdf_reports": "डाउनलोड करने योग्य रिपोर्ट और PDF",
+    "premium_teacher_dashboard": "शिक्षक डैशबोर्ड",
+    "premium_anti_duplication": "डुप्लिकेशन नियंत्रण",
+    "premium_custom_content": "कस्टम शैक्षणिक सामग्री",
+    "premium_analytics": "उन्नत एनालिटिक्स",
+
+    "student_self_paced": "स्वयं की गति से सीखना",
+    "student_self_paced_desc": "24/7 एक्सेस के साथ अपनी गति से सीखें",
+
+    "student_instant_feedback": "तुरंत फीडबैक",
+    "student_instant_feedback_desc": "हर उत्तर के लिए तुरंत व्याख्या प्राप्त करें",
+
+    "student_performance_tracking": "प्रदर्शन ट्रैकिंग",
+    "student_performance_tracking_desc": "विस्तृत रिपोर्ट के साथ अपनी प्रगति देखें",
+
+    "student_confidence": "आत्मविश्वास निर्माण",
+    "student_confidence_desc": "क्रमशः कठिन प्रश्नों के साथ विषयों में महारत हासिल करें",
+
+    "student_exam_prep": "परीक्षा तैयारी",
+    "student_exam_prep_desc": "अपने बोर्ड पैटर्न के अनुसार प्रश्नों का अभ्यास करें",
+
+    "student_doubt_clarification": "संदेह समाधान",
+    "student_doubt_clarification_desc": "जटिल विषयों के लिए AI आधारित व्याख्या",
+
+    "teacher_test_creation": "कस्टम टेस्ट निर्माण",
+    "teacher_test_creation_desc": "बिना प्रश्न लिखे सेकंडों में टेस्ट बनाएं",
+
+    "teacher_time_saving": "समय की बचत",
+    "teacher_time_saving_desc": "आकलन प्रक्रिया को स्वचालित करें",
+
+    "teacher_student_analytics": "छात्र विश्लेषण",
+    "teacher_student_analytics_desc": "व्यक्तिगत और कक्षा प्रदर्शन देखें",
+
+    "teacher_flexible_assessment": "लचीला मूल्यांकन",
+    "teacher_flexible_assessment_desc": "MCQ और अन्य प्रश्न प्रकारों का मिश्रण",
+
+    "teacher_class_management": "कक्षा प्रबंधन",
+    "teacher_class_management_desc": "छात्रों को व्यवस्थित करें और प्रगति ट्रैक करें",
+
+    "teacher_answer_evaluation": "उत्तर मूल्यांकन",
+    "teacher_answer_evaluation_desc": "AI से उत्तर पुस्तिकाओं का मूल्यांकन",
+
+    "feature_language_learning": "भाषा सीखना",
+    "feature_science_quizzes": "विज्ञान क्विज़",
+    "feature_performance_analytics": "प्रदर्शन विश्लेषण",
+    "feature_custom_test_creation": "कस्टम टेस्ट निर्माण",
+    "feature_answer_evaluation": "उत्तर पुस्तिका मूल्यांकन",
+    "feature_class_management": "कक्षा प्रबंधन",
+    "feature_student_progress": "छात्र प्रगति ट्रैकिंग",
+    "feature_download_reports": "रिपोर्ट डाउनलोड",
+
+  {
+    "pricing_title": "सरल और पारदर्शी प्राइसिंग",
+    "pricing_desc": "31 दिसंबर 2025 तक सभी उपयोगकर्ताओं के लिए सभी सुविधाएँ मुफ्त हैं। अपनी योजना चुनें और आज ही सीखना शुरू करें!",
+    "free_access_notice": "🎉 31 दिसंबर 2025 तक मुफ्त एक्सेस",
+
+    "plan_free": "फ्री",
+    "plan_pro": "प्रो",
+    "plan_premium": "प्रीमियम",
+
+    "plan_free_desc": "शुरुआती छात्रों के लिए उपयुक्त",
+    "plan_pro_desc": "गंभीर शिक्षार्थियों और शिक्षकों के लिए",
+    "plan_premium_desc": "शिक्षकों और संस्थानों के लिए",
+
+    "month": "महीना",
+
+    "cta_get_started": "शुरू करें",
+    "cta_upgrade_pro": "प्रो में अपग्रेड करें",
+    "cta_upgrade_premium": "प्रीमियम में अपग्रेड करें",
+
+    "recommended": "अनुशंसित",
+
+    "faq_title": "अक्सर पूछे जाने वाले प्रश्न",
+
+    "faq_change_plan": "क्या मैं अपनी योजना कभी भी बदल सकता हूँ?",
+    "faq_change_plan_desc": "हाँ, आप किसी भी समय अपनी योजना अपग्रेड या डाउनग्रेड कर सकते हैं।",
+
+    "faq_teacher_discount": "क्या शिक्षकों के लिए छूट है?",
+    "faq_teacher_discount_desc": "हाँ! शिक्षकों को प्रो और प्रीमियम योजनाओं पर 30% छूट मिलती है।",
+
+    "faq_payment_methods": "आप कौन से भुगतान तरीके स्वीकार करते हैं?",
+    "faq_payment_methods_desc": "हम क्रेडिट कार्ड, UPI और डिजिटल वॉलेट स्वीकार करते हैं।",
+
+    "start_free_now": "मुफ्त में शुरू करें"
+  }
+
+  
+}

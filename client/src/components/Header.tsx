@@ -140,8 +140,7 @@ export default function Header() {
   const [isDark, setIsDark] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
-
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   // 🌐 Language Toggle
   const changeLanguage = () => {
@@ -191,7 +190,7 @@ export default function Header() {
           </div>
 
           <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            {t("MCQGyaan AI")}
+            MCQGyaan AI
           </h1>
         </button>
 
@@ -205,19 +204,19 @@ export default function Header() {
             }}
             className="hover:text-yellow-300"
           >
-            {t("Home")}
+            {t("home")}
           </button>
 
           <Link to="/features" className="hover:text-yellow-300">
-            Features
+            {t("features")}
           </Link>
 
           <Link to="/pricing" className="hover:text-yellow-300">
-            Pricing
+            {t("pricing")}
           </Link>
 
           <Link to="/contact" className="hover:text-yellow-300">
-            Contact
+            {t("contact")}
           </Link>
 
         </nav>
@@ -246,14 +245,14 @@ export default function Header() {
                 className="flex items-center gap-1"
               >
                 <LogOut className="w-4 h-4" />
-                Logout
+               {t("Logout")}
               </Button>
 
             </div>
           ) : (
             <Link to="/login">
               <button className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/80 transition">
-                Login
+                {t("Login")}
               </button>
             </Link>
           )}

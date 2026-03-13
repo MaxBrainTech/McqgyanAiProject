@@ -13,6 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import LeaderboardCard from "@/components/LeaderboardCard";
 import { toast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+
+import { useTranslation } from "react-i18next";
 // import { toast } from "@/components/ui/use-toast";
 
 // import React{ userEffect, useState} from "react";
@@ -475,6 +477,8 @@ useLayoutEffect(() => {
     // ScrollRestoration();
   };
 
+  const { t } = useTranslation();
+
   return (
 
     <div className="min-h-screen relative overflow-hidden">
@@ -501,37 +505,52 @@ useLayoutEffect(() => {
 
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full border border-white/30">
                 <GraduationCap className="w-5 h-5" />
-                <span className="text-sm font-semibold">AI-Powered Learning Platform</span>
+                <span className="text-sm font-semibold">{t("ai_platform")}</span>
               </div>
 
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight tracking-tight">
-                <span className="block text-white">Smart</span>
+
+                <span className="block text-white">
+                  {t("hero_smart")}
+                </span>
 
                 <span className="block bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent">
-                  AI-Based Practice & Evaluation
+                  {t("hero_ai_practice")}
                 </span>
 
                 <span className="block text-purple-200">
-                  Tool for Students
+                  {t("hero_students")}
                 </span>
+
               </h1>
 
               <p className="text-lg sm:text-xl text-white/90 max-w-xl">
-                Free AI-powered mock tests for CBSE students. Learn 6 languages, master 4 science subjects, and achieve your academic goals.
+                {t("hero_desc")}
               </p>
 
               <div className="flex flex-wrap gap-3">
-                <Badge variant="secondary" className="text-sm font-semibold bg-white/20 text-white border-white/30 hover:bg-white/30">✓ 6 Languages</Badge>
-                <Badge variant="secondary" className="text-sm font-semibold bg-white/20 text-white border-white/30 hover:bg-white/30">✓ 4 Science Subjects</Badge>
-                <Badge variant="secondary" className="text-sm font-semibold bg-white/20 text-white border-white/30 hover:bg-white/30">✓ Free Until Dec 31</Badge>
+
+                <Badge variant="secondary" className="text-sm font-semibold bg-white/20 text-white border-white/30 hover:bg-white/30">
+                  ✓ {t("six_languages")}
+                </Badge>
+
+                <Badge variant="secondary" className="text-sm font-semibold bg-white/20 text-white border-white/30 hover:bg-white/30">
+                  ✓ {t("four_subjects")}
+                </Badge>
+
+                <Badge variant="secondary" className="text-sm font-semibold bg-white/20 text-white border-white/30 hover:bg-white/30">
+                  ✓ {t("free_until")}
+                </Badge>
+
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
+
                 <Button 
                   onClick={() => handleModeSelect("language")}
                   className="bg-white text-blue-600 hover:bg-blue-50 font-bold py-6 px-8 text-lg rounded-lg transition-all transform hover:scale-105"
                 >
-                  Start Learning Now
+                  {t("start_learning")}
                 </Button>
 
                 <Button 
@@ -539,8 +558,9 @@ useLayoutEffect(() => {
                   onClick={() => navigate("/features")}
                   className="border-white text-white hover:bg-white/10 font-bold py-6 px-8 text-lg rounded-lg"
                 >
-                  Explore Features
+                  {t("explore_features")}
                 </Button>
+
               </div>
 
             </div>
@@ -552,25 +572,25 @@ useLayoutEffect(() => {
               <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6 text-white text-center hover:bg-white/20 transition">
                 <Sparkles className="w-10 h-10 mx-auto mb-2 text-yellow-300" />
                 <p className="text-3xl font-bold">10,000+</p>
-                <p className="text-white/80">AI-Generated Questions</p>
+                <p className="text-white/80">{t("ai_questions")}</p>
               </Card>
 
               <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6 text-white text-center hover:bg-white/20 transition">
                 <Trophy className="w-10 h-10 mx-auto mb-2 text-orange-300" />
                 <p className="text-3xl font-bold">5,000+</p>
-                <p className="text-white/80">Active Students</p>
+                <p className="text-white/80">{t("active_students")}</p>
               </Card>
 
               <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6 text-white text-center hover:bg-white/20 transition">
                 <BookOpen className="w-10 h-10 mx-auto mb-2 text-green-300" />
                 <p className="text-3xl font-bold">150+</p>
-                <p className="text-white/80">Chapters & Topics</p>
+                <p className="text-white/80">{t("chapters_topics")}</p>
               </Card>
 
               <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6 text-white text-center hover:bg-white/20 transition">
                 <Zap className="w-10 h-10 mx-auto mb-2 text-blue-300" />
-                <p className="text-3xl font-bold">Real-Time</p>
-                <p className="text-white/80">AI Feedback</p>
+                <p className="text-3xl font-bold">{t("realtime")}</p>
+                <p className="text-white/80">{t("ai_feedback")}</p>
               </Card>
 
             </div>
@@ -585,9 +605,19 @@ useLayoutEffect(() => {
           <div className="space-y-6 sm:space-y-8">
             {/* Mode Selection */}
             <div className="space-y-4">
-              <div className="text-center mb-8">
+              {/* <div className="text-center mb-8">
                 <h2 className="text-2xl sm:text-3xl font-bold mb-2">Choose Your Quiz Mode</h2>
                 <p className="text-base text-muted-foreground">Select between language learning or science quizzes</p>
+              </div> */}
+
+              <div className="text-center mb-8">
+                <h2 className="text-2xl sm:text-3xl font-bold mb-2">
+                  {t("choose_quiz_mode")}
+                </h2>
+
+                <p className="text-base text-muted-foreground">
+                  {t("quiz_mode_desc")}
+                </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
@@ -617,11 +647,23 @@ useLayoutEffect(() => {
                   <div className="inline-flex p-4 bg-primary/10 rounded-full mb-4">
                     <Languages className="w-12 h-12 text-primary" />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">Language Learning</h3>
+                  {/* <h3 className="text-xl font-bold mb-2">Language Learning</h3>
                   <p className="text-base text-muted-foreground">
                     Practice French, German, Spanish, Hindi, Marathi, and Kannada
                   </p>
-                  <Badge variant="secondary" className="mt-4 text-base">6 Languages</Badge>
+                  <Badge variant="secondary" className="mt-4 text-base">6 Languages</Badge> */}
+
+                  <h3 className="text-xl font-bold mb-2">
+                    {t("language_learning")}
+                  </h3>
+
+                  <p className="text-base text-muted-foreground">
+                    {t("language_learning_desc")}
+                  </p>
+
+                  <Badge variant="secondary" className="mt-4 text-base">
+                    {t("six_languages")}
+                  </Badge>
                 </Card>
 
 
@@ -661,11 +703,22 @@ useLayoutEffect(() => {
                   <div className="inline-flex p-4 bg-accent/10 rounded-full mb-4">
                     <BookOpen className="w-12 h-12 text-accent" />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">General Science Quiz</h3>
+                  {/* <h3 className="text-xl font-bold mb-2">General Science Quiz</h3>
                   <p className="text-base text-muted-foreground">
                     Test your knowledge in Physics, Chemistry, Biology, and more
                   </p>
-                  <Badge variant="secondary" className="mt-4 text-base">4 Categories</Badge>
+                  <Badge variant="secondary" className="mt-4 text-base">4 Categories</Badge> */}
+                  <h3 className="text-xl font-bold mb-2">
+                    {t("science_quiz")}
+                  </h3>
+
+                  <p className="text-base text-muted-foreground">
+                    {t("science_quiz_desc")}
+                  </p>
+
+                  <Badge variant="secondary" className="mt-4 text-base">
+                    {t("four_categories")}
+                  </Badge>
                 </Card>
 
 
@@ -698,11 +751,24 @@ useLayoutEffect(() => {
                   <div className="inline-flex p-4 bg-purple-500/10 rounded-full mb-4">
                     <GraduationCap className="w-12 h-12 text-purple-600" />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">Custom MCQ</h3>
+                  {/* <h3 className="text-xl font-bold mb-2">Custom MCQ</h3>
                   <p className="text-base text-muted-foreground">
                     Teachers create tests, students take them
                   </p>
-                  <Badge variant="secondary" className="mt-4 text-base">Teacher/Student</Badge>
+                  <Badge variant="secondary" className="mt-4 text-base">Teacher/Student</Badge> */}
+
+                  <h3 className="text-xl font-bold mb-2">
+                    {t("custom_mcq")}
+                  </h3>
+
+                  <p className="text-base text-muted-foreground">
+                    {t("custom_mcq_desc")}
+                  </p>
+
+                  <Badge variant="secondary" className="mt-4 text-base">
+                    {t("teacher_student")}
+                  </Badge>
+
                 </Card>
 
 
@@ -740,13 +806,24 @@ useLayoutEffect(() => {
                   <div className="inline-flex p-4 bg-green-500/10 rounded-full mb-4">
                     <ScrollText className="w-12 h-12 text-green-600" />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">Answer Sheet Evaluator</h3>
+                  {/* <h3 className="text-xl font-bold mb-2">Answer Sheet Evaluator</h3>
                   <p className="text-base text-muted-foreground">
                     AI-powered evaluation of handwritten answer sheets
                   </p>
                   <Badge variant="secondary" className="mt-4 text-base">Upload & Evaluate</Badge>
-                </Card>
+                </Card> */}
+                  <h3 className="text-xl font-bold mb-2">
+                    {t("answer_sheet")}
+                  </h3>
 
+                  <p className="text-base text-muted-foreground">
+                    {t("answer_sheet_desc")}
+                  </p>
+
+                  <Badge variant="secondary" className="mt-4 text-base">
+                    {t("upload_evaluate")}
+                  </Badge>
+                  </Card>
               </div>
             </div>
 
@@ -756,7 +833,9 @@ useLayoutEffect(() => {
                 <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                   <div className="flex items-center gap-2">
                     <Trophy className="w-5 h-5 text-primary" />
-                    <h2 className="text-lg sm:text-xl font-bold">Your Best Scores</h2>
+                    <h2 className="text-lg sm:text-xl font-bold">
+                      {t("best_scores")}
+                    </h2>
                   </div>
                   <Button
                     variant="outline"
@@ -765,7 +844,8 @@ useLayoutEffect(() => {
                     className="gap-2 h-11 text-base"
                   >
                     <RotateCcw className="w-4 h-4" />
-                    <span>Reset Scores</span>
+                    <span>{t("reset_scores")}</span>
+
                   </Button>
                 </div>
                 <LeaderboardCard entries={leaderboard} />
@@ -790,10 +870,15 @@ useLayoutEffect(() => {
                 <span className="transition-transform duration-200 group-hover:-translate-x-1">
                   ←
                 </span>
-                <span>Back</span>
+                <span>{t("back")}</span>
               </Button>
-              <h2 className="text-2xl sm:text-3xl font-bold mb-2">Custom MCQ Platform</h2>
-              <p className="text-base text-muted-foreground">Choose your role to continue</p>
+              <h2 className="text-2xl sm:text-3xl font-bold mb-2">
+                {t("custom_mcq_platform")}
+              </h2>
+
+              <p className="text-base text-muted-foreground">
+                {t("choose_role")}
+              </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
@@ -805,9 +890,12 @@ useLayoutEffect(() => {
                 <div className="inline-flex p-4 bg-primary/10 rounded-full mb-4">
                   <GraduationCap className="w-12 h-12 text-primary" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">I'm a Teacher</h3>
+                <h3 className="text-xl font-bold mb-2">
+                  {t("teacher_role")}
+                </h3>
+
                 <p className="text-base text-muted-foreground">
-                  Create and manage custom MCQ tests for your students
+                  {t("teacher_role_desc")}
                 </p>
               </Card>
 
@@ -819,9 +907,12 @@ useLayoutEffect(() => {
                 <div className="inline-flex p-4 bg-accent/10 rounded-full mb-4">
                   <BookOpen className="w-12 h-12 text-accent" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">I'm a Student</h3>
+                <h3 className="text-xl font-bold mb-2">
+                  {t("student_role")}
+                </h3>
+
                 <p className="text-base text-muted-foreground">
-                  Take custom tests using a share code from your teacher
+                  {t("student_role_desc")}
                 </p>
               </Card>
             </div>
@@ -843,7 +934,7 @@ useLayoutEffect(() => {
                 <span className="transition-transform duration-200 group-hover:-translate-x-1">
                   ←
                 </span>
-                <span>Back</span>
+              <span>{t("back")}</span>
               </Button>
             {/* Features Banner */}
             {/* <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
@@ -885,8 +976,13 @@ useLayoutEffect(() => {
                 <div className="inline-flex p-2 sm:p-3 bg-blue-600/30 dark:bg-blue-500/50 rounded-lg mb-2">
                   <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <h3 className="font-semibold text-base">Aligned</h3>
-                <p className="text-base text-white/80 mt-1">Official curriculum coverage</p>
+                <h3 className="font-semibold text-base">
+                  {t("aligned")}
+                </h3>
+
+                <p className="text-base text-white/80 mt-1">
+                  {t("aligned_desc")}
+                </p>
               </Card>
 
               {/* Green Card */}
@@ -898,8 +994,13 @@ useLayoutEffect(() => {
                 <div className="inline-flex p-2 sm:p-3 bg-green-600/30 dark:bg-green-500/50 rounded-lg mb-2">
                   <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <h3 className="font-semibold text-base">AI Powered</h3>
-                <p className="text-base text-white/80 mt-1">Adaptive question generation</p>
+                <h3 className="font-semibold text-base">
+                  {t("ai_powered")}
+                </h3>
+
+                <p className="text-base text-white/80 mt-1">
+                  {t("ai_powered_desc")}
+                </p>
               </Card>
 
               {/* Purple Card */}
@@ -911,8 +1012,13 @@ useLayoutEffect(() => {
                 <div className="inline-flex p-2 sm:p-3 bg-purple-600/30 dark:bg-purple-500/50 rounded-lg mb-2">
                   <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <h3 className="font-semibold text-base">Track Progress</h3>
-                <p className="text-base text-white/80 mt-1">Monitor your improvement</p>
+                <h3 className="font-semibold text-base">
+                  {t("track_progress")}
+                </h3>
+
+                <p className="text-base text-white/80 mt-1">
+                  {t("track_progress_desc")}
+                </p>
               </Card>
             </div>
 
@@ -920,9 +1026,12 @@ useLayoutEffect(() => {
             {/* Language Selection */}
             <div className="space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <h2 className="text-xl sm:text-2xl font-bold">Choose Your Language</h2>
+                <h2 className="text-xl sm:text-2xl font-bold">
+                  {t("choose_language")}
+                </h2>
+
                 <Badge variant="secondary" className="text-base">
-                  6 Languages Available
+                  {t("six_languages_available")}
                 </Badge>
               </div>
 
@@ -984,19 +1093,27 @@ useLayoutEffect(() => {
                 <span className="transition-transform duration-200 group-hover:-translate-x-1">
                   ←
                 </span>
-                <span>Back</span>
+                <span>{t("back")}</span>
               </Button>
               <div>
-                <h2 className="text-xl sm:text-2xl font-bold">General Science Quiz</h2>
-                <p className="text-sm text-muted-foreground">Choose a category</p>
+                <h2 className="text-xl sm:text-2xl font-bold">
+                  {t("science_quiz")}
+                </h2>
+
+                <p className="text-sm text-muted-foreground">
+                  {t("choose_category")}
+                </p>
               </div>
             </div>
 
             <div className="space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <h2 className="text-xl sm:text-2xl font-bold">Select Science Category</h2>
+                <h2 className="text-xl sm:text-2xl font-bold">
+                  {t("select_science_category")}
+                </h2>
+
                 <Badge variant="secondary" className="text-base">
-                  4 Categories • 25 Chapters
+                  {t("science_categories")}
                 </Badge>
               </div>
 
@@ -1075,13 +1192,13 @@ useLayoutEffect(() => {
                 <span className="transition-transform duration-200 group-hover:-translate-x-1">
                   ←
                 </span>
-                <span>Back</span>
+                <span>{t("back")}</span>
               </Button>
               <div>
                 <h2 className="text-xl sm:text-2xl font-bold capitalize">
                   {selectedMode === "science" ? selectedScienceCategory : selectedSubjectLanguage}
                 </h2>
-                <p className="text-sm text-muted-foreground">Step 1 of 4</p>
+                <p className="text-sm text-muted-foreground">{t("step_1_4")}</p>
               </div>
             </div>
 
@@ -1156,7 +1273,7 @@ useLayoutEffect(() => {
                 <span className="transition-transform duration-200 group-hover:-translate-x-1">
                   ←
                 </span>
-                <span>Back</span>
+                <span>{t("back")}</span>
               </Button>
               <div>
                 <h2 className="text-lg sm:text-2xl font-bold capitalize">
@@ -1164,7 +1281,7 @@ useLayoutEffect(() => {
                     ? selectedScienceCategory
                     : selectedSubjectLanguage} - Class {selectedClass}
                 </h2>
-                <p className="text-sm text-muted-foreground">Step 2 of 5</p>
+                <p className="text-sm text-muted-foreground">{t("step_2_5")}</p>
               </div>
             </div>
 
@@ -1308,13 +1425,13 @@ useLayoutEffect(() => {
                 <span className="transition-transform duration-200 group-hover:-translate-x-1">
                   ←
                 </span>
-                <span>Back</span>
+                <span>{t("back")}</span>
               </Button>
               <div>
                 <h2 className="text-lg sm:text-2xl font-bold capitalize">
                   {selectedSubjectLanguage} - Class {selectedClass} - {selectedDifficulty}
                 </h2>
-                <p className="text-sm text-muted-foreground">Step 3 of 5</p>
+                <p className="text-sm text-muted-foreground">{t("step_3_5")}</p>
               </div>
             </div>
 
@@ -1325,7 +1442,7 @@ useLayoutEffect(() => {
                 transition-colors
               ">
               <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">
-                Select Test Type
+                {t("select_test_type")}
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
@@ -1474,19 +1591,19 @@ useLayoutEffect(() => {
                 <span className="transition-transform duration-200 group-hover:-translate-x-1">
                   ←
                 </span>
-                <span>Back</span>
+                <span>{t("back")}</span>
               </Button>
               <div>
                 <h2 className="text-lg sm:text-xl md:text-2xl font-bold capitalize">
                   {selectedMode === "science" ? selectedScienceCategory : selectedSubjectLanguage} - Class {selectedClass} - {selectedDifficulty} - {selectedTestType === "mcq-only" ? "MCQ Only" : "Mixed"}
                 </h2>
-                <p className="text-sm text-muted-foreground">Step 4 of 5</p>
+                <p className="text-sm text-muted-foreground">{t("step_4_5")}</p>
               </div>
             </div>
 
               <Card className="p-4 sm:p-6 bg-[hsl(200.49deg_56.52%_80.08%)] dark:bg-[hsl(200.49deg_56.52%_20%)]">
                 <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">
-                  Select Test Length
+                  {t("select_test_length")}
                 </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {[
@@ -1634,13 +1751,14 @@ useLayoutEffect(() => {
                 <span className="transition-transform duration-200 group-hover:-translate-x-1">
                   ←
                 </span>
-                <span>Back</span>
+                <span>{t("back")}</span>
               </Button>
               <div>
+
                 <h2 className="text-lg sm:text-xl md:text-2xl font-bold capitalize">
-                  Choose Test Mode
+                  {t("choose_test_mode")}
                 </h2>
-                <p className="text-sm text-muted-foreground">Step 5 of 6</p>
+                <p className="text-sm text-muted-foreground">{t("step_5_6")}</p>
               </div>
             </div>
 
@@ -1649,9 +1767,9 @@ useLayoutEffect(() => {
                 Select How You Want to Create Your Test
               </h2> */}
               <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">
-                Select How You Want to Create Your Test
-              </h2>
+                <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">
+                  {t("select_test_creation")}
+                </h2>
 
 
               {/* <div className="flex gap-2">
@@ -1788,29 +1906,33 @@ useLayoutEffect(() => {
                 <span className="transition-transform duration-200 group-hover:-translate-x-1">
                   ←
                 </span>
-                <span>Back</span>
+                <span>{t("back")}</span>
               </Button>
               <div>
                 <h2 className="text-lg sm:text-xl md:text-2xl font-bold capitalize">
-                  Create Your Custom Test
+                  {t("create_custom_test")}
                 </h2>
-                <p className="text-sm text-muted-foreground">Step 6 of 6 - Enter your topics and settings</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("step_6_settings")}
+                </p>
               </div>
             </div>
 
             <Card className="p-6">
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <h3>
                     <Settings2 className="w-5 h-5" />
-                    Test Topics
+                    {t("test_topics")}
                   </h3>
-                  <p className="text-sm text-muted-foreground mb-4">Enter topics you want to focus on (Topic 1 is mandatory, others are optional)</p>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {t("topics_desc")}
+                  </p>
 
                   <div className="space-y-4">
                     {/* Topic 1 */}
                     <div>
-                      <Label htmlFor="topic1" className="text-base"> Topic 1 (Required) *</Label>
+                      <Label htmlFor="topic1">{t("topic1_required")}</Label>
                       <Input
                         id="topic1"
                         placeholder="e.g., Basic Greetings, Verb Conjugation, Cell Structure"
@@ -1824,7 +1946,7 @@ useLayoutEffect(() => {
 
                     {/* Topic 2 */}
                     <div>
-                      <Label htmlFor="topic2" className="text-base"> Topic 2 (Required) *</Label>
+                      <Label htmlFor="topic2">{t("topic2_required")}</Label>
                       <Input
                         id="topic2"
                         placeholder="e.g., Numbers and Counting, Past Tense"
@@ -1838,7 +1960,7 @@ useLayoutEffect(() => {
 
                     {/* Topic 3 */}
                     <div>
-                      <Label htmlFor="topic3" className="text-base">Topic 3 (Required) *</Label>
+                      <Label htmlFor="topic3">{t("topic3_required")}</Label>
                       <Input
                         id="topic3"
                         placeholder="e.g., Family Members, Photosynthesis"
@@ -1852,7 +1974,7 @@ useLayoutEffect(() => {
 
                     {/* Topic 4 */}
                     <div>
-                      <Label htmlFor="topic4" className="text-base">Topic 4 (Optional)</Label>
+                      <Label htmlFor="topic4">{t("topic4_optional")}</Label>
                       <Input
                         id="topic4"
                         placeholder="e.g., Food and Drinks, Chemical Reactions"
@@ -1866,7 +1988,7 @@ useLayoutEffect(() => {
 
                     {/* Topic 5 */}
                     <div>
-                      <Label htmlFor="topic5" className="text-base">Topic 5 (Optional)</Label>
+                      <Label htmlFor="topic5">{t("topic5_optional")}</Label>
                       <Input
                         id="topic5"
                         placeholder="e.g., Tenses Practice, Algebra Basics"
@@ -1880,7 +2002,7 @@ useLayoutEffect(() => {
 
                     {/* Topic 6 */}
                     <div>
-                      <Label htmlFor="topic6" className="text-base"> Topic 6 (Optional)</Label>
+                      <Label htmlFor="topic6">{t("topic6_optional")}</Label>
                       <Input
                         id="topic6"
                         placeholder="e.g., Geometry, Human Digestive System"
@@ -1896,7 +2018,8 @@ useLayoutEffect(() => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
                   <div>
-                    <Label htmlFor="gptModel" className="text-base">AI Model Quality</Label>
+                    <Label htmlFor="gptModel">{t("ai_model_quality")}</Label>
+
                     <Select
                       value={selectedGptModel}
                       onValueChange={setSelectedGptModel}>
@@ -1939,11 +2062,14 @@ useLayoutEffect(() => {
                         </SelectItem>
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-muted-foreground mt-1">Higher quality models generate better questions but take longer</p>
+
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {t("ai_model_desc")}
+                    </p>
                   </div>
 
                   <div>
-                    <Label htmlFor="board" className="text-base">Education Board</Label>
+                    <Label htmlFor="board">{t("education_board")}</Label>
                     <Select value={selectedBoard} onValueChange={setSelectedBoard} disabled={isGeneratingTest}>
                       <SelectTrigger className="mt-1" data-testid="select-board">
                         <SelectValue placeholder="Select Board" />
@@ -1956,21 +2082,23 @@ useLayoutEffect(() => {
                         <SelectItem value="State Board">State Board</SelectItem>
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-muted-foreground mt-1">Questions will align with your board's curriculum</p>
-                  </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {t("board_desc")}
+                    </p>
                 </div>
+              </div>
 
                 <div className="pt-4 border-t">
                   <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg mb-4">
-                    <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                    <h4>
                       <Sparkles className="w-4 h-4 text-blue-600" />
-                      Test Configuration Summary
+                      {t("test_config_summary")}
                     </h4>
                     <div className="text-sm space-y-1 text-muted-foreground">
-                      <p><strong>Subject:</strong> {selectedMode === "science" ? selectedScienceCategory : selectedSubjectLanguage}</p>
-                      <p><strong>Class:</strong> {selectedClass} | <strong>Difficulty:</strong> {selectedDifficulty}</p>
-                      <p><strong>Type:</strong> {selectedTestType === "mcq-only" ? "MCQ Only" : "Mixed"} | <strong>Questions:</strong> {selectedTestLength}</p>
-                      <p><strong>Topics:</strong> {[customTopic1, customTopic2, customTopic3, customTopic4].filter(t => t.trim()).length} topic(s)</p>
+                      <p><strong>{t("subject")}:</strong> {selectedMode === "science" ? selectedScienceCategory : selectedSubjectLanguage}</p>
+                      <p><strong>{t("class")}:</strong> {selectedClass} | <strong>Difficulty:</strong> {selectedDifficulty}</p>
+                      <p><strong>{t("type")}</strong> {selectedTestType === "mcq-only" ? "MCQ Only" : "Mixed"} | <strong>Questions:</strong> {selectedTestLength}</p>
+                      <p><strong>{t("topics")}</strong> {[customTopic1, customTopic2, customTopic3, customTopic4].filter(t => t.trim()).length} topic(s)</p>
                     </div>
                   </div>
 
@@ -1984,12 +2112,12 @@ useLayoutEffect(() => {
                     {isGeneratingTest ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Generating Your Test...
+                        {t("generating_test")}
                       </>
                     ) : (
                       <>
                         <Sparkles className="w-4 h-4 mr-2" />
-                        Generate Custom Test
+                        {t("generate_custom_test")}
                       </>
                     )}
                   </Button>
@@ -2015,7 +2143,7 @@ useLayoutEffect(() => {
                 <span className="transition-transform duration-200 group-hover:-translate-x-1">
                   ←
                 </span>
-                <span>Back</span>
+                <span>{t("back")}</span>
               </Button>
               <div>
                 {/* <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold capitalize">
@@ -2031,7 +2159,7 @@ useLayoutEffect(() => {
                         selectedTestType === "mcq-only" ? "MCQ" : "Mixed"
                       } - ${selectedTestLength}Q`}
               </h2>
-                <p className="text-sm text-muted-foreground">Step 6 of 6</p>
+                <p className="text-sm text-muted-foreground">{t("step6_6")}</p>
               </div>
             </div>
 

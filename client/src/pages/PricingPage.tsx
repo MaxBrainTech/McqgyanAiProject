@@ -2,62 +2,65 @@ import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export default function PricingPage() {
   const navigate = useNavigate();
 
+  const { t } = useTranslation();
+
   const plans = [
     {
-      name: "Free",
+      name: t("plan_free"),
       price: "0",
-      description: "Perfect for students exploring",
+      description: t("plan_free_desc"),
       features: [
-        { text: "Language Learning (6 languages)", included: true },
-        { text: "General Science Quizzes", included: true },
-        { text: "10 questions per test", included: true },
-        { text: "Multiple difficulty levels", included: true },
-        { text: "Instant feedback on answers", included: true },
-        { text: "Custom Tests (3 per month)", included: false },
-        { text: "Answer Sheet Evaluator", included: false },
-        { text: "Teacher Dashboard", included: false },
+        { text: t("feature_language_learning"), included: true },
+        { text: t("feature_science_quizzes"), included: true },
+        { text: t("feature_10_questions"), included: true },
+        { text: t("feature_difficulty_levels"), included: true },
+        { text: t("feature_instant_feedback"), included: true },
+        { text: t("feature_custom_tests_limit"), included: false },
+        { text: t("feature_answer_sheet_evaluator"), included: false },
+        { text: t("feature_teacher_dashboard"), included: false },
       ],
-      cta: "Get Started",
+      cta: t("cta_get_started"),
       highlighted: false,
     },
     {
-      name: "Pro",
+      name: t("plan_pro"),
       price: "99",
-      period: "month",
-      description: "For serious learners and teachers",
+      period: t("month"),
+      description: t("plan_pro_desc"),
       features: [
-        { text: "Language Learning (6 languages)", included: true },
-        { text: "General Science Quizzes", included: true },
-        { text: "50 questions per test", included: true },
-        { text: "Multiple difficulty levels", included: true },
-        { text: "Instant feedback on answers", included: true },
-        { text: "Unlimited Custom Tests", included: true },
-        { text: "Answer Sheet Evaluator (10/month)", included: true },
-        { text: "Teacher Dashboard (Basic)", included: true },
+        { text: t("feature_language_learning"), included: true },
+        { text: t("feature_science_quizzes"), included: true },
+        { text: t("feature_50_questions"), included: true },
+        { text: t("feature_difficulty_levels"), included: true },
+        { text: t("feature_instant_feedback"), included: true },
+        { text: t("feature_unlimited_custom_tests"), included: true },
+        { text: t("feature_answer_eval_10"), included: true },
+        { text: t("feature_teacher_dashboard_basic"), included: true },
       ],
-      cta: "Upgrade to Pro",
+      cta: t("cta_upgrade_pro"),
       highlighted: true,
     },
     {
-      name: "Premium",
+      name: t("plan_premium"),
       price: "299",
-      period: "month",
-      description: "For educators and institutions",
+      period: t("month"),
+      description: t("plan_premium_desc"),
       features: [
-        { text: "Language Learning (6 languages)", included: true },
-        { text: "General Science Quizzes", included: true },
-        { text: "100 questions per test", included: true },
-        { text: "Multiple difficulty levels", included: true },
-        { text: "Instant feedback on answers", included: true },
-        { text: "Unlimited Custom Tests", included: true },
-        { text: "Unlimited Answer Sheet Evaluator", included: true },
-        { text: "Teacher Dashboard (Advanced)", included: true },
+        { text: t("feature_language_learning"), included: true },
+        { text: t("feature_science_quizzes"), included: true },
+        { text: t("feature_100_questions"), included: true },
+        { text: t("feature_difficulty_levels"), included: true },
+        { text: t("feature_instant_feedback"), included: true },
+        { text: t("feature_unlimited_custom_tests"), included: true },
+        { text: t("feature_unlimited_answer_eval"), included: true },
+        { text: t("feature_teacher_dashboard_advanced"), included: true },
       ],
-      cta: "Upgrade to Premium",
+      cta: t("cta_upgrade_premium"),
       highlighted: false,
     },
   ];
@@ -77,18 +80,14 @@ export default function PricingPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Header Section */}
       <div className="container mx-auto px-4 sm:px-6 py-12 sm:py-20 text-center">
-        <h1 className="text-4xl sm:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Simple, Transparent Pricing
-        </h1>
-        <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
-          All versions are free for all users until <span className="font-bold text-blue-600 dark:text-blue-400">December 31, 2025</span>. 
-          Choose your plan and start learning today!
+        <p className="text-sm font-semibold text-green-700 dark:text-green-400">
+          {t("free_access_notice")}
         </p>
 
         {/* Free Until Badge */}
         <div className="inline-block bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-full px-6 py-3 mb-12">
           <p className="text-sm font-semibold text-green-700 dark:text-green-400">
-            🎉 FREE ACCESS UNTIL DEC 31, 2025
+            {t("free_access_notice")}
           </p>
         </div>
       </div>
@@ -106,9 +105,9 @@ export default function PricingPage() {
               } hover-elevate`}
             >
               {plan.highlighted && (
-                <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 px-4 text-center text-sm font-bold rounded-t-lg">
-                  RECOMMENDED
-                </div>
+              <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 px-4 text-center text-sm font-bold rounded-t-lg">
+                {t("recommended")}
+              </div>
               )}
 
               <div className="flex-1 p-6 sm:p-8">
@@ -179,16 +178,16 @@ export default function PricingPage() {
               <thead>
                 <tr className="bg-gray-100 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                   <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 dark:text-white">
-                    Features
+                    {t("features")}
                   </th>
                   <th className="px-6 py-4 text-center text-sm font-bold text-gray-900 dark:text-white">
-                    Free
+                    {t("plan_free")}
                   </th>
                   <th className="px-6 py-4 text-center text-sm font-bold bg-blue-50 dark:bg-blue-900/20 text-gray-900 dark:text-white">
-                    Pro
+                    {t("plan_pro")}
                   </th>
                   <th className="px-6 py-4 text-center text-sm font-bold text-gray-900 dark:text-white">
-                    Premium
+                    {t("plan_premium")}
                   </th>
                 </tr>
               </thead>
@@ -220,7 +219,7 @@ export default function PricingPage() {
         {/* FAQ Section */}
         <div className="mt-16">
           <h2 className="text-3xl font-bold text-center mb-12">
-            Frequently Asked Questions
+            {t("faq_title")}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <Card className="p-6 sm:p-8">
@@ -247,26 +246,32 @@ export default function PricingPage() {
             </Card>
 
             <Card className="p-6 sm:p-8">
-              <h3 className="font-bold text-lg mb-3">Is there a teacher discount?</h3>
+              <h3 className="font-bold text-lg mb-3">
+                {t("faq_teacher_discount")}
+              </h3>
+
               <p className="text-gray-600 dark:text-gray-400 text-sm">
-                Yes! Teachers get a 30% discount on Pro and Premium plans. 
-                Contact support with your school ID to activate.
+                {t("faq_teacher_discount_desc")}
               </p>
             </Card>
 
             <Card className="p-6 sm:p-8">
-              <h3 className="font-bold text-lg mb-3">What payment methods do you accept?</h3>
+              <h3 className="font-bold text-lg mb-3">
+                {t("faq_teacher_discount")}
+              </h3>
+
               <p className="text-gray-600 dark:text-gray-400 text-sm">
-                We accept all major credit cards, UPI, and digital wallets. 
-                All transactions are secure and encrypted.
+                {t("faq_teacher_discount_desc")}
               </p>
             </Card>
 
             <Card className="p-6 sm:p-8">
-              <h3 className="font-bold text-lg mb-3">Do I need a subscription to use the app?</h3>
+              <h3 className="font-bold text-lg mb-3">
+                {t("faq_payment_methods")}
+              </h3>
+
               <p className="text-gray-600 dark:text-gray-400 text-sm">
-                No! The Free tier has everything you need to get started. 
-                Pro and Premium unlock additional features for power users.
+                {t("faq_payment_methods_desc")}
               </p>
             </Card>
           </div>
@@ -275,17 +280,18 @@ export default function PricingPage() {
         {/* CTA Section */}
         <div className="mt-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-12 text-center text-white">
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            Ready to start learning?
+            {t("cta_ready_learning")}
           </h2>
+
           <p className="text-lg mb-8 opacity-90">
-            Join thousands of students and teachers using MCQGyaan AI
+            {t("cta_join_students")}
           </p>
           <Button
             onClick={() => navigate("/")}
             variant="default"
             className="bg-white text-blue-600 hover:bg-gray-100 font-bold px-8 py-3 text-lg"
           >
-            Start for Free Now
+            {t("start_free_now")}
           </Button>
         </div>
       </div>

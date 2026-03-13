@@ -2,66 +2,88 @@ import { Check, Zap, Brain, Users, Sparkles, Award, BookOpen, BarChart3, Target,
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export default function FeaturesPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const mainFeatures = [
     {
       icon: Languages,
-      title: "6 Language Learning Modes",
-      description: "Master French, German, Spanish, Hindi, Marathi, and Kannada with AI-powered interactive lessons tailored to your level.",
-      benefits: ["Real pronunciations", "Cultural context", "Grammar explanations", "Progressive difficulty"]
+      title: t("feature_language_learning_title"),
+      description: t("feature_language_learning_desc"),
+      benefits: [
+        t("benefit_real_pronunciation"),
+        t("benefit_cultural_context"),
+        t("benefit_grammar_explanation"),
+        t("benefit_progressive_difficulty")
+      ]
     },
     {
       icon: Atom,
-      title: "Comprehensive Science Quizzes",
-      description: "Deep dive into Physics, Chemistry, Biology, and General Science with questions aligned to CBSE curriculum.",
-      benefits: ["Real-world applications", "Concept clarity", "Step-by-step solutions", "Visual diagrams"]
+      title: t("feature_science_quiz_title"),
+      description: t("feature_science_quiz_desc"),
+      benefits: [
+        t("benefit_real_world"),
+        t("benefit_concept_clarity"),
+        t("benefit_step_solution"),
+        t("benefit_visual_diagrams")
+      ]
     },
     {
       icon: Sparkles,
-      title: "AI-Powered Custom Tests",
-      description: "Generate unlimited personalized MCQ tests by selecting topics, difficulty, and preferred GPT model.",
-      benefits: ["GPT-4o quality", "Cost-effective options", "No question duplication", "Instant feedback"]
+      title: t("feature_custom_tests_title"),
+      description: t("feature_custom_tests_desc"),
+      benefits: [
+        t("benefit_gpt_quality"),
+        t("benefit_cost_effective"),
+        t("benefit_no_duplication"),
+        t("benefit_instant_feedback")
+      ]
     },
     {
       icon: FileText,
-      title: "Answer Sheet Evaluator",
-      description: "Upload answer sheets for automatic AI evaluation with detailed feedback and improvement suggestions.",
-      benefits: ["Batch processing", "Quality assessment", "Detailed analysis", "Score tracking"]
-    },
+      title: t("feature_answer_eval_title"),
+      description: t("feature_answer_eval_desc"),
+      benefits: [
+        t("benefit_batch_processing"),
+        t("benefit_quality_assessment"),
+        t("benefit_detailed_analysis"),
+        t("benefit_score_tracking")
+      ]
+    }
   ];
 
   const premiumFeatures = [
-    { text: "Adaptive Difficulty Levels", icon: Target },
-    { text: "Real-time Progress Tracking", icon: BarChart3 },
-    { text: "Comprehensive Leaderboard", icon: Award },
-    { text: "Multi-Board Support (CBSE/ICSE/IB)", icon: BookOpen },
-    { text: "AI Feedback & Explanations", icon: Brain },
-    { text: "Downloadable Reports & PDFs", icon: Sparkles },
-    { text: "Teacher Dashboard", icon: Users },
-    { text: "Anti-Duplication Controls", icon: Shield },
-    { text: "Custom Educational Content", icon: Lightbulb },
-    { text: "Advanced Analytics", icon: BarChart3 },
+    { text: t("premium_adaptive_difficulty"), icon: Target },
+    { text: t("premium_progress_tracking"), icon: BarChart3 },
+    { text: t("premium_leaderboard"), icon: Award },
+    { text: t("premium_multiboard"), icon: BookOpen },
+    { text: t("premium_ai_feedback"), icon: Brain },
+    { text: t("premium_pdf_reports"), icon: Sparkles },
+    { text: t("premium_teacher_dashboard"), icon: Users },
+    { text: t("premium_anti_duplication"), icon: Shield },
+    { text: t("premium_custom_content"), icon: Lightbulb },
+    { text: t("premium_analytics"), icon: BarChart3 }
   ];
 
   const forStudents = [
-    { title: "Self-Paced Learning", desc: "Learn at your own speed with 24/7 access to all resources" },
-    { title: "Instant Feedback", desc: "Get immediate explanations for every answer you give" },
-    { title: "Performance Tracking", desc: "Monitor your progress with detailed analytics and reports" },
-    { title: "Confidence Building", desc: "Master topics with progressively challenging questions" },
-    { title: "Exam Preparation", desc: "Practice with questions that match your board's pattern" },
-    { title: "Doubt Clarification", desc: "AI-powered explanations for complex concepts" },
+    { title: t("student_self_paced"), desc: t("student_self_paced_desc") },
+    { title: t("student_instant_feedback"), desc: t("student_instant_feedback_desc") },
+    { title: t("student_performance_tracking"), desc: t("student_performance_tracking_desc") },
+    { title: t("student_confidence"), desc: t("student_confidence_desc") },
+    { title: t("student_exam_prep"), desc: t("student_exam_prep_desc") },
+    { title: t("student_doubt_clarification"), desc: t("student_doubt_clarification_desc") }
   ];
 
   const forTeachers = [
-    { title: "Custom Test Creation", desc: "Generate tests in seconds without manual question writing" },
-    { title: "Time Saving", desc: "Automate assessment with zero effort" },
-    { title: "Student Analytics", desc: "Track individual and class performance at a glance" },
-    { title: "Flexible Assessment", desc: "Mix MCQ, open-ended, and custom question types" },
-    { title: "Class Management", desc: "Organize students, share codes, and track submissions" },
-    { title: "Answer Evaluation", desc: "Auto-evaluate answer sheets with detailed feedback" },
+    { title: t("teacher_test_creation"), desc: t("teacher_test_creation_desc") },
+    { title: t("teacher_time_saving"), desc: t("teacher_time_saving_desc") },
+    { title: t("teacher_student_analytics"), desc: t("teacher_student_analytics_desc") },
+    { title: t("teacher_flexible_assessment"), desc: t("teacher_flexible_assessment_desc") },
+    { title: t("teacher_class_management"), desc: t("teacher_class_management_desc") },
+    { title: t("teacher_answer_evaluation"), desc: t("teacher_answer_evaluation_desc") }
   ];
 
   return (
@@ -74,12 +96,13 @@ export default function FeaturesPage() {
         </div>
 
         <div className="relative container mx-auto px-4 sm:px-6 py-16 sm:py-24 text-center">
-          <h1 className="text-5xl sm:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Powerful Features for Smarter Learning
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
-            MCQGyaan AI combines AI-powered learning, comprehensive assessments, and intuitive tools to help students excel and teachers teach effectively.
-          </p>
+            <h2 className="text-4xl font-bold text-center mb-4">
+              {t("core_features")}
+            </h2>
+
+            <p className="text-center text-gray-600 dark:text-gray-400 mb-12 max-w-2xl mx-auto">
+              {t("core_features_desc")}
+            </p>
           <Button
             onClick={() => navigate("/")}
             className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 text-lg"
@@ -92,10 +115,11 @@ export default function FeaturesPage() {
       {/* Main Features Section */}
       <div className="container mx-auto px-4 sm:px-6 py-16">
         <h2 className="text-4xl font-bold text-center mb-4">
-          Core Features
+          {t("core_features")}
         </h2>
+
         <p className="text-center text-gray-600 dark:text-gray-400 mb-12 max-w-2xl mx-auto">
-          Everything you need for comprehensive learning and assessment
+          {t("core_features_desc")}
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -130,10 +154,11 @@ export default function FeaturesPage() {
       <div className="bg-white dark:bg-gray-800 py-16">
         <div className="container mx-auto px-4 sm:px-6">
           <h2 className="text-4xl font-bold text-center mb-4">
-            Advanced Capabilities
+            {t("advanced_capabilities")}
           </h2>
+
           <p className="text-center text-gray-600 dark:text-gray-400 mb-12 max-w-2xl mx-auto">
-            Beyond the basics: what makes MCQGyaan AI stand out
+            {t("advanced_capabilities_desc")}
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
@@ -156,10 +181,11 @@ export default function FeaturesPage() {
       <div className="container mx-auto px-4 sm:px-6 py-16">
         <div className="mb-12">
           <h2 className="text-4xl font-bold text-center mb-4">
-            Designed for Students
+            {t("built_for_teachers")}
           </h2>
+
           <p className="text-center text-gray-600 dark:text-gray-400">
-            Everything you need to succeed in your studies
+            {t("built_for_teachers_desc")}
           </p>
         </div>
 
@@ -181,10 +207,11 @@ export default function FeaturesPage() {
         <div className="container mx-auto px-4 sm:px-6">
           <div className="mb-12">
             <h2 className="text-4xl font-bold text-center mb-4">
-              Built for Teachers
+              {t("built_for_teachers")}
             </h2>
+
             <p className="text-center text-gray-600 dark:text-gray-400">
-              Streamline assessment and boost classroom efficiency
+              {t("built_for_teachers_desc")}
             </p>
           </div>
 
@@ -207,26 +234,32 @@ export default function FeaturesPage() {
         <Card className="p-8 sm:p-12 bg-gradient-to-r from-blue-600 to-purple-600 border-0 text-white">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             <div>
-              <h2 className="text-3xl font-bold mb-4">Powered by Advanced AI</h2>
+              <h2 className="text-3xl font-bold mb-4">
+                {t("powered_by_ai")}
+              </h2>
+
               <p className="mb-6 text-blue-100">
-                MCQGyaan uses cutting-edge GPT models to generate high-quality questions, provide intelligent feedback, and adapt to student learning patterns.
+                {t("powered_by_ai_desc")}
               </p>
               <ul className="space-y-3">
                 <li className="flex items-center gap-3">
                   <Check className="h-5 w-5 flex-shrink-0" />
-                  <span>Smart question generation with anti-duplication</span>
+                  <span>{t("smart_question_generation")}</span>
                 </li>
+
                 <li className="flex items-center gap-3">
                   <Check className="h-5 w-5 flex-shrink-0" />
-                  <span>Context-aware explanations and feedback</span>
+                  <span>{t("context_aware_feedback")}</span>
                 </li>
+
                 <li className="flex items-center gap-3">
                   <Check className="h-5 w-5 flex-shrink-0" />
-                  <span>Adaptive difficulty based on performance</span>
+                  <span>{t("adaptive_difficulty")}</span>
                 </li>
+
                 <li className="flex items-center gap-3">
                   <Check className="h-5 w-5 flex-shrink-0" />
-                  <span>Multi-language support with proper transliteration</span>
+                  <span>{t("multilanguage_support")}</span>
                 </li>
               </ul>
             </div>
@@ -234,22 +267,24 @@ export default function FeaturesPage() {
               <div className="p-6 bg-white/10 rounded-lg backdrop-blur-sm">
                 <Sparkles className="h-8 w-8 mb-3" />
                 <p className="font-semibold text-sm">GPT-4o</p>
-                <p className="text-xs text-blue-100">Best quality</p>
+                <span>{t("gpt4o_desc")}</span>
               </div>
               <div className="p-6 bg-white/10 rounded-lg backdrop-blur-sm">
                 <Zap className="h-8 w-8 mb-3" />
-                <p className="font-semibold text-sm">GPT-4o-mini</p>
-                <p className="text-xs text-blue-100">Fast & affordable</p>
+                <p className="font-semibold text-sm">GPT-3.5-turbo</p>
+                <p className="text-xs text-blue-100">{t("gpt35_desc")}</p>
               </div>
               <div className="p-6 bg-white/10 rounded-lg backdrop-blur-sm">
                 <Brain className="h-8 w-8 mb-3" />
-                <p className="font-semibold text-sm">GPT-3.5-turbo</p>
-                <p className="text-xs text-blue-100">Budget option</p>
+
+                <p className="font-semibold text-sm">{t("quality_control")}</p>
+                <p className="text-xs text-blue-100">{t("quality_control_desc")}</p>
               </div>
               <div className="p-6 bg-white/10 rounded-lg backdrop-blur-sm">
                 <Shield className="h-8 w-8 mb-3" />
-                <p className="font-semibold text-sm">Quality Control</p>
-                <p className="text-xs text-blue-100">100% verified</p>
+
+                <p className="font-semibold text-sm">{t("quality_control")}</p>
+                <p className="text-xs text-blue-100">{t("quality_control_desc")}</p>
               </div>
             </div>
           </div>
@@ -259,28 +294,40 @@ export default function FeaturesPage() {
       {/* Comparison Table */}
       <div className="bg-white dark:bg-gray-800 py-16">
         <div className="container mx-auto px-4 sm:px-6">
-          <h2 className="text-3xl font-bold text-center mb-12">Feature Comparison</h2>
-
+          <h2 className="text-3xl font-bold text-center mb-12">
+            {t("feature_comparison")}
+          </h2>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b-2 border-gray-200 dark:border-gray-700">
-                  <th className="text-left py-4 px-4 font-bold">Feature</th>
-                  <th className="text-center py-4 px-4 font-bold text-sm">Student</th>
-                  <th className="text-center py-4 px-4 font-bold text-sm">Teacher</th>
-                  <th className="text-center py-4 px-4 font-bold text-sm">Parent</th>
+                  <th className="text-left py-4 px-4 font-bold">
+                    {t("feature")}
+                  </th>
+
+                  <th className="text-center py-4 px-4 font-bold text-sm">
+                    {t("student")}
+                  </th>
+
+                  <th className="text-center py-4 px-4 font-bold text-sm">
+                    {t("teacher")}
+                  </th>
+
+                  <th className="text-center py-4 px-4 font-bold text-sm">
+                    {t("parent")}
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {[
-                  { feature: "Language Learning", student: true, teacher: true, parent: true },
-                  { feature: "Science Quizzes", student: true, teacher: true, parent: true },
-                  { feature: "Performance Analytics", student: true, teacher: true, parent: true },
-                  { feature: "Custom Test Creation", student: true, teacher: true, parent: false },
-                  { feature: "Answer Sheet Evaluation", student: true, teacher: true, parent: true },
-                  { feature: "Class Management", student: false, teacher: true, parent: false },
-                  { feature: "Student Progress Tracking", student: true, teacher: true, parent: true },
-                  { feature: "Download Reports", student: true, teacher: true, parent: true },
+                  { feature: t("feature_language_learning"), student: true, teacher: true, parent: true },
+                  { feature: t("feature_science_quizzes"), student: true, teacher: true, parent: true },
+                  { feature: t("feature_performance_analytics"), student: true, teacher: true, parent: true },
+                  { feature: t("feature_custom_test_creation"), student: true, teacher: true, parent: false },
+                  { feature: t("feature_answer_evaluation"), student: true, teacher: true, parent: true },
+                  { feature: t("feature_class_management"), student: false, teacher: true, parent: false },
+                  { feature: t("feature_student_progress"), student: true, teacher: true, parent: true },
+                  { feature: t("feature_download_reports"), student: true, teacher: true, parent: true }
                 ].map((row, idx) => (
                   <tr key={idx} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
                     <td className="py-4 px-4 font-medium text-gray-900 dark:text-white">{row.feature}</td>
@@ -317,24 +364,26 @@ export default function FeaturesPage() {
       <div className="container mx-auto px-4 sm:px-6 py-16">
         <Card className="p-12 sm:p-16 text-center bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 border-2 border-blue-200 dark:border-blue-800">
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            Experience MCQGyaan AI Today
+            {t("experience_mcqgyaan")}
           </h2>
+
           <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
-            Start with free access to all features until December 31, 2025. No credit card required.
+            {t("experience_desc")}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               onClick={() => navigate("/")}
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-8 py-3 text-lg"
             >
-              Start Learning Free
+              {t("start_learning_free")}
             </Button>
+
             <Button
               onClick={() => navigate("/pricing")}
               variant="outline"
               className="px-8 py-3 text-lg"
             >
-              View Pricing
+              {t("view_pricing")}
             </Button>
           </div>
         </Card>
