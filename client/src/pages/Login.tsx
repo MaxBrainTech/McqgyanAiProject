@@ -7,6 +7,8 @@ import { useNavigate } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/pages/firebase";
 import { Eye, EyeOff } from "lucide-react";
+import { useTranslation } from "react-i18next";
+
 
 interface LoginForm {
   id: string;       // email
@@ -15,6 +17,7 @@ interface LoginForm {
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [form, setForm] = useState<LoginForm>({
     id: "",
@@ -55,34 +58,35 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm shadow-xl">
         <CardHeader>
           <CardTitle className="text-center text-xl font-semibold">
-            Login
+            {t("login.title")}
           </CardTitle>
         </CardHeader>
 
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+
             {/* Email */}
             <div>
-              <label htmlFor="email">Email</label>
+              <label>{t("login.email")}</label>
               <Input
                 name="id"
                 type="email"
-                placeholder="Enter your email"
+                placeholder={t("login.emailPlaceholder")}
                 value={form.id}
                 onChange={handleChange}
                 required
               />
             </div>
 
-            {/* Password with Eye */}
+            {/* Password */}
             <div>
-              <label htmlFor="password">Password</label>
+              <label>{t("login.password")}</label>
 
               <div className="relative">
                 <Input
                   name="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder={t("login.passwordPlaceholder")}
                   value={form.password}
                   onChange={handleChange}
                   required
@@ -104,16 +108,16 @@ export default function LoginPage() {
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Logging in..." : "Login"}
+              {loading ? t("login.loading") : t("login.button")}
             </Button>
 
             <p className="text-sm text-center">
-              Don't have an account?{" "}
+              {t("login.noAccount")}{" "}
               <span
                 className="text-blue-500 cursor-pointer hover:underline"
                 onClick={() => navigate("/signup")}
               >
-                Sign Up
+                {t("login.signup")}
               </span>
             </p>
 

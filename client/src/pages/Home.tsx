@@ -16,6 +16,8 @@ import { toast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
 import { useTranslation } from "react-i18next";
+
+import { useForm } from "react-hook-form";
 // import { toast } from "@/components/ui/use-toast";
 
 // import React{ userEffect, useState} from "react";
@@ -51,6 +53,8 @@ export interface Chapter {
 // const [chapters, setChapters] = useState<Chapter[]>([]);
 
 export default function Home() {
+
+
   const hasInitialized = { current: false };  
   const navigate = useNavigate();
   const location = useLocation();
@@ -160,12 +164,12 @@ const [selectedScienceCategory, setSelectedScienceCategory] =
 //   // const [leaderboard, setLeaderboard] = useState<Array<any>>([]);
 //   // const { toast } = useToast();
 
-//   useEffect(() => {
-//     const savedScores = localStorage.getItem("langbuddy_scores");
-//     if (savedScores) {
-//       setLeaderboard(JSON.parse(savedScores));
-//     }
-//   }, []);
+  useEffect(() => {
+    const savedScores = localStorage.getItem("langbuddy_scores");
+    if (savedScores) {
+      setLeaderboard(JSON.parse(savedScores));
+    }
+  }, []);
 
 //  useEffect(() => {
 //   const fetchChapters = async () => {
@@ -423,7 +427,7 @@ useLayoutEffect(() => {
         state: {
           config: {
             mode: "custom-student",
-            language: selectedMode === "language" ? selectedSubjectLanguage : undefined,
+            language: selectedMode === "science" ? selectedMedium : selectedSubjectLanguage,
             scienceCategory: selectedMode === "science" ? selectedScienceCategory : undefined,
             class: selectedClass,
             difficulty: selectedDifficulty,
@@ -456,7 +460,7 @@ useLayoutEffect(() => {
       state: {
         config: {
           mode: selectedMode,
-          language: selectedMode === "language" ? selectedSubjectLanguage : undefined,
+          language: selectedMode === "science" ? selectedMedium : selectedSubjectLanguage,
           scienceCategory: selectedMode === "science" ? selectedScienceCategory : undefined,
           class: selectedClass,
           difficulty: selectedDifficulty,
@@ -478,22 +482,36 @@ useLayoutEffect(() => {
     // ScrollRestoration();
   };
 
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const form = useForm({
+    defaultValues: {
+      language: "english",
+    },
+  });
+  const isHindi = i18n.language.startsWith("hi");
 
   return (
 
+    //<AnimatedBackground />
+
     <div className="min-h-screen relative overflow-hidden">
       {/* Decorative background shapes */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
+      {/* <div className="absolute inset-0 overflow-hidden pointer-events-none"> */}
+        {/* <div className="absolute inset-0 overflow-hidden pointer-events-none z-10"> */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2"></div>
         <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-secondary/5 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2"></div>
       </div>
 
       {/* Hero Header - Premium Design */}
-      <div className="relative bg-gradient-to-br from-blue-600 via-purple-600 to-blue-700 dark:from-gray-900 dark:via-gray-800 dark:to-black overflow-hidden">
-        <div className="absolute inset-0">
-          <AnimatedBackground />
+       <div className="relative bg-gradient-to-br from-blue-600 via-purple-600 to-blue-700 dark:from-gray-900 dark:via-gray-800 dark:to-black overflow-hidden">
+      {/* <div className="relative overflow-hidden"> */}
+       {/* <div className="relative overflow-hidden z-10 min-h-[600px]"> */}
+
+        {/* Particles Background */}
+         <div className="absolute inset-0 z-0 pointer-events-none opacity-60">
+          {/* <AnimatedBackground /> */}
         </div>
         {/* Animated background shapes */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -501,18 +519,26 @@ useLayoutEffect(() => {
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-white/5 rounded-full blur-3xl transform -translate-x-1/4 translate-y-1/4"></div>
         </div>
 
-        <div className="relative container mx-auto px-4 sm:px-6 py-6 sm:py-8 lg:py-12 max-w-7xl">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div className="relative z-10 container mx-auto px-4 sm:px-6 py-6 sm:py-8 lg:py-12 max-w-7xl">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
 
             {/* Left Content */}
-            <div className="text-white space-y-6 sm:space-y-8">
+            <div className={`text-white ${isHindi ? "space-y-3 sm:space-y-4" : "space-y-6 sm:space-y-8"}`}>
 
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full border border-white/30">
                 <GraduationCap className="w-5 h-5" />
                 <span className="text-sm font-semibold">{t("ai_platform")}</span>
               </div>
 
-              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight tracking-tight">
+              {/* <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight tracking-tight"> */}
+                <h1
+                  className={`font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent
+                  ${
+                    isHindi
+                      ? "mb-1 text-3xl sm:text-4xl lg:text-5xl leading-[0.9] tracking-tight"
+                      : "mb-6 text-4xl sm:text-5xl lg:text-6xl leading-[1.1] tracking-tight"
+                  }`}
+                >
 
                 <span className="block text-white">
                   {t("hero_smart")}
@@ -528,7 +554,7 @@ useLayoutEffect(() => {
 
               </h1>
 
-              <p className="text-lg sm:text-xl text-white/90 max-w-xl">
+              <p className="text-base sm:text-lg text-white/90 max-w-xl">
                 {t("hero_desc")}
               </p>
 
@@ -552,7 +578,7 @@ useLayoutEffect(() => {
 
                 <Button 
                   onClick={() => handleModeSelect("language")}
-                  className="bg-white text-blue-600 hover:bg-blue-50 font-bold py-6 px-8 text-lg rounded-lg transition-all transform hover:scale-105"
+                  className="bg-white text-blue-600 hover:bg-blue-50 font-bold py-4 px-6 text-base sm:text-lg rounded-lg transition-all transform hover:scale-105"
                 >
                   {t("start_learning")}
                 </Button>
@@ -560,7 +586,7 @@ useLayoutEffect(() => {
                 <Button 
                   variant="outline"
                   onClick={() => navigate("/features")}
-                  className="border-white text-white hover:bg-white/10 font-bold py-6 px-8 text-lg rounded-lg"
+                  className="border-white text-white hover:bg-white/10 font-bold py-4 px-6 text-base sm:text-lg rounded-lg"
                 >
                   {t("explore_features")}
                 </Button>
@@ -573,28 +599,28 @@ useLayoutEffect(() => {
             {/* Right Stats */}
             <div className="hidden lg:grid grid-cols-2 gap-6">
 
-              <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6 text-white text-center hover:bg-white/20 transition">
-                <Sparkles className="w-10 h-10 mx-auto mb-2 text-yellow-300" />
-                <p className="text-3xl font-bold">10,000+</p>
-                <p className="text-white/80">{t("ai_questions")}</p>
+              <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-5 text-white text-center hover:bg-white/20 transition">
+                <Sparkles className="w-9 h-9 mx-auto mb-2 text-yellow-300" />
+                <p className="text-2xl font-semibold">10,000+</p>
+                <p className="text-white/80 text-sm sm:text-base">{t("ai_questions")}</p>
               </Card>
 
-              <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6 text-white text-center hover:bg-white/20 transition">
-                <Trophy className="w-10 h-10 mx-auto mb-2 text-orange-300" />
-                <p className="text-3xl font-bold">5,000+</p>
-                <p className="text-white/80">{t("active_students")}</p>
+              <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-5 text-white text-center hover:bg-white/20 transition">
+                <Trophy className="w-9 h-9 mx-auto mb-2 text-orange-300" />
+                <p className="text-2xl font-semibold">5,000+</p>
+                <p className="text-white/80 text-sm sm:text-base">{t("active_students")}</p>
               </Card>
 
-              <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6 text-white text-center hover:bg-white/20 transition">
-                <BookOpen className="w-10 h-10 mx-auto mb-2 text-green-300" />
-                <p className="text-3xl font-bold">150+</p>
-                <p className="text-white/80">{t("chapters_topics")}</p>
+              <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-5 text-white text-center hover:bg-white/20 transition">
+                <BookOpen className="w-9 h-9 mx-auto mb-2 text-green-300" />
+                <p className="text-2xl font-semibold">150+</p>
+                <p className="text-white/80 text-sm sm:text-base">{t("chapters_topics")}</p>
               </Card>
 
-              <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6 text-white text-center hover:bg-white/20 transition">
-                <Zap className="w-10 h-10 mx-auto mb-2 text-blue-300" />
-                <p className="text-3xl font-bold">{t("realtime")}</p>
-                <p className="text-white/80">{t("ai_feedback")}</p>
+              <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-5 text-white text-center hover:bg-white/20 transition">
+                <Zap className="w-9 h-9 mx-auto mb-2 text-blue-300" />
+                <p className="text-2xl font-semibold">{t("realtime")}</p>
+                <p className="text-white/80 text-sm sm:text-base">{t("ai_feedback")}</p>
               </Card>
 
             </div>
@@ -602,9 +628,10 @@ useLayoutEffect(() => {
           </div>
           </div>
         </div>
- 
 
-      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-6xl" data-section="mode-selection">
+
+      {/* <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-6xl" data-section="mode-selection"> */}
+      <div className="relative z-20 container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-6xl" data-section="mode-selection">
         {step === "mode" && (
           <div className="space-y-6 sm:space-y-8">
             {/* Mode Selection */}
@@ -1041,37 +1068,37 @@ useLayoutEffect(() => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 <LanguageCard
-                  language="French"
+                  language={t("subject_french")}
                   icon={BookOpen}
                   color="bg-pink-50 dark:bg-pink-950/20 text-pink-600 dark:text-pink-400"
                   onClick={() => handleSubjectLanguageSelect("french")}
                 />
                 <LanguageCard
-                  language="German"
+                  language={t("subject_german")}
                   icon={Languages}
                   color="bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400"
                   onClick={() => handleSubjectLanguageSelect("german")}
                 />
                 <LanguageCard
-                  language="Spanish"
+                  language={t("subject_spanish")}
                   icon={Sparkles}
                   color="bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400"
                   onClick={() => handleSubjectLanguageSelect("spanish")}
                 />
                 <LanguageCard
-                  language="Hindi"
+                  language={t("subject_hindi")}
                   icon={Book}
                   color="bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400"
                   onClick={() => handleSubjectLanguageSelect("hindi")}
                 />
                 <LanguageCard
-                  language="Marathi"
+                  language={t("subject_marathi")}
                   icon={Library}
                   color="bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400"
                   onClick={() => handleSubjectLanguageSelect("marathi")}
                 />
                 <LanguageCard
-                  language="Kannada"
+                  language={t("subject_kannada")}
                   icon={ScrollText}
                   color="bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400"
                   onClick={() => handleSubjectLanguageSelect("kannada")}
@@ -1123,25 +1150,25 @@ useLayoutEffect(() => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <LanguageCard
-                  language="Physics"
+                  language={t("subject_physics")}
                   icon={Atom}
                   color="bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400"
                   onClick={() => handleScienceCategorySelect("physics")}
                 />
                 <LanguageCard
-                  language="Chemistry"
+                  language={t("subject_chemistry")}
                   icon={Beaker}
                   color="bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400"
                   onClick={() => handleScienceCategorySelect("chemistry")}
                 />
                 <LanguageCard
-                  language="Biology"
+                  language={t("subject_biology")}
                   icon={Dna}
                   color="bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400"
                   onClick={() => handleScienceCategorySelect("biology")}
                 />
                 <LanguageCard
-                  language="General Science"
+                  language={t("subject_general_science")}
                   icon={Zap}
                   color="bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400"
                   onClick={() => handleScienceCategorySelect("general")}
@@ -1200,7 +1227,7 @@ useLayoutEffect(() => {
               </Button>
               <div>
                 <h2 className="text-xl sm:text-2xl font-bold capitalize">
-                  {selectedMode === "science" ? selectedScienceCategory : selectedSubjectLanguage}
+                  {t(selectedMode === "science" ? `subject_${selectedScienceCategory}` : `subject_${selectedSubjectLanguage}`)}
                 </h2>
                 <p className="text-sm text-muted-foreground">{t("step_1_4")}</p>
               </div>
@@ -1208,11 +1235,11 @@ useLayoutEffect(() => {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
-                { label: "Class 6", value: 6, light: "from-green-400 to-green-200", dark: "from-green-700 to-green-500" },
-                { label: "Class 7", value: 7, light: "from-blue-400 to-blue-200", dark: "from-blue-700 to-blue-500" },
-                { label: "Class 8", value: 8, light: "from-purple-400 to-purple-200", dark: "from-purple-700 to-purple-500" },
-                { label: "Class 9", value: 9, light: "from-pink-400 to-pink-200", dark: "from-pink-700 to-pink-500" },
-                { label: "Class 10", value: 10, light: "from-yellow-400 to-yellow-200", dark: "from-yellow-700 to-yellow-500" },
+            { label: t("class_6"), value: 6, light: "from-green-400 to-green-200", dark: "from-green-700 to-green-500" },
+            { label: t("class_7"), value: 7, light: "from-blue-400 to-blue-200", dark: "from-blue-700 to-blue-500" },
+            { label: t("class_8"), value: 8, light: "from-purple-400 to-purple-200", dark: "from-purple-700 to-purple-500" },
+            { label: t("class_9"), value: 9, light: "from-pink-400 to-pink-200", dark: "from-pink-700 to-pink-500" },
+            { label: t("class_10"), value: 10, light: "from-yellow-400 to-yellow-200", dark: "from-yellow-700 to-yellow-500" },
               ].map((item) => (
                 <div
                   key={item.value}
@@ -1281,9 +1308,10 @@ useLayoutEffect(() => {
               </Button>
               <div>
                 <h2 className="text-lg sm:text-2xl font-bold capitalize">
-                  {selectedMode === "science"
-                    ? selectedScienceCategory
-                    : selectedSubjectLanguage} - Class {selectedClass}
+                  {t(selectedMode === "science"
+                      ? `subject_${selectedScienceCategory}`
+                      : `subject_${selectedSubjectLanguage}`
+                    )} - {t("class")} {selectedClass}
                 </h2>
                 <p className="text-sm text-muted-foreground">{t("step_2_5")}</p>
               </div>
@@ -1291,9 +1319,9 @@ useLayoutEffect(() => {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
-                { label: "Easy", value: "easy", light: "from-green-400 to-green-200", dark: "from-green-700 to-green-500" },
-                { label: "Medium", value: "medium", light: "from-yellow-400 to-yellow-200", dark: "from-yellow-700 to-yellow-500" },
-                { label: "Hard", value: "hard", light: "from-red-400 to-red-200", dark: "from-red-700 to-red-500" },
+            { label: t("difficulty_easy"), value: "easy", light: "from-green-400 to-green-200", dark: "from-green-700 to-green-500" },
+            { label: t("difficulty_medium"), value: "medium", light: "from-yellow-400 to-yellow-200", dark: "from-yellow-700 to-yellow-500" },
+            { label: t("difficulty_hard"), value: "hard", light: "from-red-400 to-red-200", dark: "from-red-700 to-red-500" },
               ].map((item) => (
                 <div
                   key={item.value}
@@ -1432,8 +1460,8 @@ useLayoutEffect(() => {
                 <span>{t("back")}</span>
               </Button>
               <div>
-                <h2 className="text-lg sm:text-2xl font-bold capitalize">
-                  {selectedSubjectLanguage} - Class {selectedClass} - {selectedDifficulty}
+                <h2 className="text-xl sm:text-2xl font-bold capitalize">
+                  {t(selectedMode === "science" ? `subject_${selectedScienceCategory}` : `subject_${selectedSubjectLanguage}`)}
                 </h2>
                 <p className="text-sm text-muted-foreground">{t("step_3_5")}</p>
               </div>
@@ -1450,22 +1478,22 @@ useLayoutEffect(() => {
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
-                  {
-                    id: "mixed",
-                    title: "Mixed Test",
-                    description: "MCQ + Open-ended Questions",
-                    extra: "50% multiple choice, 50% written answers for comprehensive practice",
-                    bgColor: "bg-[rgb(241,234,164)] dark:bg-[rgb(126,43,17)]",
-                    icon: <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600 dark:text-yellow-400" />,
-                  },
-                  {
-                    id: "mcq-only",
-                    title: "MCQ Only Test",
-                    description: "Multiple Choice Questions Only",
-                    extra: "Fast-paced test with instant feedback on all questions",
-                    bgColor: "bg-[rgb(247,207,207)] dark:bg-[rgb(160,88,65)]",
-                    icon: <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 dark:text-red-400" />,
-                  },
+            {
+              id: "mixed",
+              title: t("test_type_mixed_title"),
+              description: t("test_type_mixed_desc"),
+              extra: t("test_type_mixed_extra"),
+              bgColor: "bg-[rgb(241,234,164)] dark:bg-[rgb(126,43,17)]",
+              icon: <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600 dark:text-yellow-400" />,
+            },
+            {
+              id: "mcq-only",
+              title: t("test_type_mcq_title"),
+              description: t("test_type_mcq_desc"),
+              extra: t("test_type_mcq_extra"),
+              bgColor: "bg-[rgb(247,207,207)] dark:bg-[rgb(160,88,65)]",
+              icon: <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 dark:text-red-400" />,
+            },
                 ].map((test) => (
                   <Card
                     key={test.id}
@@ -1497,9 +1525,9 @@ useLayoutEffect(() => {
                         )}
                       </div>
                       <div>
-                        <h3 className="font-semibold text-lg mb-1">{test.title}</h3>
-                        <p className="text-base text-muted-foreground">{test.description}</p>
-                        <p className="text-sm text-muted-foreground mt-2">{test.extra}</p>
+                        <h3 className="font-semibold text-lg mb-1">{t(test.title)}</h3>
+                        <p className="text-base text-muted-foreground">{t(test.description)}</p>
+                        <p className="text-sm text-muted-foreground mt-2">{t(test.extra)}</p>
                       </div>
                     </div>
                   </Card>
@@ -1599,7 +1627,10 @@ useLayoutEffect(() => {
               </Button>
               <div>
                 <h2 className="text-lg sm:text-xl md:text-2xl font-bold capitalize">
-                  {selectedMode === "science" ? selectedScienceCategory : selectedSubjectLanguage} - Class {selectedClass} - {selectedDifficulty} - {selectedTestType === "mcq-only" ? "MCQ Only" : "Mixed"}
+                  {t(selectedMode === "science"
+                      ? `subject_${selectedScienceCategory}`
+                      : `subject_${selectedSubjectLanguage}`
+                    )} - {t("class")} {selectedClass} - {t(`difficulty_${selectedDifficulty}`)} - {selectedTestType === "mcq-only" ? t("test_type_mcq_short") : t("test_type_mixed_short")}
                 </h2>
                 <p className="text-sm text-muted-foreground">{t("step_4_5")}</p>
               </div>
@@ -1611,10 +1642,34 @@ useLayoutEffect(() => {
                 </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {[
-                  { label: "Quick Test", sublabel: "10 Questions", value: 10, time: "~10 mins", bg: "bg-[rgb(241,234,164)] dark:bg-[rgb(126,43,17)]" },
-                  { label: "Standard Test", sublabel: "20 Questions", value: 20, time: "~20 mins", bg: "bg-[rgb(247,207,207)] dark:bg-[rgb(160,88,65)]" },
-                  { label: "Extended Test", sublabel: "30 Questions", value: 30, time: "~30 mins", bg: "bg-[rgb(200,230,255)] dark:bg-[rgb(20,50,80)]" },
-                  { label: "Full Test", sublabel: "50 Questions", value: 50, time: "~50 mins", bg: "bg-[rgb(220,250,220)] dark:bg-[rgb(30,60,40)]" },
+            {
+              label: t("test_quick"),
+              sublabel: t("test_quick_questions"),
+              value: 10,
+              time: t("test_quick_time"),
+              bg: "bg-[rgb(241,234,164)] dark:bg-[rgb(126,43,17)]"
+            },
+            {
+              label: t("test_standard"),
+              sublabel: t("test_standard_questions"),
+              value: 20,
+              time: t("test_standard_time"),
+              bg: "bg-[rgb(247,207,207)] dark:bg-[rgb(160,88,65)]"
+            },
+            {
+              label: t("test_extended"),
+              sublabel: t("test_extended_questions"),
+              value: 30,
+              time: t("test_extended_time"),
+              bg: "bg-[rgb(200,230,255)] dark:bg-[rgb(20,50,80)]"
+            },
+            {
+              label: t("test_full"),
+              sublabel: t("test_full_questions"),
+              value: 50,
+              time: t("test_full_time"),
+              bg: "bg-[rgb(220,250,220)] dark:bg-[rgb(30,60,40)]"
+            },
                 ].map((item) => (
                   <Card
                     key={item.value}
@@ -1628,9 +1683,9 @@ useLayoutEffect(() => {
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="font-semibold text-lg">{item.label}</h3>
-                        <p className="text-muted-foreground">{item.sublabel}</p>
-                        <p className="text-sm text-muted-foreground mt-1">{item.time}</p>
+                        <h3 className="font-semibold text-lg">{t(item.label)}</h3>
+                        <p className="text-muted-foreground">{t(item.sublabel)}</p>
+                        <p className="text-sm text-muted-foreground mt-1">{t(item.time)}</p>
                       </div>
                       {selectedTestLength === item.value && (
                         <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
@@ -1800,6 +1855,28 @@ useLayoutEffect(() => {
                 </button>
               </div> */}
               <div className="flex gap-2">
+
+                {/* <button
+                  onClick={() => form.setValue("language", "english")}
+                  className={
+                    form.watch("language") === "english"
+                      ? "bg-blue-600 text-white px-4 py-1 rounded"
+                      : "bg-gray-200 px-4 py-1 rounded"
+                  }
+                >
+                  English
+                </button>
+
+                <button
+                  onClick={() => form.setValue("language", "hindi")}
+                  className={
+                    form.watch("language") === "hindi"
+                      ? "bg-blue-600 text-white px-4 py-1 rounded"
+                      : "bg-gray-200 px-4 py-1 rounded"
+                  }
+                >
+                  हिंदी
+                </button> */}
                 <button
                   onClick={() => handleMediumSelect("english")}
                   className={selectedMedium === "english"
@@ -1817,29 +1894,30 @@ useLayoutEffect(() => {
                 >
                   हिंदी
                 </button>
+                
               </div>
             </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
-                  {
-                    label: "Pre-defined Chapters",
-                    description: "Choose from curated curriculum chapters",
-                    details: "25 chapters covering the complete syllabus",
-                    value: "predefined",
-                    iconBg: "bg-blue-500/10",
-                    iconColor: "text-blue-500",
-                    pastel: "bg-[rgb(74_153_255)] dark:bg-[rgb(74_153_255)]",
-                  },
-                  {
-                    label: "Custom Topics",
-                    description: "Create test with your own topics",
-                    details: "Enter your own topics and customize settings",
-                    value: "custom",
-                    iconBg: "bg-purple-500/10",
-                    iconColor: "text-purple-500",
-                    pastel: "bg-[rgb(177_118_236)] dark:bg-[rgb(177_118_236)]",
-                  },
+            {
+              label: t("chapter_predefined"),
+              description: t("chapter_predefined_desc"),
+              details: t("chapter_predefined_details"),
+              value: "predefined",
+              iconBg: "bg-blue-500/10",
+              iconColor: "text-blue-500",
+              pastel: "bg-[rgb(74_153_255)] dark:bg-[rgb(74_153_255)]",
+            },
+            {
+              label: t("chapter_custom"),
+              description: t("chapter_custom_desc"),
+              details: t("chapter_custom_details"),
+              value: "custom",
+              iconBg: "bg-purple-500/10",
+              iconColor: "text-purple-500",
+              pastel: "bg-[rgb(177_118_236)] dark:bg-[rgb(177_118_236)]",
+            },
                 ].map((item) => (
                   <Card
                     key={item.value}
@@ -1866,9 +1944,9 @@ useLayoutEffect(() => {
                           )}
                         </div>
 
-                        <h3 className="font-semibold text-xl mt-3">{item.label}</h3>
-                        <p className="text-gray-600 dark:text-gray-300">{item.description}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{item.details}</p>
+                        <h3 className="font-semibold text-xl mt-3">{t(item.label)}</h3>
+                        <p className="text-gray-600 dark:text-gray-300">{t(item.description)}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t(item.details)}</p>
                       </div>
 
                       {selectedTestMode === item.value && (
@@ -1933,90 +2011,88 @@ useLayoutEffect(() => {
                     {t("topics_desc")}
                   </p>
 
-                  <div className="space-y-4">
-                    {/* Topic 1 */}
-                    <div>
-                      <Label htmlFor="topic1">{t("topic1_required")}</Label>
-                      <Input
-                        id="topic1"
-                        placeholder="e.g., Basic Greetings, Verb Conjugation, Cell Structure"
-                        value={customTopic1}
-                        onChange={(e) => setCustomTopic1(e.target.value)}
-                        className="mt-1"
-                        data-testid="input-topic1"
-                        disabled={isGeneratingTest}
-                      />
-                    </div>
+                  {/* Topic 1 */}
+                  <div>
+                    <Label htmlFor="topic1">{t("topic1_required")}</Label>
+                    <Input
+                      id="topic1"
+                      placeholder={t("topic_placeholder1")}
+                      value={customTopic1}
+                      onChange={(e) => setCustomTopic1(e.target.value)}
+                      className="mt-1"
+                      data-testid="input-topic1"
+                      disabled={isGeneratingTest}
+                    />
+                  </div>
 
-                    {/* Topic 2 */}
-                    <div>
-                      <Label htmlFor="topic2">{t("topic2_required")}</Label>
-                      <Input
-                        id="topic2"
-                        placeholder="e.g., Numbers and Counting, Past Tense"
-                        value={customTopic2}
-                        onChange={(e) => setCustomTopic2(e.target.value)}
-                        className="mt-1"
-                        data-testid="input-topic2"
-                        disabled={isGeneratingTest}
-                      />
-                    </div>
+                  {/* Topic 2 */}
+                  <div>
+                    <Label htmlFor="topic2">{t("topic2_required")}</Label>
+                    <Input
+                      id="topic2"
+                      placeholder={t("topic_placeholder2")}
+                      value={customTopic2}
+                      onChange={(e) => setCustomTopic2(e.target.value)}
+                      className="mt-1"
+                      data-testid="input-topic2"
+                      disabled={isGeneratingTest}
+                    />
+                  </div>
 
-                    {/* Topic 3 */}
-                    <div>
-                      <Label htmlFor="topic3">{t("topic3_required")}</Label>
-                      <Input
-                        id="topic3"
-                        placeholder="e.g., Family Members, Photosynthesis"
-                        value={customTopic3}
-                        onChange={(e) => setCustomTopic3(e.target.value)}
-                        className="mt-1"
-                        data-testid="input-topic3"
-                        disabled={isGeneratingTest}
-                      />
-                    </div>
+                  {/* Topic 3 */}
+                  <div>
+                    <Label htmlFor="topic3">{t("topic3_required")}</Label>
+                    <Input
+                      id="topic3"
+                      placeholder={t("topic_placeholder3")}
+                      value={customTopic3}
+                      onChange={(e) => setCustomTopic3(e.target.value)}
+                      className="mt-1"
+                      data-testid="input-topic3"
+                      disabled={isGeneratingTest}
+                    />
+                  </div>
 
-                    {/* Topic 4 */}
-                    <div>
-                      <Label htmlFor="topic4">{t("topic4_optional")}</Label>
-                      <Input
-                        id="topic4"
-                        placeholder="e.g., Food and Drinks, Chemical Reactions"
-                        value={customTopic4}
-                        onChange={(e) => setCustomTopic4(e.target.value)}
-                        className="mt-1"
-                        data-testid="input-topic4"
-                        disabled={isGeneratingTest}
-                      />
-                    </div>
+                  {/* Topic 4 */}
+                  <div>
+                    <Label htmlFor="topic4">{t("topic4_optional")}</Label>
+                    <Input
+                      id="topic4"
+                      placeholder={t("topic_placeholder4")}
+                      value={customTopic4}
+                      onChange={(e) => setCustomTopic4(e.target.value)}
+                      className="mt-1"
+                      data-testid="input-topic4"
+                      disabled={isGeneratingTest}
+                    />
+                  </div>
 
-                    {/* Topic 5 */}
-                    <div>
-                      <Label htmlFor="topic5">{t("topic5_optional")}</Label>
-                      <Input
-                        id="topic5"
-                        placeholder="e.g., Tenses Practice, Algebra Basics"
-                        value={customTopic5}
-                        onChange={(e) => setCustomTopic5(e.target.value)}
-                        className="mt-1"
-                        data-testid="input-topic5"
-                        disabled={isGeneratingTest}
-                      />
-                    </div>
+                  {/* Topic 5 */}
+                  <div>
+                    <Label htmlFor="topic5">{t("topic5_optional")}</Label>
+                    <Input
+                      id="topic5"
+                      placeholder={t("topic_placeholder5")}
+                      value={customTopic5}
+                      onChange={(e) => setCustomTopic5(e.target.value)}
+                      className="mt-1"
+                      data-testid="input-topic5"
+                      disabled={isGeneratingTest}
+                    />
+                  </div>
 
-                    {/* Topic 6 */}
-                    <div>
-                      <Label htmlFor="topic6">{t("topic6_optional")}</Label>
-                      <Input
-                        id="topic6"
-                        placeholder="e.g., Geometry, Human Digestive System"
-                        value={customTopic6}
-                        onChange={(e) => setCustomTopic6(e.target.value)}
-                        className="mt-1"
-                        data-testid="input-topic6"
-                        disabled={isGeneratingTest}
-                      />
-                    </div>
+                  {/* Topic 6 */}
+                  <div>
+                    <Label htmlFor="topic6">{t("topic6_optional")}</Label>
+                    <Input
+                      id="topic6"
+                      placeholder={t("topic_placeholder6")}
+                      value={customTopic6}
+                      onChange={(e) => setCustomTopic6(e.target.value)}
+                      className="mt-1"
+                      data-testid="input-topic6"
+                      disabled={isGeneratingTest}
+                    />
                   </div>
                 </div>
 
@@ -2026,44 +2102,42 @@ useLayoutEffect(() => {
 
                     <Select
                       value={selectedGptModel}
-                      onValueChange={setSelectedGptModel}>
+                      onValueChange={setSelectedGptModel}
+                    >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select AI Model" />
+                        <SelectValue placeholder={t("select_ai_model")} />
                       </SelectTrigger>
 
                       <SelectContent>
 
-                        {/* 🤗 HuggingFace Model */}
                         <SelectItem value="hf-mcqgyaan">
-                          MCQGyaan HF Model 🤗
+                          {t("model_hf")}
                         </SelectItem>
 
-                        {/* 🔥 Fine-Tuned Model */}
-                      <SelectItem value="ft:gpt-4.1-nano-2025-04-14:maxbrain-technologies:pricer:DD6LfCqA">
-                        FT Pricer 4.1 Nano (Custom Trained) 🧠🔥
-                      </SelectItem>
-                        {/* 🔥 GPT-5 Series */}
+                        <SelectItem value="ft:gpt-4.1-nano-2025-04-14:maxbrain-technologies:pricer:DD6LfCqA">
+                          {t("model_ft_pricer")}
+                        </SelectItem>
+
                         <SelectItem value="gpt-5.2">
-                          GPT-5.2 (Latest • Highest Intelligence) 🧠🔥
+                          {t("model_gpt52")}
                         </SelectItem>
 
                         <SelectItem value="gpt-5.1">
-                          GPT-5.1 (Fast • Near GPT-5.2 Quality) ⚡
+                          {t("model_gpt51")}
                         </SelectItem>
 
-                        {/* GPT-4 Series */}
                         <SelectItem value="gpt-4o">
-                          GPT-4o (Best Quality) ⭐
+                          {t("model_gpt4o")}
                         </SelectItem>
 
                         <SelectItem value="gpt-4o-mini">
-                          GPT-4o Mini (Fast & Affordable - Recommended) ⚡
+                          {t("model_gpt4o_mini")}
                         </SelectItem>
 
-                        {/* Legacy */}
                         <SelectItem value="gpt-3.5-turbo">
-                          GPT-3.5 Turbo (Cheapest) 💰
+                          {t("model_gpt35")}
                         </SelectItem>
+
                       </SelectContent>
                     </Select>
 
@@ -2074,16 +2148,18 @@ useLayoutEffect(() => {
 
                   <div>
                     <Label htmlFor="board">{t("education_board")}</Label>
+
                     <Select value={selectedBoard} onValueChange={setSelectedBoard} disabled={isGeneratingTest}>
                       <SelectTrigger className="mt-1" data-testid="select-board">
-                        <SelectValue placeholder="Select Board" />
+                        <SelectValue placeholder={t("select_board")} />
                       </SelectTrigger>
+
                       <SelectContent>
-                        <SelectItem value="CBSE">CBSE (Central Board)</SelectItem>
-                        <SelectItem value="ICSE">ICSE (Council for Indian School)</SelectItem>
-                        <SelectItem value="IB">IB (International Baccalaureate)</SelectItem>
-                        <SelectItem value="RBSE">RBSE (Rajasthan Board)</SelectItem>
-                        <SelectItem value="State Board">State Board</SelectItem>
+                        <SelectItem value="CBSE">{t("board_cbse")}</SelectItem>
+                        <SelectItem value="ICSE">{t("board_icse")}</SelectItem>
+                        <SelectItem value="IB">{t("board_ib")}</SelectItem>
+                        <SelectItem value="RBSE">{t("board_rbse")}</SelectItem>
+                        <SelectItem value="State Board">{t("board_state")}</SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground mt-1">
@@ -2099,10 +2175,29 @@ useLayoutEffect(() => {
                       {t("test_config_summary")}
                     </h4>
                     <div className="text-sm space-y-1 text-muted-foreground">
-                      <p><strong>{t("subject")}:</strong> {selectedMode === "science" ? selectedScienceCategory : selectedSubjectLanguage}</p>
-                      <p><strong>{t("class")}:</strong> {selectedClass} | <strong>Difficulty:</strong> {selectedDifficulty}</p>
-                      <p><strong>{t("type")}</strong> {selectedTestType === "mcq-only" ? "MCQ Only" : "Mixed"} | <strong>Questions:</strong> {selectedTestLength}</p>
-                      <p><strong>{t("topics")}</strong> {[customTopic1, customTopic2, customTopic3, customTopic4].filter(t => t.trim()).length} topic(s)</p>
+
+                      <p>
+                        <strong>{t("difficulty_label")}:</strong> 
+                        {t(`difficulty_${selectedDifficulty}`)} | <strong>{t("class")}:</strong> {selectedClass} 
+                      </p>
+
+                      {/* <p>
+                        <strong>{t("class")}:</strong> {selectedClass} | 
+                        <strong>{t("difficulty.label")}:</strong> 
+                        {t(`difficulty.${selectedDifficulty}`)}
+                      </p> */}
+
+                      <p>
+                        <strong>{t("type")}:</strong> 
+                        {selectedTestType === "mcq-only" ? t("test_type_mcq") : t("test_type_mixed")} | 
+                        <strong> {t("questions")}:</strong> {selectedTestLength}
+                      </p>
+
+                      <p>
+                        <strong>{t("topics")}:</strong> 
+                        {[customTopic1, customTopic2, customTopic3, customTopic4].filter(t => t.trim()).length} {t("topics_count")}
+                      </p>
+
                     </div>
                   </div>
 

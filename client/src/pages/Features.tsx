@@ -114,13 +114,6 @@ export default function FeaturesPage() {
 
       {/* Main Features Section */}
       <div className="container mx-auto px-4 sm:px-6 py-16">
-        <h2 className="text-4xl font-bold text-center mb-4">
-          {t("core_features")}
-        </h2>
-
-        <p className="text-center text-gray-600 dark:text-gray-400 mb-12 max-w-2xl mx-auto">
-          {t("core_features_desc")}
-        </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {mainFeatures.map((feature, idx) => {

@@ -1,6 +1,8 @@
+/* stylelint-disable at-rule-no-unknown */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* stylelint-enable at-rule-no-unknown */
 
 /* LIGHT MODE */
 :root {
@@ -203,6 +205,41 @@
     background-attachment: fixed;
   }
 
+  /* Hindi typography fixes: prevent clipping/overlap on tight line heights */
+  .lang-hi {
+    line-height: 1.45;
+  }
+
+  .lang-hi .leading-none,
+  .lang-hi .leading-tight {
+    line-height: 1.45;
+  }
+
+  .lang-hi .text-xs,
+  .lang-hi .text-sm,
+  .lang-hi .text-base,
+  .lang-hi .text-lg,
+  .lang-hi .text-xl,
+  .lang-hi .text-2xl,
+  .lang-hi .text-3xl,
+  .lang-hi .text-4xl,
+  .lang-hi .text-5xl,
+  .lang-hi .text-6xl,
+  .lang-hi .text-7xl {
+    line-height: 1.45;
+  }
+
+  .lang-hi .tracking-tight {
+    letter-spacing: 0;
+  }
+
+  /* Prevent descenders/marks from clipping on gradient text headings */
+  .bg-clip-text.text-transparent {
+    display: inline-block;
+    padding-top: 0.06em;
+    padding-bottom: 0.12em;
+  }
+
 
 /**
  * Using the elevate system.
@@ -241,9 +278,7 @@
   /* .no-default-hover-elevate/no-default-active-elevate is an escape hatch so consumers of
    * buttons/badges can remove the automatic brightness adjustment on interactions
    * and program their own. */
-  .no-default-hover-elevate {}
 
-  .no-default-active-elevate {}
 
 
   /**

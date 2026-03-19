@@ -11,7 +11,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Mail, Phone, MapPin, Clock, Send, MessageSquare } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-const { t } = useTranslation();
 
 const contactSchema = z.object({
   fullName: z.string().min(2, "Name must be at least 2 characters"),
@@ -27,7 +26,7 @@ type ContactForm = z.infer<typeof contactSchema>;
 export default function Contact() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const { t } = useTranslation();
   const form = useForm<ContactForm>({
     resolver: zodResolver(contactSchema),
     defaultValues: {
@@ -68,28 +67,40 @@ export default function Contact() {
   const contactInfo = [
     {
       icon: Mail,
-      title: "Email",
-      details: ["support@mcqgyaan.com", "info@mcqgyaan.com"],
-      desc: "For quick support"
+      title: t("contact_email_title"),
+      details: [
+        t("contact_email_detail1"),
+        t("contact_email_detail2")
+      ],
+      desc: t("contact_email_desc")
     },
     {
       icon: Phone,
-      title: "Phone",
-      details: ["+91 9950143179", "+91 7597493655"],
-      desc: "Available 9 AM - 6 PM IST"
+      title: t("contact_phone_title"),
+      details: [
+        t("contact_phone_detail1"),
+        t("contact_phone_detail2")
+      ],
+      desc: t("contact_phone_desc")
     },
     {
       icon: MapPin,
-      title: "Office Location",
-      details: ["SF-77 Jaipur Electronics Market", "Jaipur-302018, India"],
-      desc: "MaxBrain Technologies Pvt. Ltd."
+      title: t("contact_location_title"),
+      details: [
+        t("contact_location_detail1"),
+        t("contact_location_detail2")
+      ],
+      desc: t("contact_location_desc")
     },
     {
       icon: Clock,
-      title: "Response Time",
-      details: ["Within 24 hours", "Mon - Fri (Business Days)"],
-      desc: "We respond quickly"
-    },
+      title: t("contact_response_title"),
+      details: [
+        t("contact_response_detail1"),
+        t("contact_response_detail2")
+      ],
+      desc: t("contact_response_desc")
+    }
   ];
 
   return (

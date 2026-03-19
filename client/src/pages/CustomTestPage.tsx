@@ -10,18 +10,33 @@ import { ArrowLeft, CheckCircle, XCircle, Loader2, Download } from "lucide-react
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+
+import { useTranslation } from "react-i18next";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 export default function CustomTestPage() {
-  const navigate = useNavigate();
-  const [shareCode, setShareCode] = useState("");
-  const [testStarted, setTestStarted] = useState(false);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+    const { t } = useTranslation();
+    const navigate = useNavigate();
+    const [shareCode, setShareCode] = useState("");
+    const [testStarted, setTestStarted] = useState(false);
+    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [results, setResults] = useState<Record<string, any>>({});
   const [testCompleted, setTestCompleted] = useState(false);
   const { toast } = useToast();
+
+  const normalizeQuestionType = (type?: string, options?: any[]) => {
+    const normalized = (type || "").toString().trim().toLowerCase();
+    if (normalized === "mcq" || normalized === "multiple_choice" || normalized === "multiple-choice") return "mcq";
+    if ((!normalized || normalized.length === 0) && Array.isArray(options) && options.length > 0) return "mcq";
+    return normalized || "open-ended";
+  };
+
+  const cleanOption = (opt: string) =>
+    (opt ?? "")
+      .replace(/^[A-D][.)]?\s*/i, "") // strip leading letter/marker
+      .trim();
 
   const { data: testData, isLoading, refetch } = useQuery<any>({
     queryKey: [`/api/custom-test/${shareCode}`],
@@ -43,8 +58,8 @@ export default function CustomTestPage() {
     if (!shareCode.trim()) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Please enter a share code",
+        title: t("error"),
+        description: t("enter_share_code"),
       });
       return;
     }
@@ -55,8 +70,8 @@ export default function CustomTestPage() {
     } else {
       toast({
         variant: "destructive",
-        title: "Test not found",
-        description: "Invalid share code. Please check and try again.",
+        title: t("test_not_found"),
+        description: t("invalid_share_code"),
       });
     }
   }
@@ -68,8 +83,8 @@ export default function CustomTestPage() {
     if (!answer.trim()) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Please provide an answer",
+        title: t("error"),
+        description: t("provide_answer"),
       });
       return;
     }
@@ -91,8 +106,8 @@ export default function CustomTestPage() {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to evaluate answer",
+        title: t("error"),
+        description: t("evaluate_failed"),
       });
     }
   }
@@ -110,11 +125,17 @@ export default function CustomTestPage() {
     if (!printWindow) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Please allow popups to download PDF",
+        title: t("error"),
+        description: t("allow_popup_pdf"),
       });
       return;
     }
+
+    const classLabel = testData?.test?.classLevel
+      ?? testData?.test?.class
+      ?? (testData?.test as any)?.class_number
+      ?? (testData?.test as any)?.class_level
+      ?? "—";
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -178,24 +199,24 @@ export default function CustomTestPage() {
       <body>
         <div class="header">
           <h1>${testData?.test?.title || "Question Paper"}</h1>
-          <div class="test-info">
-            <div><strong>Subject:</strong> ${testData?.test?.subject}</div>
-            <div><strong>Class:</strong> ${testData?.test?.classLevel}</div>
-            <div><strong>Difficulty:</strong> ${testData?.test?.difficulty}</div>
-            <div><strong>Total Questions:</strong> ${testData?.questions?.length}</div>
-            <div><strong>Share Code:</strong> ${shareCode}</div>
-          </div>
+            <div class="test-info">
+              <div><strong>Subject:</strong> ${testData?.test?.subject}</div>
+              <div><strong>Class:</strong> ${classLabel}</div>
+              <div><strong>Difficulty:</strong> ${testData?.test?.difficulty}</div>
+              <div><strong>Total Questions:</strong> ${testData?.questions?.length}</div>
+              <div><strong>Share Code:</strong> ${shareCode}</div>
+            </div>
         </div>
 
         ${testData?.questions.map((q: any, idx: number) => `
           <div class="question">
             <div class="question-number">Question ${idx + 1}:</div>
             <div class="question-text">${q.question}</div>
-            ${q.questionType === 'mcq' && q.options ? `
+            ${normalizeQuestionType(q.questionType, q.options) === 'mcq' && q.options ? `
               <div class="options">
                 ${q.options.map((opt: string, optIdx: number) => `
                   <div class="option">
-                    <strong>${String.fromCharCode(65 + optIdx)}.</strong> ${opt}
+                    <strong>${String.fromCharCode(65 + optIdx)}.</strong> ${cleanOption(opt)}
                   </div>
                 `).join('')}
               </div>
@@ -217,14 +238,19 @@ export default function CustomTestPage() {
     printWindow.document.close();
 
     toast({
-      title: "Print Dialog Opened",
-      description: "Choose 'Save as PDF' to download",
+      title: t("print_dialog_opened"),
+      description: t("choose_save_pdf"),
     });
   }
 
   function downloadAnswerSheet() {
     const stats = calculateStats();
     const percentage = Math.round((stats.totalScore / stats.maxScore) * 100);
+    const classLabel = testData?.test?.classLevel
+      ?? testData?.test?.class
+      ?? (testData?.test as any)?.class_number
+      ?? (testData?.test as any)?.class_level
+      ?? "—";
 
     const printWindow = window.open('', '', 'width=800,height=600');
     if (!printWindow) {
@@ -333,7 +359,7 @@ export default function CustomTestPage() {
           <h1>Answer Sheet</h1>
           <div class="test-info">
             <div><strong>Test:</strong> ${testData?.test?.title}</div>
-            <div><strong>Subject:</strong> ${testData?.test?.subject} | <strong>Class:</strong> ${testData?.test?.classLevel}</div>
+            <div><strong>Subject:</strong> ${testData?.test?.subject} | <strong>Class:</strong> ${classLabel}</div>
           </div>
         </div>
 
@@ -345,10 +371,21 @@ export default function CustomTestPage() {
         ${testData?.questions.map((q: any, idx: number) => {
           const result = results[q.id];
           const isCorrect = result?.isCorrect;
+          const qType = normalizeQuestionType(q.questionType, q.options);
           return `
             <div class="question-block">
               <div class="question-header">Question ${idx + 1}:</div>
               <div class="question-text">${q.question}</div>
+
+              ${qType === 'mcq' && Array.isArray(q.options) ? `
+                <div class="options" style="margin: 10px 0 6px 0; padding: 8px; background: #f8fafc; border-radius: 6px;">
+                  ${q.options.map((opt: string, optIdx: number) => `
+                    <div style="margin: 4px 0;">
+                      <strong>${String.fromCharCode(65 + optIdx)}.</strong> ${cleanOption(opt)}
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
 
               <div class="answer-section">
                 <div class="your-answer">
@@ -399,15 +436,15 @@ export default function CustomTestPage() {
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>Take Custom Test</CardTitle>
-            <CardDescription>Enter the share code provided by your teacher</CardDescription>
+            <CardTitle>{t("take_custom_test")}</CardTitle>
+            <CardDescription>{t("enter_share_code_teacher")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="shareCode">Share Code</Label>
+              <Label htmlFor="shareCode">{t("share_code")}</Label>
               <Input
                 id="shareCode"
-                placeholder="Enter 6-character code"
+                placeholder={t("enter_code_placeholder")}
                 value={shareCode}
                 onChange={(e) => setShareCode(e.target.value.toUpperCase())}
                 maxLength={6}
@@ -420,11 +457,11 @@ export default function CustomTestPage() {
                 disabled={isLoading}
                 data-testid="button-start-test"
               >
-                {isLoading ? "Loading..." : "Start Test"}
+                {isLoading ? t("loading") : t("start_test")}
               </Button>
               <Button variant="outline" onClick={() => navigate('/')} data-testid="button-back">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
+                {t("back")}
               </Button>
             </div>
           </CardContent>
@@ -442,18 +479,16 @@ export default function CustomTestPage() {
         <div className="container mx-auto max-w-2xl">
           <Card>
             <CardHeader>
-              <CardTitle>Test Completed!</CardTitle>
+              <CardTitle>{t("test_completed")}</CardTitle>
               <CardDescription>{testData?.test?.title}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="text-center p-6 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 rounded-lg">
                   <p className="text-4xl font-bold mb-2">{percentage}%</p>
-                  <p className="text-lg">
-                    {stats.correct} out of {stats.total} correct
-                  </p>
+                  {stats.correct} {t("out_of")} {stats.total} {t("correct")}
                   <p className="text-sm text-muted-foreground">
-                    Total Score: {stats.totalScore}/{stats.maxScore}
+                    {t("total_score")} {stats.totalScore}/{stats.maxScore}
                   </p>
                 </div>
 
@@ -475,16 +510,16 @@ export default function CustomTestPage() {
                         <CardContent className="text-sm space-y-3">
                           <p className="font-medium">{question.question}</p>
                           <div className="p-2 bg-blue-50 dark:bg-blue-950 rounded">
-                            <p><span className="font-semibold">Your answer:</span> <span className="text-blue-600">{answers[question.id]}</span></p>
+                            <p><span className="font-semibold">{t("your_answer")}</span> <span className="text-blue-600">{answers[question.id]}</span></p>
                           </div>
                           {!result?.isCorrect && (
                             <div className="p-2 bg-green-50 dark:bg-green-950 rounded">
-                              <p><span className="font-semibold">Correct answer:</span> <span className="text-green-600">{result?.correctAnswer}</span></p>
+                              <p><span className="font-semibold">{t("correct_answer")}</span> <span className="text-green-600">{result?.correctAnswer}</span></p>
                             </div>
                           )}
                           {result?.explanation && (
                             <div className="p-3 bg-purple-50 dark:bg-purple-950 rounded">
-                              <p className="font-semibold mb-1">Explanation:</p>
+                              <p className="font-semibold mb-1">{t("explanation")}</p>
                               <p className="text-muted-foreground">{result.explanation}</p>
                             </div>
                           )}
@@ -502,10 +537,10 @@ export default function CustomTestPage() {
                     data-testid="button-download-answer-sheet"
                   >
                     <Download className="h-4 w-4 mr-2" />
-                    Download Answer Sheet
+                    {t("download_answer_sheet")}
                   </Button>
                   <Button onClick={() => window.location.reload()} className="flex-1">
-                    Take Another Test
+                    {t("download_answer_sheet")}
                   </Button>
                 </div>
               </div>
@@ -517,6 +552,15 @@ export default function CustomTestPage() {
   }
 
   const currentQuestion = testData?.questions[currentQuestionIndex];
+  const currentQuestionType = normalizeQuestionType(
+    currentQuestion?.questionType,
+    currentQuestion?.options
+  );
+  const headerClassLabel = testData?.test?.classLevel
+    ?? testData?.test?.class
+    ?? (testData?.test as any)?.class_number
+    ?? (testData?.test as any)?.class_level
+    ?? "—";
 
   return (
     <div className="min-h-screen p-4 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
@@ -540,7 +584,7 @@ export default function CustomTestPage() {
                   data-testid="button-exit-test"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Exit Test
+                  {t("exit_test")}
                 </Button>
                 <Button 
                   variant="outline" 
@@ -549,16 +593,16 @@ export default function CustomTestPage() {
                   data-testid="button-download-question-paper"
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  Download Questions
+                  {t("download_questions")}
                 </Button>
               </div>
               <span className="text-sm text-muted-foreground">
-                Question {currentQuestionIndex + 1} of {testData?.questions?.length}
+                {t("question")} {currentQuestionIndex + 1} {t("of")} {testData?.questions?.length}
               </span>
             </div>
             <CardTitle>{testData?.test?.title}</CardTitle>
             <CardDescription>
-              {testData?.test?.subject} • Class {testData?.test?.classLevel}
+              {testData?.test?.subject} • {t("class")} {headerClassLabel}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -566,7 +610,7 @@ export default function CustomTestPage() {
               <p className="text-lg">{currentQuestion?.question}</p>
             </div>
 
-            {currentQuestion?.questionType === "mcq" && currentQuestion?.options ? (
+            {currentQuestionType === "mcq" && currentQuestion?.options ? (
               <RadioGroup
                 value={answers[currentQuestion.id] || ""}
                 onValueChange={(value) =>
@@ -582,7 +626,7 @@ export default function CustomTestPage() {
               </RadioGroup>
             ) : (
               <Textarea
-                placeholder="Type your answer here..."
+                placeholder={t("type_answer_here")}
                 value={answers[currentQuestion?.id] || ""}
                 onChange={(e) =>
                   setAnswers(prev => ({ ...prev, [currentQuestion.id]: e.target.value }))
@@ -601,12 +645,12 @@ export default function CustomTestPage() {
               {evaluateMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Evaluating...
+                  {t("evaluating")}
                 </>
               ) : currentQuestionIndex < testData?.questions?.length - 1 ? (
-                "Next Question"
+              t("next_question")
               ) : (
-                "Finish Test"
+              t("finish_test")
               )}
             </Button>
           </CardContent>

@@ -12,9 +12,11 @@ export default function AnimatedBackground() {
     <Particles
       id="tsparticles"
       init={particlesInit}
-      className="absolute inset-0 -z-10"
+      className="absolute inset-0 pointer-events-none"
       options={{
-        fullScreen: false,
+        fullScreen: {
+          enable: true
+        },
 
         background: {
           color: {

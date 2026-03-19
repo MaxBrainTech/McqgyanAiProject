@@ -196,8 +196,8 @@ export default function ChapterList({
 
   return (
     <Card className="p-6">
-      <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-        <BookOpen className="w-5 h-5" />
+      <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-white">
+        <BookOpen className="w-5 h-5 text-white" />
         {selectedMedium === "hindi" ? "अध्याय चुनें" : "Select a Chapter"}
       </h2>
 
@@ -209,16 +209,16 @@ export default function ChapterList({
           return (
             <Card
               key={chapter.id}
-              className={`p-4 cursor-pointer transition-all ${colorClass} hover:shadow-lg hover:scale-105`}
+              className={`p-4 cursor-pointer transition-all ${colorClass} hover:shadow-lg hover:scale-105 text-slate-900`}
               onClick={() => onSelect(chapter.id)}
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <h3>{getText(chapter.title)}</h3>
-                  <p>{getText(chapter.description)}</p>
+                  <h3 className="font-semibold text-slate-900">{getText(chapter.title)}</h3>
+                  <p className="text-slate-800">{getText(chapter.description)}</p>
                 </div>
 
-                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                <ChevronRight className="w-5 h-5 text-slate-700" />
               </div>
             </Card>
           );

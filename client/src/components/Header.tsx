@@ -10,7 +10,7 @@
 //   const [user, setUser] = useState<User | null>(null);
 //   const navigate = useNavigate();
 
-  
+
 
 //   // 🌙 Dark mode toggle
 //   useEffect(() => {
@@ -19,7 +19,7 @@
 //     else root.classList.remove("dark");
 //   }, [isDark]);
 
-  
+
 
 //   // 🔐 Firebase auth listener
 //   useEffect(() => {
@@ -148,6 +148,13 @@ export default function Header() {
     i18n.changeLanguage(newLang);
   };
 
+  useEffect(() => {
+    const root = document.documentElement;
+    const isHindi = i18n.language?.toLowerCase().startsWith("hi");
+    root.lang = isHindi ? "hi" : "en";
+    root.classList.toggle("lang-hi", Boolean(isHindi));
+  }, [i18n.language]);
+
   // 🌙 Dark mode toggle
   useEffect(() => {
     const root = document.documentElement;
@@ -258,12 +265,24 @@ export default function Header() {
           )}
 
           {/* 🌐 Language Toggle */}
-          <Button
+          {/* <Button
             variant="ghost"
             onClick={changeLanguage}
             className="h-11 w-11 p-0"
           >
             <Languages className="w-5 h-5" />
+          </Button> */}
+
+          <Button
+            variant="ghost"
+            onClick={changeLanguage}
+            className={`h-11 px-3 font-semibold transition-all ${
+              i18n.language === "hi"
+                ? "bg-gray-300 dark:bg-gray-700"
+                : "hover:bg-gray-200 dark:hover:bg-gray-800"
+            }`}
+          >
+            {i18n.language === "hi" ? "English" : "हिंदी"}
           </Button>
 
           {/* 🌗 Theme toggle */}

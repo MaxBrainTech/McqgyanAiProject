@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Upload, X, Loader2, CheckCircle, AlertCircle, BookOpen } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { useTranslation } from "react-i18next";
 
 
 
@@ -28,6 +29,7 @@ interface EvaluationResult {
 }
 
 export default function AnswerSheetEvaluator() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [studentName, setStudentName] = useState<string>("");
   const [classLevel, setClassLevel] = useState<string>("");
@@ -188,10 +190,10 @@ export default function AnswerSheetEvaluator() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Answer Sheet Evaluator
+          {t("answerEvaluator.title")}
           </h1>
           <p className="text-lg text-muted-foreground">
-            Upload answer sheets and get AI-powered detailed feedback
+            {t("answerEvaluator.subtitle")}
           </p>
         </div>
 
@@ -200,40 +202,40 @@ export default function AnswerSheetEvaluator() {
             {/* Student Information */}
             <Card>
               <CardHeader>
-                <CardTitle>Student Information (Optional)</CardTitle>
-                <CardDescription>Provide details for personalized feedback</CardDescription>
+                <CardTitle>{t("answerEvaluator.studentInfo")}</CardTitle>
+                <CardDescription>{t("answerEvaluator.studentDesc")}</CardDescription>
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor="studentName">Student Name</Label>
+                  <Label htmlFor="studentName">{t("answerEvaluator.studentName")}</Label>
                   <Input
                     id="studentName"
-                    placeholder="e.g., Rahul Kumar"
+                    placeholder={t("answerEvaluator.studentPlaceholder")}
                     value={studentName}
                     onChange={(e) => setStudentName(e.target.value)}
                     data-testid="input-student-name"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="classLevel">Class Level</Label>
+                  <Label htmlFor="classLevel">{t("answerEvaluator.classLevel")}</Label>
                   <Select value={classLevel} onValueChange={setClassLevel}>
                     <SelectTrigger data-testid="select-class-level">
-                      <SelectValue placeholder="Select Class" />
+                      <SelectValue placeholder={t("answerEvaluator.selectClass")} />
                     </SelectTrigger>
                     <SelectContent>
                       {[6, 7, 8, 9, 10, 11, 12].map((level) => (
                         <SelectItem key={level} value={level.toString()}>
-                          Class {level}
+                          {t("answerEvaluator.class")} {level}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="subject">Subject</Label>
+                  <Label htmlFor="subject">{t("answerEvaluator.subject")}</Label>
                   <Input
                     id="subject"
-                    placeholder="e.g., Physics, Math"
+                    placeholder={t("answerEvaluator.subjectPlaceholder")}
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
                     data-testid="input-subject"
@@ -245,8 +247,8 @@ export default function AnswerSheetEvaluator() {
             {/* Upload Section */}
             <Card>
               <CardHeader>
-                <CardTitle>Upload Answer Sheets</CardTitle>
-                <CardDescription>Upload up to 20 images of answer sheets</CardDescription>
+                <CardTitle>{t("answerEvaluator.uploadAnswers")}</CardTitle>
+                <CardDescription>{t("answerEvaluator.uploadDesc")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -256,9 +258,9 @@ export default function AnswerSheetEvaluator() {
                       className="flex-1 cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-8 text-center hover:border-blue-500 dark:hover:border-blue-400 transition-colors"
                     >
                       <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                      <p className="text-sm font-medium mb-1">Click to upload images</p>
+                      <p className="text-sm font-medium mb-1">{t("answerEvaluator.clickUpload")}</p>
                       <p className="text-xs text-muted-foreground">
-                        {images.length}/20 images uploaded
+                      {images.length}/20 {t("answerEvaluator.imagesUploaded")}
                       </p>
                       <Input
                         id="image-upload"
@@ -301,9 +303,9 @@ export default function AnswerSheetEvaluator() {
              {/* Question Upload (Optional) */}
             <Card>
               <CardHeader>
-                <CardTitle>Upload Question Paper (Optional)</CardTitle>
+                <CardTitle>{t("answerEvaluator.uploadQuestions")}</CardTitle>
                 <CardDescription>
-                  Upload question paper images for more accurate evaluation
+                  {t("answerEvaluator.questionDesc")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -315,10 +317,10 @@ export default function AnswerSheetEvaluator() {
                     >
                       <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
                       <p className="text-sm font-medium mb-1">
-                        Click to upload question images
+                      {t("answerEvaluator.clickUploadQuestions")}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {questionImages.length} question image(s) uploaded
+                      {questionImages.length} {t("answerEvaluator.questionImagesUploaded")}
                       </p>
                       <Input
                         id="question-upload"
@@ -379,12 +381,12 @@ export default function AnswerSheetEvaluator() {
               {isEvaluating ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Evaluating... This may take a minute
+                  {t("answerEvaluator.evaluating")}
                 </>
               ) : (
                 <>
                   <BookOpen className="w-5 h-5 mr-2" />
-                  Evaluate Answer Sheets
+                  {t("answerEvaluator.evaluate")}
                 </>
               )}
             </Button>
@@ -397,17 +399,17 @@ export default function AnswerSheetEvaluator() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CheckCircle className="w-6 h-6 text-green-600" />
-                  Evaluation Complete
+                  {t("answerEvaluator.complete")}
                 </CardTitle>
                 <CardDescription>
-                  Analyzed {evaluationResult.totalAnswers} answer(s)
+                {t("answerEvaluator.analyzed")} {evaluationResult.totalAnswers} {t("answerEvaluator.answers")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-semibold">Average Score:</span>
+                      <span className="font-semibold">{t("answerEvaluator.averageScore")}:</span>
                       <span className={`text-2xl font-bold ${getScoreColor(evaluationResult.averageScore)}`}>
                         {evaluationResult.averageScore.toFixed(1)}/10
                       </span>
@@ -421,8 +423,8 @@ export default function AnswerSheetEvaluator() {
                   </div>
 
                   <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
-                    <h4 className="font-semibold mb-2">Overall Feedback:</h4>
-                    <p className="text-sm">{evaluationResult.overallFeedback}</p>
+                    <h4 className="font-semibold mb-2">{t("answerEvaluator.overallFeedback")}</h4>
+                    <p className="text-sm">{t("answerEvaluator.overallFeedback")}: {evaluationResult.overallFeedback}</p>
                   </div>
                 </div>
               </CardContent>
@@ -433,7 +435,7 @@ export default function AnswerSheetEvaluator() {
               <Card key={index}>
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
-                    <span>Answer {evaluation.questionNumber}</span>
+                    <span>{t("answerEvaluator.answer")} {evaluation.questionNumber}</span>
                     <span className={`text-xl font-bold ${getScoreColor(evaluation.qualityScore)}`}>
                       {evaluation.qualityScore}/10
                     </span>
@@ -441,7 +443,7 @@ export default function AnswerSheetEvaluator() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <h4 className="font-semibold mb-2">Student's Answer:</h4>
+                    <h4 className="font-semibold mb-2">{t("answerEvaluator.studentAnswer")}:</h4>
                     <p className="text-sm bg-gray-50 dark:bg-gray-900 p-3 rounded border italic">
                       {evaluation.extractedAnswer}
                     </p>
@@ -451,7 +453,7 @@ export default function AnswerSheetEvaluator() {
                     <div>
                       <h4 className="font-semibold mb-2 flex items-center gap-2 text-green-600 dark:text-green-400">
                         <CheckCircle className="w-4 h-4" />
-                        Strengths:
+                        {t("answerEvaluator.strengths")}:
                       </h4>
                       <ul className="list-disc list-inside space-y-1 text-sm">
                         {evaluation.strengths.map((strength, i) => (
@@ -465,7 +467,7 @@ export default function AnswerSheetEvaluator() {
                     <div>
                       <h4 className="font-semibold mb-2 flex items-center gap-2 text-yellow-600 dark:text-yellow-400">
                         <AlertCircle className="w-4 h-4" />
-                        Areas for Improvement:
+                        {t("answerEvaluator.improvements")}:
                       </h4>
                       <ul className="list-disc list-inside space-y-1 text-sm">
                         {evaluation.improvements.map((improvement, i) => (
@@ -478,16 +480,15 @@ export default function AnswerSheetEvaluator() {
                   {evaluation.correctAnswer && (
                     <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
                       <h4 className="font-semibold mb-2 text-green-700 dark:text-green-300">
-                        Correct/Complete Answer:
+                        {t("answerEvaluator.correctAnswer")}:
                       </h4>
-                      <p className="text-sm">{evaluation.correctAnswer}</p>
+                      <p className="text-sm">{t("answerEvaluator.correctAnswer")}: {evaluation.correctAnswer}</p>
                     </div>
                   )}
 
                   <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
-                    <h4 className="font-semibold mb-2">Detailed Feedback:</h4>
-                    <p className="text-sm">{evaluation.detailedFeedback}</p>
-                  </div>
+                    <h4 className="font-semibold mb-2">{t("answerEvaluator.detailedFeedback")}:</h4>
+                  <p className="text-sm">{t("answerEvaluator.detailedFeedback")}: {evaluation.detailedFeedback}</p>                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -554,7 +555,7 @@ export default function AnswerSheetEvaluator() {
                 }
               }}
             >
-              Download PDF Report
+              {t("answerEvaluator.downloadPDF")}
             </Button>
             {/* Reset Button */}
             <Button
@@ -572,7 +573,7 @@ export default function AnswerSheetEvaluator() {
               }}
               data-testid="button-evaluate-another"
             >
-              Evaluate Another Answer Sheet
+              {t("answerEvaluator.evaluateAnother")}
             </Button>
           </div>
         )}

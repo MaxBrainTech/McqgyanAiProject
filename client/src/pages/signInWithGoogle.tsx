@@ -1,15 +1,16 @@
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "../pages/firebase";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 export default function SignInWithGoogle() {
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const googleLogin = async () => {
     try {
       const provider = new GoogleAuthProvider();
 
-      // ✅ FORCE email selection
       provider.addScope("profile");
       provider.addScope("email");
       provider.setCustomParameters({
@@ -17,22 +18,18 @@ export default function SignInWithGoogle() {
       });
 
       const result = await signInWithPopup(auth, provider);
-
       const user = result.user;
 
-      console.log("EMAIL:", user.email);
-      console.log("NAME:", user.displayName);
-
       toast({
-        title: "Login Successful",
-        description: user.email ?? "Signed in with Google",
+        title: t("google.successTitle"),
+        description: user.email ?? t("google.successDesc"),
       });
 
       window.location.href = "/";
     } catch (error: any) {
       console.error(error);
       toast({
-        title: "Google Sign-In Failed",
+        title: t("google.errorTitle"),
         description: error.message,
         variant: "destructive",
       });
@@ -42,7 +39,7 @@ export default function SignInWithGoogle() {
   return (
     <div className="mt-4 text-center">
       <p className="text-sm text-muted-foreground mb-3">
-        — Or continue with —
+        {t("google.or")}
       </p>
 
       <div

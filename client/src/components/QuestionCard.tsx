@@ -1,3 +1,214 @@
+// import { Card } from "@/components/ui/card";
+// import { Textarea } from "@/components/ui/textarea";
+// import { Button } from "@/components/ui/button";
+// import { Badge } from "@/components/ui/badge";
+// import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+// import { Label } from "@/components/ui/label";
+// import { useState } from "react";
+// import { HelpCircle, Pencil, CheckCircle, Languages } from "lucide-react";
+// import { useTranslation } from "react-i18next";
+
+// interface QuestionCardProps {
+//   questionNumber: number;
+//   totalQuestions: number;
+//   question: string;
+//   questionType?: string;
+//   options?: string[];
+//   language?: string;
+//   onSubmit: (answer: string) => void;
+//   isSubmitting?: boolean;
+// }
+
+// export default function QuestionCard({
+//   questionNumber,
+//   totalQuestions,
+//   question,
+//   questionType = "open-ended",
+//   options = [],
+//   language = "English",
+//   onSubmit,
+//   isSubmitting = false,
+// }: QuestionCardProps) {
+
+//   const { t } = useTranslation();
+
+//   const [answer, setAnswer] = useState("");
+//   const [selectedOption, setSelectedOption] = useState("");
+
+  
+
+//   const isMcq = questionType === "mcq";
+
+//   const handleSubmit = () => {
+//     const finalAnswer = isMcq ? selectedOption : answer;
+//     if (finalAnswer.trim()) {
+//       onSubmit(finalAnswer);
+//       setAnswer("");
+//       setSelectedOption("");
+//     }
+//   };
+
+//   return (
+//     <Card className="p-4 sm:p-6 md:p-8 shadow-xl border-2">
+
+//       <div className="space-y-4 sm:space-y-6">
+
+//         {/* Header */}
+
+//         <div className="flex items-center justify-between pb-3 sm:pb-4 border-b flex-wrap gap-2">
+
+//           <div className="flex items-center gap-2">
+
+//             <Badge variant="secondary" className="text-base">
+//               {t("question")} {questionNumber} {t("of")} {totalQuestions}
+//             </Badge>
+
+//             {isMcq && (
+//               <Badge variant="outline" className="text-base">
+//                 <CheckCircle className="w-3 h-3 mr-1" />
+//                 {t("multiple_choice")}
+//               </Badge>
+//             )}
+
+//           </div>
+
+//           <div className="flex items-center gap-1 text-base text-muted-foreground">
+//             <HelpCircle className="w-4 h-4" />
+//             <span className="hidden sm:inline">{t("read_carefully")}</span>
+//           </div>
+
+//         </div>
+
+
+//         {/* Question */}
+
+//         <div className="bg-gradient-to-br from-primary/5 to-primary/10 p-4 sm:p-5 md:p-6 rounded-xl border border-primary/20">
+
+//           <div className="flex items-start gap-2 sm:gap-3">
+
+//             <div className="mt-1">
+
+//               <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+//                 <span className="text-primary font-bold">Q</span>
+//               </div>
+
+//             </div>
+
+//             <div className="flex-1">
+//               <p className="text-xl font-medium leading-relaxed">
+//                 {question}
+//               </p>
+//             </div>
+
+//           </div>
+
+//         </div>
+
+
+//         {/* MCQ Section */}
+
+//         {isMcq ? (
+
+//           <div className="space-y-4">
+
+//             <div className="flex items-center gap-2">
+//               <CheckCircle className="w-4 h-4 text-muted-foreground" />
+//               <label className="text-base font-semibold">
+//                 {t("select_answer")}
+//               </label>
+//             </div>
+
+//             {/* const cleanedOptions = options.map(opt =>
+//               opt.replace(/([A-D]\.\s*)+/gi, "").trim()
+//             );
+//  */}
+//             <RadioGroup value={selectedOption} onValueChange={setSelectedOption}>
+
+//               <div className="space-y-3">
+
+//             {options.map((option, index) => (
+//               <div
+//                 key={index}
+//                 className="flex items-center space-x-3 p-3 sm:p-4 rounded-lg border-2 hover-elevate active-elevate-2 cursor-pointer"
+//                 onClick={() => setSelectedOption(option)}
+//                 data-testid={`option-${index}`}
+//                 >
+//                 <RadioGroupItem
+//                   value={option}
+//                   id={`option-${index}`}
+//                   className="h-5 w-5"
+//                 />
+
+//                 <Label
+//                   htmlFor={`option-${index}`}
+//                   className="flex-1 text-base sm:text-lg cursor-pointer"
+//                 >
+//                   {/* 👇 FINAL FIX */}
+//                   {String.fromCharCode(65 + index)}.{" "}
+//                   {option.replace(/([A-D]\.\s*)+/gi, "").trim()}
+//                 </Label>
+//               </div>
+
+//                 ))}
+
+//               </div>
+
+             
+
+//             </RadioGroup>
+
+//             <p className="text-base text-muted-foreground">
+//               {t("tip_select_best")}
+//             </p>
+
+//           </div>
+
+//         ) : (
+
+//           <div className="space-y-3">
+
+//             <div className="flex items-center gap-2">
+//               <Pencil className="w-4 h-4 text-muted-foreground" />
+//               <label className="text-base font-semibold">
+//                 {t("your_answer")}
+//               </label>
+//             </div>
+
+//             <Textarea
+//               placeholder={t("type_answer")}
+//               value={answer}
+//               onChange={(e) => setAnswer(e.target.value)}
+//               className="min-h-32 text-lg"
+//             />
+
+//             <p className="text-base text-muted-foreground">
+//               {t("tip_check_spelling")}
+//             </p>
+
+//           </div>
+
+//         )}
+
+//         {/* Submit Button */}
+
+//         <Button
+//           onClick={handleSubmit}
+//           disabled={(isMcq ? !selectedOption : !answer.trim()) || isSubmitting}
+//           className="w-full text-lg"
+//         >
+
+//           {isSubmitting ? t("evaluating") : t("submit_answer")}
+
+//         </Button>
+
+//       </div>
+
+//     </Card>
+//   );
+// }
+
+
+
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -6,7 +217,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { HelpCircle, Pencil, CheckCircle, Languages } from "lucide-react";
-import { transliterate, isTransliterationAvailable, getTransliterationLabel } from "@/lib/transliterate";
+import { useTranslation } from "react-i18next";
 
 interface QuestionCardProps {
   questionNumber: number;
@@ -29,13 +240,14 @@ export default function QuestionCard({
   onSubmit,
   isSubmitting = false,
 }: QuestionCardProps) {
+
+  const { t } = useTranslation();
+
   const [answer, setAnswer] = useState("");
   const [selectedOption, setSelectedOption] = useState("");
-  const [transliterationEnabled, setTransliterationEnabled] = useState(false);
-  const [englishInput, setEnglishInput] = useState("");
 
-  const isMcq = questionType === "mcq";
-  const showTransliteration = !isMcq && isTransliterationAvailable(language);
+  const isMcq =
+    (questionType || "").toLowerCase() === "mcq" || (options?.length ?? 0) > 0;
 
   const handleSubmit = () => {
     const finalAnswer = isMcq ? selectedOption : answer;
@@ -43,192 +255,155 @@ export default function QuestionCard({
       onSubmit(finalAnswer);
       setAnswer("");
       setSelectedOption("");
-      setEnglishInput("");
     }
-  };
-
-  const handleAnswerChange = (value: string) => {
-    if (transliterationEnabled) {
-      setEnglishInput(value);
-      const transliterated = transliterate(value, language);
-      setAnswer(transliterated);
-    } else {
-      setAnswer(value);
-      setEnglishInput("");
-    }
-  };
-
-  const toggleTransliteration = () => {
-    if (!transliterationEnabled) {
-      // Switching to transliteration mode
-      setEnglishInput("");
-      setAnswer("");
-    } else {
-      // Switching to normal mode
-      setEnglishInput("");
-    }
-    setTransliterationEnabled(!transliterationEnabled);
   };
 
   return (
     <Card className="p-4 sm:p-6 md:p-8 shadow-xl border-2">
+
       <div className="space-y-4 sm:space-y-6">
-        {/* Question Header */}
+
+        {/* Header */}
+
         <div className="flex items-center justify-between pb-3 sm:pb-4 border-b flex-wrap gap-2">
+
           <div className="flex items-center gap-2">
+
             <Badge variant="secondary" className="text-base">
-              Question {questionNumber} of {totalQuestions}
+              {t("question")} {questionNumber} {t("of")} {totalQuestions}
             </Badge>
+
             {isMcq && (
               <Badge variant="outline" className="text-base">
                 <CheckCircle className="w-3 h-3 mr-1" />
-                Multiple Choice
+                {t("multiple_choice")}
               </Badge>
             )}
+
           </div>
+
           <div className="flex items-center gap-1 text-base text-muted-foreground">
             <HelpCircle className="w-4 h-4" />
-            <span className="hidden sm:inline">Read carefully</span>
+            <span className="hidden sm:inline">{t("read_carefully")}</span>
           </div>
+
         </div>
 
-        {/* Question Display - Enhanced */}
+
+        {/* Question */}
+
         <div className="bg-gradient-to-br from-primary/5 to-primary/10 p-4 sm:p-5 md:p-6 rounded-xl border border-primary/20">
+
           <div className="flex items-start gap-2 sm:gap-3">
-            <div className="mt-0.5 sm:mt-1">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                <span className="text-primary font-bold text-base">Q</span>
+
+            <div className="mt-1">
+
+              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                <span className="text-primary font-bold">Q</span>
               </div>
+
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-base sm:text-lg md:text-xl lg:text-2xl font-medium leading-relaxed text-foreground break-words">
+
+            <div className="flex-1">
+              <p className="text-xl font-medium leading-relaxed">
                 {question}
               </p>
             </div>
+
           </div>
+
         </div>
 
-        {/* Answer Input Section */}
+
+        {/* MCQ Section */}
+
         {isMcq ? (
-          <div className="space-y-3 sm:space-y-4">
+
+          <div className="space-y-4">
+
             <div className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-muted-foreground" />
-              <label className="text-base font-semibold text-foreground">Select your answer:</label>
+              <label className="text-base font-semibold">
+                {t("select_answer")}
+              </label>
             </div>
+
             <RadioGroup value={selectedOption} onValueChange={setSelectedOption}>
+
               <div className="space-y-3">
-                {/* {options.map((option) => {
-                  const optionKey = option.charAt(0);
+
+                {options.map((option, index) => {
+                  const optionKey = String.fromCharCode(65 + index); // Map to A/B/C/D for backend
+
                   return (
                     <div
-                      key={optionKey}
-                      className="flex items-center space-x-3 p-3 sm:p-4 rounded-lg border-2 hover-elevate active-elevate-2 cursor-pointer"
+                      key={index}
+                      className="flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer"
                       onClick={() => setSelectedOption(optionKey)}
-                      data-testid={`option-${optionKey.toLowerCase()}`}
                     >
-                      <RadioGroupItem value={optionKey} id={optionKey} className="h-5 w-5" />
-                      <Label
-                        htmlFor={optionKey}
-                        className="flex-1 text-base sm:text-lg cursor-pointer"
-                      >
+                      <RadioGroupItem
+                        value={optionKey}
+                        id={`option-${index}`}
+                        className="h-5 w-5"
+                      />
+
+                      <Label htmlFor={`option-${index}`} className="flex-1 text-lg">
                         {option}
                       </Label>
                     </div>
                   );
-                })} */}
-                {options.map((option, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center space-x-3 p-3 sm:p-4 rounded-lg border-2 hover-elevate active-elevate-2 cursor-pointer"
-                    onClick={() => setSelectedOption(option)}
-                    data-testid={`option-${index}`}
-                    >
-                    <RadioGroupItem
-                      value={option}
-                      id={`option-${index}`}
-                      className="h-5 w-5"
-                    />
+                })}
 
-                    <Label
-                      htmlFor={`option-${index}`}
-                      className="flex-1 text-base sm:text-lg cursor-pointer"
-                    >
-                      {option}
-                    </Label>
-                  </div>
-                ))}
               </div>
+
             </RadioGroup>
+
             <p className="text-base text-muted-foreground">
-              Tip: Select the best answer from the options above
+              {t("tip_select_best")}
             </p>
+
           </div>
+
         ) : (
-          <div className="space-y-2 sm:space-y-3">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2">
-                <Pencil className="w-4 h-4 text-muted-foreground" />
-                <label className="text-base font-semibold text-foreground">Your Answer:</label>
-              </div>
-              {showTransliteration && (
-                <Button
-                  type="button"
-                  variant={transliterationEnabled ? "default" : "outline"}
-                  size="sm"
-                  onClick={toggleTransliteration}
-                  className="gap-2"
-                  data-testid="button-toggle-transliteration"
-                >
-                  <Languages className="w-4 h-4" />
-                  <span className="hidden sm:inline">{getTransliterationLabel(language)}</span>
-                  <span className="sm:hidden">Type in English</span>
-                </Button>
-              )}
+
+          <div className="space-y-3">
+
+            <div className="flex items-center gap-2">
+              <Pencil className="w-4 h-4 text-muted-foreground" />
+              <label className="text-base font-semibold">
+                {t("your_answer")}
+              </label>
             </div>
-            {transliterationEnabled && (
-              <div className="bg-primary/5 p-3 rounded-lg border border-primary/20">
-                <p className="text-sm text-muted-foreground mb-2">
-                  <Languages className="w-3 h-3 inline mr-1" />
-                  Type in English below, and it will convert to {language} script automatically
-                </p>
-                <div className="text-lg font-medium text-foreground">
-                  {answer || <span className="text-muted-foreground/50">Your {language} text will appear here...</span>}
-                </div>
-              </div>
-            )}
+
             <Textarea
-              placeholder={transliterationEnabled ? "Type in English... (e.g., namaste, kaise ho)" : "Type your answer here..."}
-              value={transliterationEnabled ? englishInput : answer}
-              onChange={(e) => handleAnswerChange(e.target.value)}
-              className="min-h-28 sm:min-h-32 text-base sm:text-lg resize-none border-2 focus:border-primary"
-              data-testid="textarea-answer"
+              placeholder={t("type_answer")}
+              value={answer}
+              onChange={(e) => setAnswer(e.target.value)}
+              className="min-h-32 text-lg"
             />
+
             <p className="text-base text-muted-foreground">
-              {transliterationEnabled 
-                ? "Tip: Type phonetically in English (e.g., 'namaste' → 'नमस्ते')"
-                : "Tip: Check your spelling and grammar before submitting"}
+              {t("tip_check_spelling")}
             </p>
+
           </div>
+
         )}
 
         {/* Submit Button */}
+
         <Button
           onClick={handleSubmit}
           disabled={(isMcq ? !selectedOption : !answer.trim()) || isSubmitting}
-          className="w-full text-base sm:text-lg"
-          size="lg"
-          data-testid="button-submit-answer"
+          className="w-full text-lg"
         >
-          {isSubmitting ? (
-            <span className="flex items-center gap-2 justify-center">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              <span>Evaluating...</span>
-            </span>
-          ) : (
-            "Submit Answer"
-          )}
+
+          {isSubmitting ? t("evaluating") : t("submit_answer")}
+
         </Button>
+
       </div>
+
     </Card>
   );
 }

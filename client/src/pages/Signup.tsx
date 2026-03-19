@@ -10,9 +10,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function Signup() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -70,7 +72,9 @@ export default function Signup() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md bg-card p-6 rounded-xl shadow-md space-y-5">
-        <h2 className="text-2xl font-bold text-center">Create Account</h2>
+        <h2 className="text-2xl font-bold text-center">
+          {t("signup.title")}
+        </h2>
 
         {error && (
           <p className="text-sm text-red-500 text-center">{error}</p>
@@ -78,9 +82,9 @@ export default function Signup() {
 
         {/* Name */}
         <div className="space-y-1">
-          <Label>Name</Label>
+          <Label>{t("signup.name")}</Label>
           <Input
-            placeholder="Enter your name"
+            placeholder={t("signup.namePlaceholder")}
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
@@ -88,10 +92,10 @@ export default function Signup() {
 
         {/* Email */}
         <div className="space-y-1">
-          <Label>Email</Label>
+          <Label>{t("signup.email")}</Label>
           <Input
             type="email"
-            placeholder="Enter your email"
+            placeholder={t("signup.emailPlaceholder")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -99,11 +103,11 @@ export default function Signup() {
 
         {/* Password */}
         <div className="space-y-1">
-          <Label>Password</Label>
+          <Label>{t("signup.password")}</Label>
           <div className="relative">
             <Input
               type={showPassword ? "text" : "password"}
-              placeholder="Create password"
+              placeholder={t("signup.passwordPlaceholder")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="pr-10"
@@ -124,11 +128,11 @@ export default function Signup() {
 
         {/* Confirm Password */}
         <div className="space-y-1">
-          <Label>Confirm Password</Label>
+          <Label>{t("signup.confirmPassword")}</Label>
           <div className="relative">
             <Input
               type={showConfirmPassword ? "text" : "password"}
-              placeholder="Confirm password"
+              placeholder={t("signup.confirmPasswordPlaceholder")}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className={`pr-10 ${
@@ -150,7 +154,7 @@ export default function Signup() {
 
           {passwordsMismatch && (
             <p className="text-xs text-red-500">
-              Passwords do not match
+              {t("signup.passwordMismatch")}
             </p>
           )}
         </div>
@@ -160,16 +164,16 @@ export default function Signup() {
           onClick={handleSignup}
           disabled={loading}
         >
-          {loading ? "Creating Account..." : "Sign Up"}
+          {loading ? t("signup.loading") : t("signup.button")}
         </Button>
 
         <p className="text-sm text-center text-muted-foreground">
-          Already have an account?{" "}
+          {t("signup.haveAccount")}{" "}
           <span
             className="text-primary cursor-pointer hover:underline"
             onClick={() => navigate("/login")}
           >
-            Login
+            {t("signup.login")}
           </span>
         </p>
       </div>

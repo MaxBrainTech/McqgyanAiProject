@@ -11,8 +11,6 @@
   "get_started": "Get Started Free",
 
   "features_title": "Powerful Features for Smarter Learning",
-  "pricing_title": "Simple, Transparent Pricing",
-  "contact_title": "Get In Touch",
 
   "ai_platform": "AI-Powered Learning Platform",
 
@@ -154,7 +152,7 @@
   "parent": "Parent",
 
   "experience_mcqgyaan": "Experience MCQGyaan AI Today",
-  "experience_desc": "Start with free access to all features until December 31, 2025. No credit card required.",
+  "experience_desc": "Start with free access to all features until December 31, 2026. No credit card required.",
 
   "start_learning_free": "Start Learning Free",
   "view_pricing": "View Pricing",
@@ -164,101 +162,101 @@
   "adaptive_difficulty": "Adaptive difficulty based on performance",
   "multilanguage_support": "Multi-language support with proper transliteration",
 
-    "feature_language_learning_title": "6 Language Learning Modes",
-    "feature_language_learning_desc": "Master French, German, Spanish, Hindi, Marathi, and Kannada with AI-powered interactive lessons tailored to your level.",
+  "feature_language_learning_title": "6 Language Learning Modes",
+  "feature_language_learning_desc": "Master French, German, Spanish, Hindi, Marathi, and Kannada with AI-powered interactive lessons tailored to your level.",
 
-    "benefit_real_pronunciation": "Real pronunciations",
-    "benefit_cultural_context": "Cultural context",
-    "benefit_grammar_explanation": "Grammar explanations",
-    "benefit_progressive_difficulty": "Progressive difficulty",
+  "benefit_real_pronunciation": "Real pronunciations",
+  "benefit_cultural_context": "Cultural context",
+  "benefit_grammar_explanation": "Grammar explanations",
+  "benefit_progressive_difficulty": "Progressive difficulty",
 
-    "feature_science_quiz_title": "Comprehensive Science Quizzes",
-    "feature_science_quiz_desc": "Deep dive into Physics, Chemistry, Biology, and General Science with questions aligned to CBSE curriculum.",
+  "feature_science_quiz_title": "Comprehensive Science Quizzes",
+  "feature_science_quiz_desc": "Deep dive into Physics, Chemistry, Biology, and General Science with questions aligned to CBSE curriculum.",
 
-    "benefit_real_world": "Real-world applications",
-    "benefit_concept_clarity": "Concept clarity",
-    "benefit_step_solution": "Step-by-step solutions",
-    "benefit_visual_diagrams": "Visual diagrams",
+  "benefit_real_world": "Real-world applications",
+  "benefit_concept_clarity": "Concept clarity",
+  "benefit_step_solution": "Step-by-step solutions",
+  "benefit_visual_diagrams": "Visual diagrams",
 
-    "feature_custom_tests_title": "AI-Powered Custom Tests",
-    "feature_custom_tests_desc": "Generate unlimited personalized MCQ tests by selecting topics, difficulty, and preferred GPT model.",
+  "feature_custom_tests_title": "AI-Powered Custom Tests",
+  "feature_custom_tests_desc": "Generate unlimited personalized MCQ tests by selecting topics, difficulty, and preferred GPT model.",
 
-    "benefit_gpt_quality": "GPT-4o quality",
-    "benefit_cost_effective": "Cost-effective options",
-    "benefit_no_duplication": "No question duplication",
-    "benefit_instant_feedback": "Instant feedback",
+  "benefit_gpt_quality": "GPT-4o quality",
+  "benefit_cost_effective": "Cost-effective options",
+  "benefit_no_duplication": "No question duplication",
+  "benefit_instant_feedback": "Instant feedback",
 
-    "feature_answer_eval_title": "Answer Sheet Evaluator",
-    "feature_answer_eval_desc": "Upload answer sheets for automatic AI evaluation with detailed feedback and improvement suggestions.",
+  "feature_answer_eval_title": "Answer Sheet Evaluator",
+  "feature_answer_eval_desc": "Upload answer sheets for automatic AI evaluation with detailed feedback and improvement suggestions.",
 
-    "benefit_batch_processing": "Batch processing",
-    "benefit_quality_assessment": "Quality assessment",
-    "benefit_detailed_analysis": "Detailed analysis",
-    "benefit_score_tracking": "Score tracking",
+  "benefit_batch_processing": "Batch processing",
+  "benefit_quality_assessment": "Quality assessment",
+  "benefit_detailed_analysis": "Detailed analysis",
+  "benefit_score_tracking": "Score tracking",
 
-    "premium_adaptive_difficulty": "Adaptive Difficulty Levels",
-    "premium_progress_tracking": "Real-time Progress Tracking",
-    "premium_leaderboard": "Comprehensive Leaderboard",
-    "premium_multiboard": "Multi-Board Support (CBSE/ICSE/IB)",
-    "premium_ai_feedback": "AI Feedback & Explanations",
-    "premium_pdf_reports": "Downloadable Reports & PDFs",
-    "premium_teacher_dashboard": "Teacher Dashboard",
-    "premium_anti_duplication": "Anti-Duplication Controls",
-    "premium_custom_content": "Custom Educational Content",
-    "premium_analytics": "Advanced Analytics",
+  "premium_adaptive_difficulty": "Adaptive Difficulty Levels",
+  "premium_progress_tracking": "Real-time Progress Tracking",
+  "premium_leaderboard": "Comprehensive Leaderboard",
+  "premium_multiboard": "Multi-Board Support (CBSE/ICSE/IB)",
+  "premium_ai_feedback": "AI Feedback & Explanations",
+  "premium_pdf_reports": "Downloadable Reports & PDFs",
+  "premium_teacher_dashboard": "Teacher Dashboard",
+  "premium_anti_duplication": "Anti-Duplication Controls",
+  "premium_custom_content": "Custom Educational Content",
+  "premium_analytics": "Advanced Analytics",
 
-    "student_self_paced": "Self-Paced Learning",
-    "student_self_paced_desc": "Learn at your own speed with 24/7 access to all resources",
+  "student_self_paced": "Self-Paced Learning",
+  "student_self_paced_desc": "Learn at your own speed with 24/7 access to all resources",
 
-    "student_instant_feedback": "Instant Feedback",
-    "student_instant_feedback_desc": "Get immediate explanations for every answer you give",
+  "student_instant_feedback": "Instant Feedback",
+  "student_instant_feedback_desc": "Get immediate explanations for every answer you give",
 
-    "student_performance_tracking": "Performance Tracking",
-    "student_performance_tracking_desc": "Monitor your progress with detailed analytics and reports",
+  "student_performance_tracking": "Performance Tracking",
+  "student_performance_tracking_desc": "Monitor your progress with detailed analytics and reports",
 
-    "student_confidence": "Confidence Building",
-    "student_confidence_desc": "Master topics with progressively challenging questions",
+  "student_confidence": "Confidence Building",
+  "student_confidence_desc": "Master topics with progressively challenging questions",
 
-    "student_exam_prep": "Exam Preparation",
-    "student_exam_prep_desc": "Practice with questions that match your board's pattern",
+  "student_exam_prep": "Exam Preparation",
+  "student_exam_prep_desc": "Practice with questions that match your board's pattern",
 
-    "student_doubt_clarification": "Doubt Clarification",
-    "student_doubt_clarification_desc": "AI-powered explanations for complex concepts",
+  "student_doubt_clarification": "Doubt Clarification",
+  "student_doubt_clarification_desc": "AI-powered explanations for complex concepts",
 
-    "teacher_test_creation": "Custom Test Creation",
-    "teacher_test_creation_desc": "Generate tests in seconds without manual question writing",
+  "teacher_test_creation": "Custom Test Creation",
+  "teacher_test_creation_desc": "Generate tests in seconds without manual question writing",
 
-    "teacher_time_saving": "Time Saving",
-    "teacher_time_saving_desc": "Automate assessment with zero effort",
+  "teacher_time_saving": "Time Saving",
+  "teacher_time_saving_desc": "Automate assessment with zero effort",
 
-    "teacher_student_analytics": "Student Analytics",
-    "teacher_student_analytics_desc": "Track individual and class performance at a glance",
+  "teacher_student_analytics": "Student Analytics",
+  "teacher_student_analytics_desc": "Track individual and class performance at a glance",
 
-    "teacher_flexible_assessment": "Flexible Assessment",
-    "teacher_flexible_assessment_desc": "Mix MCQ, open-ended, and custom question types",
+  "teacher_flexible_assessment": "Flexible Assessment",
+  "teacher_flexible_assessment_desc": "Mix MCQ, open-ended, and custom question types",
 
-    "teacher_class_management": "Class Management",
-    "teacher_class_management_desc": "Organize students, share codes, and track submissions",
+  "teacher_class_management": "Class Management",
+  "teacher_class_management_desc": "Organize students, share codes, and track submissions",
 
-    "teacher_answer_evaluation": "Answer Evaluation",
-    "teacher_answer_evaluation_desc": "Auto-evaluate answer sheets with detailed feedback",
+  "teacher_answer_evaluation": "Answer Evaluation",
+  "teacher_answer_evaluation_desc": "Auto-evaluate answer sheets with detailed feedback",
 
-    "feature_language_learning": "Language Learning",
-    "feature_science_quizzes": "Science Quizzes",
-    "feature_performance_analytics": "Performance Analytics",
-    "feature_custom_test_creation": "Custom Test Creation",
-    "feature_answer_evaluation": "Answer Sheet Evaluation",
-    "feature_class_management": "Class Management",
-    "feature_student_progress": "Student Progress Tracking",
-    "feature_download_reports": "Download Reports",
+  "feature_language_learning": "Language Learning",
+  "feature_science_quizzes": "Science Quizzes",
+  "feature_performance_analytics": "Performance Analytics",
+  "feature_custom_test_creation": "Custom Test Creation",
+  "feature_answer_evaluation": "Answer Sheet Evaluation",
+  "feature_class_management": "Class Management",
+  "feature_student_progress": "Student Progress Tracking",
+  "feature_download_reports": "Download Reports",
 
-    "pricing_title": "Simple, Transparent Pricing",
-    "pricing_desc": "All versions are free for all users until December 31, 2025. Choose your plan and start learning today!",
-    "free_access_notice": "🎉 FREE ACCESS UNTIL DEC 31, 2025",
+  "pricing_title": "Simple, Transparent Pricing",
+  "pricing_desc": "All versions are free for all users until December 31, 2026. Choose your plan and start learning today!",
+  "free_access_notice": "🎉 FREE ACCESS UNTIL DEC 31, 2026",
 
-    "plan_free": "Free",
-    "plan_pro": "Pro",
-    "plan_premium": "Premium",
+  "plan_free": "Free",
+  "plan_pro": "Pro",
+  "plan_premium": "Premium",
 
   "feature_10_questions": "10 questions per test",
   "feature_50_questions": "50 questions per test",
@@ -278,47 +276,48 @@
   "feature_teacher_dashboard_basic": "Teacher Dashboard (Basic)",
   "feature_teacher_dashboard_advanced": "Teacher Dashboard (Advanced)",
 
-    "pricing_title": "Simple, Transparent Pricing",
-    "pricing_desc_before": "All versions are free for all users until ",
-    "pricing_free_date": "December 31, 2025",
-    "pricing_desc_after": ". Choose your plan and start learning today!",
+  "pricing_desc_before": "All versions are free for all users until ",
+  "pricing_free_date": "December 31, 2026",
+  "pricing_desc_after": ". Choose your plan and start learning today!",
 
+  "plan_free_desc": "Perfect for students exploring",
+  "plan_pro_desc": "For serious learners and teachers",
+  "plan_premium_desc": "For educators and institutions",
 
-    "plan_free_desc": "Perfect for students exploring",
-    "plan_pro_desc": "For serious learners and teachers",
-    "plan_premium_desc": "For educators and institutions",
+  "month": "month",
 
-    "month": "month",
+  "cta_get_started": "Get Started",
+  "cta_upgrade_pro": "Upgrade to Pro",
+  "cta_upgrade_premium": "Upgrade to Premium",
 
-    "cta_get_started": "Get Started",
-    "cta_upgrade_pro": "Upgrade to Pro",
-    "cta_upgrade_premium": "Upgrade to Premium",
+  "recommended": "RECOMMENDED",
 
-    "recommended": "RECOMMENDED",
+  "faq_teacher_discount": "Is there a teacher discount?",
+  "faq_teacher_discount_desc": "Yes! Teachers get a 30% discount on Pro and Premium plans.",
 
-    "faq_title": "Frequently Asked Questions",
+  "faq_payment_methods": "What payment methods do you accept?",
+  "faq_payment_methods_desc": "We accept credit cards, UPI, and digital wallets.",
 
-    "faq_change_plan": "Can I change my plan anytime?",
-    "faq_change_plan_desc": "Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately.",
+  "start_free_now": "Start for Free Now",
 
-    "faq_teacher_discount": "Is there a teacher discount?",
-    "faq_teacher_discount_desc": "Yes! Teachers get a 30% discount on Pro and Premium plans.",
+  "comparison_language_learning": "Language Learning Modes",
+  "comparison_science_quiz": "Science Quiz Categories",
+  "comparison_custom_mcq": "Custom MCQ Generation",
+  "comparison_gpt_model": "GPT Model Selection",
+  "comparison_answer_evaluation": "Answer Sheet Evaluation",
+  "comparison_offline_access": "Offline Access",
+  "comparison_api_access": "API Access",
+  "comparison_priority_support": "Priority Support",
 
-    "faq_payment_methods": "What payment methods do you accept?",
-    "faq_payment_methods_desc": "We accept credit cards, UPI, and digital wallets.",
+  "faq_refund": "Do you offer refunds?",
+  "faq_refund_desc": "We offer a 7-day money-back guarantee if you're not satisfied with our service. No questions asked!",
 
-    "start_free_now": "Start for Free Now",
+  "cta_ready_learning": "Ready to start learning?",
+  "cta_join_students": "Join thousands of students and teachers using MCQGyaan AI",
+  "free_until_date": "Free until Dec 31, 2026",
 
-
-    "faq_refund": "Do you offer refunds?",
-    "faq_refund_desc": "We offer a 7-day money-back guarantee if you're not satisfied with our service. No questions asked!",
-
-    "cta_ready_learning": "Ready to start learning?",
-    "cta_join_students": "Join thousands of students and teachers using MCQGyaan AI",
-  "free_until_date": "Free until Dec 31, 2025",
-
-  "faq_free_features": "Are all features free until Dec 31, 2025?",
-  "faq_free_features_desc": "Yes! All pricing tiers are completely free for all users until December 31, 2025. After that date, paid plans will be activated.",
+  "faq_free_features": "Are all features free until Dec 31, 2026?",
+  "faq_free_features_desc": "Yes! All pricing tiers are completely free for all users until December 31, 2026. After that date, paid plans will be activated.",
 
   "faq_change_plan": "Can I change my plan anytime?",
   "faq_change_plan_desc": "Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately.",
@@ -360,12 +359,663 @@
   "faq_offline_a": "Currently, MCQGyaan AI requires an internet connection.",
 
   "faq_free_trial_q": "Is there a free trial available?",
-  "faq_free_trial_a": "Yes! All features are free until December 31, 2025.",
+  "faq_free_trial_a": "Yes! All features are free until December 31, 2026.",
 
   "faq_api_q": "Do you offer API access?",
   "faq_api_a": "API access is available on our Premium plan.",
 
   "faq_data_security_q": "How is my data protected?",
-  "faq_data_security_a": "We use enterprise-grade encryption and comply with all data protection regulations."
+  "faq_data_security_a": "We use enterprise-grade encryption and comply with all data protection regulations.",
 
+  "contact_email_title": "Email",
+  "contact_email_detail1": "support@mcqgyaan.com",
+  "contact_email_detail2": "info@mcqgyaan.com",
+  "contact_email_desc": "For quick support",
+
+  "contact_phone_title": "Phone",
+  "contact_phone_detail1": "+91 9950143179",
+  "contact_phone_detail2": "+91 7597493655",
+  "contact_phone_desc": "Available 9 AM - 6 PM IST",
+
+  "contact_location_title": "Office Location",
+  "contact_location_detail1": "SF-77 Jaipur Electronics Market",
+  "contact_location_detail2": "Jaipur-302018, India",
+  "contact_location_desc": "MaxBrain Technologies Pvt. Ltd.",
+
+  "contact_response_title": "Response Time",
+  "contact_response_detail1": "Within 24 hours",
+  "contact_response_detail2": "Mon - Fri (Business Days)",
+  "contact_response_desc": "We respond quickly",
+
+  "terms_title": "Terms and Conditions",
+  "terms_last_updated": "Last Updated: March 2026",
+
+  "terms_section1_title": "1. Acceptance of Terms",
+  "terms_section1_desc": "By accessing and using MCQGyaan AI, you accept and agree to be bound by these terms and conditions. If you do not agree to abide by the above, please do not use this service.",
+
+  "terms_section2_title": "2. Use License",
+  "terms_section2_desc": "Permission is granted to temporarily download one copy of the materials on MCQGyaan AI for personal, non-commercial viewing only. Under this license you may not:",
+
+  "terms_section2_li1": "Modify or copy the materials",
+  "terms_section2_li2": "Use the materials for commercial purposes or public display",
+  "terms_section2_li3": "Attempt to reverse engineer any software on the platform",
+  "terms_section2_li4": "Transfer the materials to another person",
+  "terms_section2_li5": "Remove copyright or proprietary notices",
+
+  "terms_section3_title": "3. Disclaimer",
+  "terms_section3_desc": "The materials on MCQGyaan AI are provided for educational purposes. We do not guarantee the accuracy or completeness of the information.",
+
+  "terms_section4_title": "4. Limitations of Liability",
+  "terms_section4_desc": "MCQGyaan AI will not be liable for any damages arising from the use or inability to use the platform.",
+
+  "terms_section5_title": "5. Accuracy of Materials",
+  "terms_section5_desc": "Materials on the website may contain errors. MCQGyaan AI does not guarantee that all materials are accurate or current.",
+
+  "terms_section6_title": "6. User Accounts",
+  "terms_section6_desc": "Users must provide accurate information while creating accounts and are responsible for maintaining the confidentiality of their login details.",
+
+  "terms_section7_title": "7. Free Trial",
+  "terms_section7_desc": "All features are free until December 31, 2026. After that, some features may require a paid subscription.",
+
+  "terms_section8_title": "8. Modifications",
+  "terms_section8_desc": "MCQGyaan AI may update these terms at any time without prior notice.",
+
+  "terms_section9_title": "9. Governing Law",
+  "terms_section9_desc": "These terms are governed by the laws of India and disputes will fall under the jurisdiction of Jaipur courts.",
+
+  "privacy_title": "Privacy Policy",
+  "privacy_last_updated": "Last Updated: March 2026",
+
+  "privacy_intro_title": "Introduction",
+  "privacy_intro_desc": "MCQGyaan AI operates this website. This page informs you about our policies regarding the collection, use, and disclosure of personal data.",
+
+  "privacy_collection_title": "Information Collection",
+  "privacy_collection_desc": "We collect different types of information for various purposes:",
+
+  "privacy_collection_li1": "Personal Data: Name, email address, phone number, educational board, class level",
+  "privacy_collection_li2": "Usage Data: Browser type, pages visited, time spent, test performance",
+  "privacy_collection_li3": "Device Information: IP address, operating system, device type",
+
+  "privacy_use_title": "Use of Data",
+  "privacy_use_desc": "MCQGyaan AI uses collected data for various purposes:",
+
+  "privacy_use_li1": "To provide and maintain our service",
+  "privacy_use_li2": "To notify you about changes to our service",
+  "privacy_use_li3": "To provide personalized learning recommendations",
+  "privacy_use_li4": "To improve our service using analytics",
+  "privacy_use_li5": "To monitor usage of our platform",
+
+  "privacy_security_title": "Data Security",
+  "privacy_security_desc": "We use industry-standard encryption and security protocols to protect your data.",
+
+  "privacy_cookies_title": "Cookies",
+  "privacy_cookies_desc": "We use cookies to enhance your experience and analyze site traffic.",
+
+  "privacy_children_title": "Children's Privacy",
+  "privacy_children_desc": "Our service is designed for students aged 11-16. We do not knowingly collect personal data from children under 11.",
+
+  "privacy_changes_title": "Changes to This Policy",
+  "privacy_changes_desc": "We may update this Privacy Policy from time to time and will notify users by updating this page.",
+
+  "privacy_contact_title": "Contact Us",
+  "privacy_contact_desc": "If you have any questions about this Privacy Policy, contact us at privacy@mcqgyaan.com",
+
+  "refund_title": "Refund Policy",
+  "refund_last_updated": "Last Updated: March 2026",
+
+  "refund_guarantee_title": "7-Day Money-Back Guarantee",
+  "refund_guarantee_desc": "If you are not satisfied within 7 days of purchase, we will refund 100% of your money.",
+
+  "refund_eligibility_title": "Refund Eligibility",
+  "refund_eligibility_desc": "To be eligible for a refund your purchase must meet these criteria:",
+
+  "refund_eligibility_li1": "Refund requested within 7 days of purchase",
+  "refund_eligibility_li2": "Annual subscription refunds within 30 days",
+  "refund_eligibility_li3": "Original payment method must be valid",
+  "refund_eligibility_li4": "Account must not show abuse",
+
+  "refund_request_title": "How to Request a Refund",
+  "refund_request_desc": "Follow these steps to request a refund:",
+
+  "refund_request_li1": "Contact support at support@mcqgyaan.com",
+  "refund_request_li2": "Provide your order or subscription ID",
+  "refund_request_li3": "Explain your reason for refund",
+  "refund_request_li4": "Request processed within 5-7 business days",
+
+  "refund_processing_title": "Processing Time",
+  "refund_processing_desc": "Approved refunds will be credited within 5-10 business days.",
+
+  "refund_special_title": "Special Cases",
+  "refund_special_desc1": "Free Trial Period: All features are free until December 31, 2026.",
+  "refund_special_desc2": "Teacher Accounts that generated tests are not eligible for refunds.",
+
+  "refund_exceptions_title": "Exceptions",
+  "refund_exceptions_desc": "Refunds will NOT be issued for:",
+
+  "refund_exceptions_li1": "Requests after refund window",
+  "refund_exceptions_li2": "Accounts violating terms",
+  "refund_exceptions_li3": "Gift cards or promotional credits",
+  "refund_exceptions_li4": "Previously refunded amounts",
+
+  "refund_contact_title": "Contact Support",
+  "refund_contact_desc": "For refund inquiries contact:",
+
+  "refund_contact_email": "Email: support@mcqgyaan.com",
+  "refund_contact_time": "Response Time: Within 24 hours",
+
+  "disclaimer_title": "Disclaimer",
+  "disclaimer_last_updated": "Last Updated: March 2026",
+
+  "disclaimer_edu_title": "Educational Use",
+  "disclaimer_edu_desc": "MCQGyaan AI is a supplementary learning tool for students. We aim to provide accurate educational content but cannot guarantee absolute accuracy.",
+
+  "disclaimer_ai_title": "AI-Generated Content",
+  "disclaimer_ai_desc": "Questions and answers may be generated using AI. Although we apply quality checks, some content may contain minor inaccuracies.",
+
+  "disclaimer_results_title": "No Guarantee of Results",
+  "disclaimer_results_desc": "MCQGyaan AI does not guarantee specific academic outcomes. Results depend on individual effort and consistent study.",
+
+  "disclaimer_curriculum_title": "Curriculum Alignment",
+  "disclaimer_curriculum_desc": "Our content aligns with CBSE curriculum but students should verify updates with official board sources.",
+
+  "disclaimer_technical_title": "Technical Limitations",
+  "disclaimer_technical_desc": "MCQGyaan AI is provided as-is. We do not guarantee uninterrupted or error-free service.",
+
+  "disclaimer_thirdparty_title": "Third-Party Content",
+  "disclaimer_thirdparty_desc": "The platform may include links to third-party resources. We are not responsible for their content or accuracy.",
+
+  "disclaimer_liability_title": "Limitation of Liability",
+  "disclaimer_liability_desc": "MCQGyaan AI is not liable for any indirect damages arising from platform use.",
+
+  "disclaimer_professional_title": "Professional Advice",
+  "disclaimer_professional_desc": "This platform does not provide legal, medical, or professional advice.",
+
+  "disclaimer_user_title": "User Responsibility",
+  "disclaimer_user_desc": "Users are responsible for:",
+
+  "disclaimer_user_li1": "Maintaining account security",
+  "disclaimer_user_li2": "Following platform policies",
+  "disclaimer_user_li3": "Avoiding illegal or harmful usage",
+  "disclaimer_user_li4": "Respecting intellectual property rights",
+
+  "about_title": "About MCQGyaan AI",
+  "about_subtitle": "Revolutionizing learning through AI-powered education for CBSE students across India.",
+
+  "about_mission_title": "Our Mission",
+  "about_mission_desc": "To democratize quality education using AI and make learning engaging for every student in India.",
+
+  "about_vision_title": "Our Vision",
+  "about_vision_desc": "To become the leading AI-powered learning platform empowering millions of students to achieve academic excellence.",
+
+  "about_why_title": "Why Choose Us?",
+
+  "about_feature1": "CBSE Aligned",
+  "about_feature2": "Personalized",
+  "about_feature3": "Innovative",
+  "about_feature4": "Effective",
+
+  "about_start_learning": "Start Learning Free",
+
+  "subject_physics": "Physics",
+  "subject_chemistry": "Chemistry",
+  "subject_biology": "Biology",
+  "subject_general_science": "General Science",
+
+  "subject_french": "French",
+  "subject_german": "German",
+  "subject_spanish": "Spanish",
+  "subject_hindi": "Hindi",
+  "subject_marathi": "Marathi",
+  "subject_kannada": "Kannada",
+
+  "class_6": "Class 6",
+  "class_7": "Class 7",
+  "class_8": "Class 8",
+  "class_9": "Class 9",
+  "class_10": "Class 10",
+
+  "difficulty_easy": "Easy",
+  "difficulty_medium": "Medium",
+  "difficulty_hard": "Hard",
+
+  "test_type_mixed_title": "Mixed Test",
+  "test_type_mixed_desc": "MCQ + Open-ended Questions",
+  "test_type_mixed_extra": "50% multiple choice, 50% written answers for comprehensive practice",
+
+  "test_type_mcq_title": "MCQ Only Test",
+  "test_type_mcq_desc": "Multiple Choice Questions Only",
+  "test_type_mcq_extra": "Fast-paced test with instant feedback on all questions",
+
+  "test_quick": "Quick Test",
+  "test_quick_questions": "10 Questions",
+  "test_quick_time": "~10 mins",
+
+  "test_standard": "Standard Test",
+  "test_standard_questions": "20 Questions",
+  "test_standard_time": "~20 mins",
+
+  "test_extended": "Extended Test",
+  "test_extended_questions": "30 Questions",
+  "test_extended_time": "~30 mins",
+
+  "test_full": "Full Test",
+  "test_full_questions": "50 Questions",
+  "test_full_time": "~50 mins",
+
+  "class": "Class",
+
+  "test_type_mcq_short": "MCQ Only",
+  "test_type_mixed_short": "Mixed",
+
+  "chapter_predefined": "Pre-defined Chapters",
+  "chapter_predefined_desc": "Choose from curated curriculum chapters",
+  "chapter_predefined_details": "25 chapters covering the complete syllabus",
+
+  "chapter_custom": "Custom Topics",
+  "chapter_custom_desc": "Create test with your own topics",
+  "chapter_custom_details": "Enter your own topics and customize settings",
+  "education_board": "Education Board",
+  "select_board": "Select Board",
+
+  "board_cbse": "CBSE (Central Board)",
+  "board_icse": "ICSE (Council for Indian School)",
+  "board_ib": "IB (International Baccalaureate)",
+  "board_rbse": "RBSE (Rajasthan Board)",
+  "board_state": "State Board",
+
+  "subject": "Subject",
+  "class": "Class",
+  "difficulty_label": "Difficulty",
+  "difficulty_easy": "Easy",
+  "difficulty_medium": "Medium",
+  "difficulty_hard": "Hard",
+  "type": "Type",
+  "questions": "Questions",
+  "topics": "Topics",
+
+  "topics_count": "topic(s)",
+
+  "test_type_mcq": "MCQ Only",
+  "test_type_mixed": "Mixed",
+
+  "topic_placeholder1": "e.g., Basic Greetings, Verb Conjugation, Cell Structure",
+  "topic_placeholder2": "e.g., Numbers and Counting, Past Tense",
+  "topic_placeholder3": "e.g., Family Members, Photosynthesis",
+  "topic_placeholder4": "e.g., Food and Drinks, Chemical Reactions",
+  "topic_placeholder5": "e.g., Tenses Practice, Algebra Basics",
+  "topic_placeholder6": "e.g., Geometry, Human Digestive System",
+
+  "select_ai_model": "Select AI Model",
+  "titleFormat": "Class {{class}} {{subject}}",
+
+  "model_hf": "MCQGyaan HF Model 🤗",
+  "model_ft_pricer": "FT Pricer 4.1 Nano (Custom Trained) 🧠🔥",
+
+  "model_gpt52": "GPT-5.2 (Latest • Highest Intelligence) 🧠🔥",
+  "model_gpt51": "GPT-5.1 (Fast • Near GPT-5.2 Quality) ⚡",
+
+  "model_gpt4o": "GPT-4o (Best Quality) ⭐",
+  "model_gpt4o_mini": "GPT-4o Mini (Fast & Affordable - Recommended) ⚡",
+
+  "model_gpt35": "GPT-3.5 Turbo (Cheapest) 💰",
+
+  "progress": "Progress:",
+  "questions": "questions",
+  "score": "Score:",
+  "points": "points",
+
+  "question": "Question",
+  "of": "of",
+  "multiple_choice": "Multiple Choice",
+  "read_carefully": "Read carefully",
+
+  "select_answer": "Select your answer:",
+  "tip_select_best": "Tip: Select the best answer from the options above",
+
+  "your_answer": "Your Answer:",
+  "type_answer": "Type your answer here...",
+  "tip_check_spelling": "Tip: Check your spelling and grammar before submitting",
+
+  "submit_answer": "Submit Answer",
+  "evaluating": "Evaluating...",
+
+  "redirecting": "Redirecting...",
+  "error": "Error",
+  "failed_start_test": "Failed to start test. Please try again.",
+  "failed_generate_question": "Failed to generate question.",
+  "failed_evaluate_answer": "Failed to evaluate answer.",
+  "great_job": "Great job! You got it right!",
+  "try_again": "Not quite right, but keep trying!",
+  "excellent_work": "Excellent work! You're doing great!",
+  "keep_learning": "Don't worry, keep learning and you'll improve!",
+  "ai_generating_question": "AI is generating your question...",
+  "test": "Test",
+  "class": "Class",
+  "exit_test": "Exit Test",
+
+  "error": "Error",
+  "enter_share_code": "Please enter a share code",
+  "test_not_found": "Test not found",
+  "invalid_share_code": "Invalid share code. Please check and try again.",
+  "provide_answer": "Please provide an answer",
+  "evaluate_failed": "Failed to evaluate answer",
+  "allow_popup_pdf": "Please allow popups to download PDF",
+
+  "print_dialog_opened": "Print Dialog Opened",
+  "choose_save_pdf": "Choose 'Save as PDF' to download",
+
+  "take_custom_test": "Take Custom Test",
+  "enter_share_code_teacher": "Enter the share code provided by your teacher",
+  "share_code": "Share Code",
+  "enter_code_placeholder": "Enter 6-character code",
+
+  "start_test": "Start Test",
+  "back": "Back",
+  "loading": "Loading...",
+
+  "test_completed": "Test Completed!",
+  "out_of": "out of",
+  "correct": "correct",
+  "total_score": "Total Score:",
+
+  "your_answer": "Your answer:",
+  "correct_answer": "Correct answer:",
+  "explanation": "Explanation:",
+
+  "download_answer_sheet": "Download Answer Sheet",
+  "take_another_test": "Take Another Test",
+
+  "exit_test": "Exit Test",
+  "download_questions": "Download Questions",
+
+  "question": "Question",
+  "of": "of",
+  "class": "Class",
+
+  "type_answer_here": "Type your answer here...",
+  "evaluating": "Evaluating...",
+  "next_question": "Next Question",
+  "finish_test": "Finish Test",
+
+  "correct": "Correct!",
+  "incorrect": "Incorrect",
+  "partial_credit": "Partial Credit",
+
+  "correct_answer": "Correct Answer",
+
+  "listen": "Listen",
+  "stop": "Stop",
+
+  "listen_pronunciation": "Click \"Listen\" to hear the correct pronunciation",
+
+  "next_question": "Next Question",
+  "end_test": "End Test",
+
+  "easy": "Easy",
+  "medium": "Medium",
+  "hard": "Hard",
+
+  "test_complete": "Test Complete!",
+  "great_work": "Great work on your",
+  "quiz": "quiz",
+
+  "total_score": "Total Score",
+  "accuracy": "Accuracy",
+  "correct": "Correct",
+
+  "outstanding": "Outstanding! You're really mastering this language!",
+  "good_progress": "Good job! You're making great progress!",
+  "keep_practicing": "Nice try! Keep practicing and you'll improve quickly!",
+
+  "try_another_test": "Try Another Test",
+  "back_home": "Back to Home",
+
+  "no_scores": "No scores yet. Start a test to see your results here!",
+
+  "answer_sheet_evaluator": "Answer Sheet Evaluator",
+  "ai_feedback_desc": "Upload answer sheets and get AI-powered detailed feedback",
+
+  "student_information": "Student Information (Optional)",
+  "personalized_feedback": "Provide details for personalized feedback",
+
+  "student_name": "Student Name",
+  "enter_student_name": "Enter student name",
+
+  "class_level": "Class Level",
+  "select_class": "Select Class",
+  "class": "Class",
+
+  "subject": "Subject",
+  "enter_subject": "Enter subject",
+
+  "upload_answer_sheets": "Upload Answer Sheets",
+  "upload_20_images": "Upload up to 20 images",
+
+  "upload_question_paper": "Upload Question Paper (Optional)",
+  "optional_question_upload": "Upload question paper images for better evaluation",
+
+  "click_upload_images": "Click to upload images",
+  "click_upload_questions": "Click to upload question images",
+
+  "evaluate_answer_sheets": "Evaluate Answer Sheets",
+  "evaluating": "Evaluating... Please wait",
+
+  "evaluation_complete": "Evaluation Complete",
+  "answers_evaluated": "answers evaluated",
+  "average_score": "Average Score",
+
+  "evaluate_another_sheet": "Evaluate Another Answer Sheet",
+
+  "no_images": "No Images",
+  "upload_answer_sheet": "Please upload answer sheet images",
+
+  "evaluation_failed": "Evaluation Failed",
+
+  "answerEvaluator": {
+    "title": "Answer Sheet Evaluator",
+    "subtitle": "Upload answer sheets and get AI-powered feedback",
+    "studentInfo": "Student Information (Optional)",
+    "studentDesc": "Provide details for personalized feedback",
+    "studentName": "Student Name",
+    "studentPlaceholder": "e.g Rahul Kumar",
+    "classLevel": "Class Level",
+    "selectClass": "Select Class",
+    "subject": "Subject",
+    "subjectPlaceholder": "e.g Physics, Math",
+    "uploadAnswers": "Upload Answer Sheets",
+    "uploadDesc": "Upload up to 20 images of answer sheets",
+    "clickUpload": "Click to upload images",
+    "clickUploadQuestions": "Click to upload question images",
+    "questionImagesUploaded": "question image(s) uploaded",
+    "imagesUploaded": "images uploaded",
+    "uploadQuestions": "Upload Question Paper (Optional)",
+    "questionDesc": "Upload question paper images for more accurate evaluation",
+    "evaluate": "Evaluate Answer Sheets",
+    "evaluating": "Evaluating... This may take a minute",
+    "complete": "Evaluation Complete",
+    "overallFeedback": "Overall Feedback",
+    "studentAnswer": "Student's Answer",
+    "strengths": "Strengths",
+    "improvements": "Areas for Improvement",
+    "correctAnswer": "Correct Answer",
+    "detailedFeedback": "Detailed Feedback",
+    "averageScore": "Average Score",
+    "analyzed": "Analyzed",
+    "answers": "answer(s)",
+    "answer": "Answer",
+    "class": "Class",
+    "downloadPDF": "Download PDF Report",
+    "evaluateAnother": "Evaluate Another Answer Sheet"
+  },
+
+  "teacherDashboard": {
+    "title": "Teacher Dashboard",
+    "welcome": "Welcome",
+    "logout": "Logout",
+    "createTest": "Create New Test",
+    "createCustomTest": "Create Custom MCQ Test",
+    "testDescription": "Configure test parameters and AI will generate questions automatically",
+    "testTitle": "Test Title",
+    "subject": "Subject",
+    "classStandard": "Class Standard",
+    "difficulty": "Difficulty Level",
+    "numQuestions": "Number of Questions (5-50)",
+    "questionType": "Question Type",
+    "gptModel": "GPT Model",
+    "gpt4o": "GPT-4o (Best Quality - Premium)",
+    "gpt4omini": "GPT-4o Mini (Fast & Affordable - Recommended)",
+    "syllabus": "Syllabus / Topics",
+    "syllabusDesc": "Enter up to 4 topics. Questions will be distributed evenly across topics.",
+    "topic1": "Topic 1 (Required)",
+    "topic2": "Topic 2 (Optional)",
+    "topic3": "Topic 3 (Optional)",
+    "topic4": "Topic 4 (Optional)",
+    "instructions": "Instructions (Optional)",
+    "generateTest": "Generate Test",
+    "generating": "Generating...",
+    "cancel": "Cancel",
+    "yourTests": "Your Tests",
+    "noTests": "No tests created yet. Click 'Create New Test' to get started!",
+    "viewQuestions": "View Questions",
+    "downloadPDF": "Download PDF",
+    "copyCode": "Copy Code",
+    "editQuestion": "Edit Question",
+    "aiEdit": "AI-Assisted Edit",
+    "improveAI": "Improve with AI",
+
+    "testTitlePlaceholder": "e.g., Chapter 5 Physics Test",
+    "selectSubject": "Select subject",
+    "class": "Class",
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard",
+    "mcqOnly": "MCQ Only",
+    "openEnded": "Open-Ended Only",
+    "mixed": "Mixed",
+    "topicExample1": "e.g., Force and Motion",
+    "topicExample2": "e.g., Photosynthesis",
+    "topicExample3": "e.g., French Verbs",
+    "topicExample4": "e.g., Cell Structure",
+    "instructionsPlaceholder": "Add any special instructions for students...",
+    "topic": "Topic",
+    "questions": "questions",
+    "question": "Question",
+    "options": "Options",
+    "modelAnswer": "Model Answer",
+    "explanation": "Explanation",
+    "edit": "Edit",
+    "aiEdit": "AI Edit",
+    "manualEditDesc": "Manually edit the question, options, answer, and explanation",
+    "aiEditDesc": "Tell AI what you want to improve about this question",
+    "currentQuestion": "Current Question:",
+    "feedbackLabel": "Feedback for AI (minimum 10 characters)",
+    "improving": "Improving...",
+    "cancel": "Cancel",
+    "correctOption": "Correct Option",
+    "correctAnswer": "Correct Answer",
+    "option": "Option",
+    "saving": "Saving...",
+    "class": "Class",
+    "topic": "Topic",
+    "questions": "Questions"
+  },
+
+  "status": {
+    "published": "Published",
+    "draft": "Draft"
+  },
+
+  "difficulty": {
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard"
+  },
+
+  "subjects": {
+    "math": "Mathematics",
+    "science": "Science",
+    "physics": "Physics",
+    "chemistry": "Chemistry",
+    "biology": "Biology",
+    "history": "History",
+    "geography": "Geography",
+    "english": "English",
+    "hindi": "Hindi",
+    "marathi": "Marathi",
+    "kannada": "Kannada",
+    "sanskrit": "Sanskrit",
+    "mathematics": "Mathematics",
+    "french": "French",
+    "german": "German",
+    "spanish": "Spanish",
+    "general": "General",
+    "social_studies": "Social Studies"
+  },
+
+  "teacherAuth": {
+    "portal": "Teacher Portal",
+    "loginDescription": "Login to create custom MCQ tests",
+    "registerDescription": "Register as a teacher",
+    "username": "Username",
+    "password": "Password",
+    "email": "Email",
+    "fullName": "Full Name",
+    "school": "School (Optional)",
+    "enterUsername": "Enter username",
+    "enterPassword": "Enter password",
+    "chooseUsername": "Choose username",
+    "passwordPlaceholder": "Minimum 6 characters",
+    "emailPlaceholder": "teacher@school.com",
+    "fullNamePlaceholder": "John Doe",
+    "schoolPlaceholder": "Your school name",
+    "login": "Login",
+    "register": "Register",
+    "success": "Success!",
+    "loginSuccess": "Welcome back, teacher!",
+    "registerSuccess": "Account created successfully!",
+    "loginFailed": "Login failed",
+    "registerFailed": "Registration failed",
+    "invalidCredentials": "Invalid credentials",
+    "couldNotCreate": "Could not create account",
+    "noAccount": "Don't have an account? Register",
+    "haveAccount": "Already have an account? Login",
+
+    "usernameMin": "Username must contain at least 3 characters",
+    "passwordMin": "Password must contain at least 6 characters",
+    "fullNameMin": "Full name must contain at least 2 characters",
+    "invalidEmail": "Invalid email address"
+  },
+  "login": {
+    "title": "Login",
+    "email": "Email",
+    "emailPlaceholder": "Enter your email",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "button": "Login",
+    "loading": "Logging in...",
+    "noAccount": "Don't have an account?",
+    "signup": "Sign Up"
+  },
+  "signup": {
+    "title": "Create Account",
+    "name": "Name",
+    "namePlaceholder": "Enter your name",
+    "email": "Email",
+    "emailPlaceholder": "Enter your email",
+    "password": "Password",
+    "passwordPlaceholder": "Create password",
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordPlaceholder": "Confirm password",
+    "passwordMismatch": "Passwords do not match",
+    "button": "Sign Up",
+    "loading": "Creating Account...",
+    "haveAccount": "Already have an account?",
+    "login": "Login"
+  },
+  "google": {
+    "or": "— Or continue with —",
+    "successTitle": "Login Successful",
+    "successDesc": "Signed in with Google",
+    "errorTitle": "Google Sign-In Failed"
+  }
 }

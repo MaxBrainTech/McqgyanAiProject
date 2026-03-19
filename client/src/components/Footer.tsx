@@ -76,7 +76,7 @@ export default function Footer() {
         </div>
 
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-gray-500">Free until Dec 31, 2025 • Made with passion for education</p>
+          <p className="text-sm text-gray-500">Free until Dec 31, 2026 • Made with passion for education</p>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-blue-400" data-testid="button-facebook">
               <Facebook className="w-4 h-4" />
