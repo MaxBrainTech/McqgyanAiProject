@@ -1,342 +1,4 @@
-// import { useState, useEffect } from "react";
-// import { useLocation, useNavigate } from "react-router-dom";
-// import { useMutation } from "@tanstack/react-query";
-// import { useTranslation } from "react-i18next";
 
-// import QuestionCard from "@/components/QuestionCard";
-// import FeedbackSection from "@/components/FeedbackSection";
-// import ProgressBar from "@/components/ProgressBar";
-// import TestSummary from "@/components/TestSummary";
-
-// import { Button } from "@/components/ui/button";
-// import { useToast } from "@/hooks/use-toast";
-// import { apiRequest } from "@/lib/queryClient";
-
-// const normalizeAnswer = (text?: string) =>
-//   text
-//     ?.normalize("NFKC")
-//     .replace(/\s+/g, " ")
-//     .trim()
-//     .toLowerCase();
-
-// export default function TestPage() {
-
-//   const { t } = useTranslation();
-
-//   const location = useLocation();
-//   const navigate = useNavigate();
-//   const config = location.state?.config;
-
-//   const { toast } = useToast();
-
-//   useEffect(() => {
-//     window.scrollTo(0, 0);
-//   }, []);
-
-//   useEffect(() => {
-//     if (!config) navigate("/");
-//   }, [config, navigate]);
-
-//   if (!config) {
-//     return (
-//       <div className="min-h-screen flex items-center justify-center">
-//         <p>{t("redirecting")}</p>
-//       </div>
-//     );
-//   }
-
-//   const isCustomStudentTest = config.mode === "custom-student";
-
-//   const [sessionId, setSessionId] = useState<string | null>(null);
-//   const [customQuestions] = useState<any[]>(config.customQuestions || []);
-//   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-//   const [currentQuestion, setCurrentQuestion] = useState("");
-//   const [questionType, setQuestionType] = useState("");
-//   const [questionOptions, setQuestionOptions] = useState<string[]>([]);
-//   const [questionNumber, setQuestionNumber] = useState(0);
-//   const [showFeedback, setShowFeedback] = useState(false);
-//   const [feedbackData, setFeedbackData] = useState<any>(null);
-//   const [totalScore, setTotalScore] = useState(0);
-//   const [correctAnswers, setCorrectAnswers] = useState(0);
-//   const [showSummary, setShowSummary] = useState(false);
-//   const [totalQuestions, setTotalQuestions] = useState(
-//     isCustomStudentTest ? customQuestions.length : 10
-//   );
-
-//   useEffect(() => {
-//     if (isCustomStudentTest) {
-//       if (customQuestions.length > 0) {
-//         const firstQuestion = customQuestions[0];
-//         setCurrentQuestion(firstQuestion.question);
-//         setQuestionType(firstQuestion.questionType || "open-ended");
-//         setQuestionOptions(firstQuestion.options || []);
-//         setQuestionNumber(1);
-//         setTotalQuestions(customQuestions.length);
-//       }
-//       return;
-//     }
-
-//     // const startSession = async () => {
-//     //   try {
-//     //     const response = await apiRequest("POST", "/api/test/start", config);
-//     //     const data = await response.json();
-//     //     setSessionId(data.id);
-//     //   } catch (error) {
-//     //     toast({
-//     //       title: t("error"),
-//     //       description: t("failed_start_test"),
-//     //       variant: "destructive",
-//     //     });
-//     //   }
-//     // };
-
-//     const startSession = async () => {
-//       try {
-//         const payload = {
-//           ...config,
-//           classLevel: config.class, // ✅ FIX
-//         };
-
-//         console.log("PAYLOAD:", payload); // debug
-
-//         const response = await apiRequest("POST", "/api/test/start", payload);
-//         const data = await response.json();
-
-//         setSessionId(data.id);
-//       } catch (error) {
-//         toast({
-//           title: t("error"),
-//           description: t("failed_start_test"),
-//           variant: "destructive",
-//         });
-//       }
-//     };
-
-//     startSession();
-//   }, [config]);
-
-//   const generateQuestionMutation = useMutation({
-//     mutationFn: async () => {
-//       const response = await apiRequest(
-//         "POST",
-//         `/api/test/${sessionId}/question`
-//       );
-//       return await response.json();
-//     },
-
-//     onSuccess: (data) => {
-//       setCurrentQuestion(data.question);
-//       setQuestionType(data.questionType || "open-ended");
-//       setQuestionOptions(data.options || []);
-//       setQuestionNumber(data.questionNumber);
-//       setTotalQuestions(data.totalQuestions);
-//     },
-
-//     onError: () => {
-//       toast({
-//         title: t("error"),
-//         description: t("failed_generate_question"),
-//         variant: "destructive",
-//       });
-//     },
-//   });
-
-//   useEffect(() => {
-//     if (sessionId && !currentQuestion && !showSummary) {
-//       generateQuestionMutation.mutate();
-//     }
-//   }, [sessionId]);
-
-//   const evaluateAnswerMutation = useMutation({
-//     mutationFn: async (answer: string) => {
-//       const response = await apiRequest(
-//         "POST",
-//         `/api/test/${sessionId}/evaluate`,
-//         { answer }
-//       );
-//       return await response.json();
-//     },
-
-//     onSuccess: (data) => {
-//       setFeedbackData(data);
-//       setTotalScore(data.totalScore);
-//       setCorrectAnswers(data.correctAnswers);
-//       setShowFeedback(true);
-//     },
-
-//     onError: () => {
-//       toast({
-//         title: t("error"),
-//         description: t("failed_evaluate_answer"),
-//         variant: "destructive",
-//       });
-//     },
-//   });
-
-//   const handleSubmitAnswer = (answer: string) => {
-//     if (isCustomStudentTest) {
-//       if (showFeedback) return;
-
-//       const currentQ = customQuestions[currentQuestionIndex];
-//       const correctAnswer = currentQ.correctAnswer || currentQ.correctOption;
-
-//       const isCorrect =
-//         normalizeAnswer(answer) === normalizeAnswer(correctAnswer);
-
-//       const pointsEarned = isCorrect ? 10 : 0;
-//       const newScore = totalScore + pointsEarned;
-//       const newCorrect = correctAnswers + (isCorrect ? 1 : 0);
-
-//       setTotalScore(newScore);
-//       setCorrectAnswers(newCorrect);
-
-//       setFeedbackData({
-//         isCorrect,
-//         feedback:
-//           currentQ.explanation ||
-//           (isCorrect ? t("great_job") : t("try_again")),
-//         correctAnswer: correctAnswer,
-//         score: pointsEarned,
-//         totalScore: newScore,
-//         correctAnswers: newCorrect,
-//         encouragement: isCorrect
-//           ? t("excellent_work")
-//           : t("keep_learning"),
-//       });
-
-//       setShowFeedback(true);
-//     } else {
-//       evaluateAnswerMutation.mutate(answer);
-//     }
-//   };
-
-//   const handleNext = () => {
-//     setShowFeedback(false);
-
-//     if (questionNumber < totalQuestions) {
-//       if (isCustomStudentTest) {
-//         const nextIndex = currentQuestionIndex + 1;
-
-//         if (nextIndex < customQuestions.length) {
-//           const nextQuestion = customQuestions[nextIndex];
-
-//           setCurrentQuestionIndex(nextIndex);
-//           setCurrentQuestion(nextQuestion.question);
-//           setQuestionType(nextQuestion.questionType || "open-ended");
-//           setQuestionOptions(nextQuestion.options || []);
-//           setQuestionNumber(nextIndex + 1);
-//         }
-//       } else {
-//         generateQuestionMutation.mutate();
-//       }
-//     } else {
-//       setShowSummary(true);
-//     }
-//   };
-
-//   const handleEndTest = () => setShowSummary(true);
-
-//   const handleNewTest = () => navigate("/");
-
-//   if (showSummary) {
-//     const subject =
-//       config.mode === "science"
-//         ? config.scienceCategory
-//         : config.language;
-
-//     return (
-//       <TestSummary
-//         totalScore={totalScore}
-//         totalQuestions={totalQuestions}
-//         correctAnswers={correctAnswers}
-//         subject={subject || "quiz"}
-//         onNewTest={handleNewTest}
-//         onHome={() => navigate("/")}
-//       />
-//     );
-//   }
-
-//   if (!currentQuestion) {
-//     return (
-//       <div className="flex items-center justify-center min-h-screen">
-//         <p>{t("ai_generating_question")}</p>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="min-h-screen bg-background">
-
-//       <div className="container mx-auto max-w-4xl py-6">
-
-//         <div className="flex justify-between items-center">
-
-//           <div>
-//             <h1 className="text-2xl font-bold capitalize">
-//               {config.mode === "science"
-//                 ? config.scienceCategory
-//                 : config.language}{" "}
-//               {t("test")}
-//             </h1>
-
-//             <p className="text-muted-foreground">
-//               {t("class")} {config.class} • {t(config.difficulty)}
-//             </p>
-//           </div>
-
-//           <Button
-//             variant="outline"
-//             onClick={() => navigate("/")}
-//           >
-//             {t("exit_test")}
-//           </Button>
-
-//         </div>
-
-//         <ProgressBar
-//           current={questionNumber}
-//           total={totalQuestions}
-//           score={totalScore}
-//         />
-
-//         {!showFeedback ? (
-
-//           <QuestionCard
-//             questionNumber={questionNumber}
-//             totalQuestions={totalQuestions}
-//             question={currentQuestion}
-//             questionType={questionType}
-//             options={questionOptions}
-//             language={config.language || ""}
-//             onSubmit={handleSubmitAnswer}
-//             isSubmitting={
-//               isCustomStudentTest
-//                 ? false
-//                 : evaluateAnswerMutation.isPending
-//             }
-//           />
-
-//         ) : (
-
-//           <FeedbackSection
-//             score={feedbackData.score}
-//             maxScore={10}
-//             feedback={feedbackData.feedback}
-//             correctAnswer={feedbackData.correctAnswer}
-//             isCorrect={feedbackData.isCorrect}
-//             encouragement={feedbackData.encouragement}
-//             language={config.language || ""}
-//             onNext={handleNext}
-//             onEndTest={handleEndTest}
-//           />
-
-//         )}
-
-//       </div>
-
-//     </div>
-//   );
-// }
 
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -348,6 +10,9 @@ import TestSummary from "@/components/TestSummary";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useTranslation } from "react-i18next";
+import { getLocalizedText, getSubjectTestTitle } from "@/lib/quizText";
+import { saveScoreHistoryAttempt } from "@/lib/scoreHistory";
 
 const normalizeAnswer = (text?: string) =>
   text
@@ -359,6 +24,7 @@ const normalizeAnswer = (text?: string) =>
 export default function TestPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const config = location.state?.config;
 
   // Scroll to top when page loads
@@ -376,10 +42,10 @@ export default function TestPage() {
   // Return loading state while redirecting if no config
   if (!config) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+      <div className="min-h-[calc(100vh-72px)] bg-background flex items-center justify-center px-4 py-8">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-base sm:text-lg font-semibold text-primary">Redirecting...</p>
+          <p className="text-base sm:text-lg font-semibold text-primary">{t("redirecting")}</p>
         </div>
       </div>
     );
@@ -397,6 +63,7 @@ export default function TestPage() {
   const [feedbackData, setFeedbackData] = useState<any>(null);
   const [totalScore, setTotalScore] = useState(0);
   const [correctAnswers, setCorrectAnswers] = useState(0);
+  const [questionReview, setQuestionReview] = useState<any[]>([]);
   const [showSummary, setShowSummary] = useState(false);
   const [totalQuestions, setTotalQuestions] = useState(isCustomStudentTest ? customQuestions.length : 10);
   const { toast } = useToast();
@@ -443,33 +110,39 @@ export default function TestPage() {
 
     const startSession = async () => {
       try {
-        const preferredLanguage = (
-          (config.language as string) ||
-          ""
-        ).toString();
-
-        const preferredMedium = (
+        const testLanguageSource = (
+          (config.testLanguage as string) ||
           (config.medium as string) ||
           (config.selectedMedium as string) ||
+          (config.language as string) ||
           ""
         )
           .toString()
           .toLowerCase();
 
-        const mediumOrLanguage = preferredMedium || preferredLanguage.toLowerCase();
+        const normalizedTestLanguage = testLanguageSource.startsWith("hi")
+          ? "hindi"
+          : "english";
 
-        const normalizedLanguage =
-          config.mode === "science"
-            ? mediumOrLanguage.startsWith("hi")
-              ? "hindi"
-              : "english"
-            : (preferredLanguage || "english").toLowerCase();
+        const subjectLanguageSource = (
+          (config.subjectLanguage as string) ||
+          (config.subject as string) ||
+          (config.language as string) ||
+          ""
+        )
+          .toString()
+          .toLowerCase();
+
+        const normalizedSubjectLanguage =
+          config.mode === "science" ? undefined : (subjectLanguageSource || undefined);
 
         const payload = {
           mode: config.mode,
 
-          // ✅ language fallback
-          language: normalizedLanguage,
+          // ✅ selected test language
+          language: normalizedTestLanguage,
+          testLanguage: normalizedTestLanguage,
+          subjectLanguage: normalizedSubjectLanguage,
 
           // ✅ subject fix
           scienceCategory:
@@ -496,8 +169,8 @@ export default function TestPage() {
         console.error("START TEST ERROR:", error);
 
         toast({
-          title: "Error",
-          description: "Failed to start test. Please try again.",
+          title: t("error"),
+          description: t("failed_start_test"),
           variant: "destructive",
         });
       }
@@ -520,8 +193,8 @@ export default function TestPage() {
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to generate question. Please try again.",
+        title: t("error"),
+        description: t("failed_generate_question"),
         variant: "destructive",
       });
     },
@@ -542,7 +215,29 @@ export default function TestPage() {
       });
       return await response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data, answer) => {
+      let submittedAnswer = answer;
+      if (
+        (questionType === "mcq" || questionOptions.length > 0) &&
+        typeof answer === "string" &&
+        answer.length === 1
+      ) {
+        const optionIndex = answer.toUpperCase().charCodeAt(0) - 65;
+        submittedAnswer = questionOptions[optionIndex] || answer;
+      }
+
+      const questionSnapshot = {
+        questionNumber,
+        question: currentQuestion,
+        options: [...questionOptions],
+        userAnswer: submittedAnswer,
+        correctAnswer: data.correctAnswer || "",
+        isCorrect: Boolean(data.isCorrect),
+        explanation:
+          data.feedback || (data.isCorrect ? t("answer_correct_explanation_fallback") : t("answer_wrong_explanation_fallback")),
+        questionType,
+      };
+      setQuestionReview((prev) => [...prev, questionSnapshot]);
       setFeedbackData(data);
       setTotalScore(data.totalScore);
       setCorrectAnswers(data.correctAnswers);
@@ -550,8 +245,8 @@ export default function TestPage() {
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to evaluate answer. Please try again.",
+        title: t("error"),
+        description: t("failed_evaluate_answer"),
         variant: "destructive",
       });
     },
@@ -595,18 +290,33 @@ export default function TestPage() {
 
       setTotalScore(newScore);
       setCorrectAnswers(newCorrect);
+      setQuestionReview((prev) => [
+        ...prev,
+        {
+          questionNumber: currentQuestionIndex + 1,
+          question: currentQ.question,
+          options: [...(currentQ.options || [])],
+          userAnswer: submittedAnswer,
+          correctAnswer,
+          isCorrect,
+          explanation:
+            getLocalizedText(currentQ.explanation, i18n.language) ||
+            (isCorrect ? t("answer_correct_explanation_fallback") : t("answer_wrong_explanation_fallback")),
+          questionType: currentQ.questionType || questionType,
+        },
+      ]);
 
       // Build feedback data matching the API response shape
       setFeedbackData({
         isCorrect,
-        feedback: currentQ.explanation || (isCorrect ? "Great job! You got it right!" : "Not quite right, but keep trying!"),
+        feedback: getLocalizedText(currentQ.explanation, i18n.language) || (isCorrect ? t("answer_correct_explanation_fallback") : t("answer_wrong_explanation_fallback")),
         correctAnswer: currentQ.correctAnswer || currentQ.correctOption,
         score: pointsEarned,
         totalScore: newScore,
         correctAnswers: newCorrect,
         encouragement: isCorrect 
-          ? "Excellent work! You're doing great!" 
-          : "Don't worry, keep learning and you'll improve!",
+          ? t("excellent_work")
+          : t("keep_learning"),
       });
       setShowFeedback(true);
     } else {
@@ -629,6 +339,7 @@ export default function TestPage() {
           setQuestionNumber(nextIndex + 1);
         }
       } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
         generateQuestionMutation.mutate();
       }
     } else {
@@ -640,12 +351,43 @@ export default function TestPage() {
     setShowSummary(true);
   };
 
+  const handleExitTest = async () => {
+    if (!confirm(t("confirm_exit_test"))) {
+      return;
+    }
+
+    const subject =
+      config.mode === "science"
+        ? config.scienceCategory
+        : (config.subjectLanguage ?? config.language);
+
+    await saveScoreHistoryAttempt({
+      subject: subject || "quiz",
+      totalScore,
+      totalQuestions,
+      correctAnswers,
+      language: i18n.language || "en",
+      classLevel: Number(config.class ?? config.classLevel ?? 0) || null,
+      difficulty: config.difficulty,
+      mode: config.mode,
+      questionPaperTitle: getSubjectTestTitle(subject || "quiz", t),
+      questionReview,
+    }).catch((error) => {
+      console.warn("Failed to save score history on exit", error);
+    });
+
+    navigate("/");
+  };
+
   const handleNewTest = () => {
     navigate('/');
   };
 
   if (showSummary) {
-    const subject = config.mode === "science" ? config.scienceCategory : config.language;
+    const subject =
+      config.mode === "science"
+        ? config.scienceCategory
+        : (config.subjectLanguage ?? config.language);
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
@@ -654,6 +396,11 @@ export default function TestPage() {
             totalQuestions={totalQuestions}
             correctAnswers={correctAnswers}
             subject={subject || "quiz"}
+            classLevel={Number(config.class ?? config.classLevel ?? 0)}
+            language={i18n.language || "en"}
+            questionReview={questionReview}
+            difficulty={config.difficulty}
+            mode={config.mode}
             onNewTest={handleNewTest}
             onHome={() => navigate('/')}
           />
@@ -665,13 +412,16 @@ export default function TestPage() {
   // Skip session check for custom student tests
   if (!isCustomStudentTest && (!sessionId || generateQuestionMutation.isPending)) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-primary mx-auto"></div>
+      <div className="min-h-[calc(100vh-72px)] bg-background flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-md rounded-3xl border bg-card/95 p-8 text-center shadow-2xl">
+          <div className="relative mx-auto mb-6 h-16 w-16">
+            <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping"></div>
+            <div className="absolute inset-2 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
+          </div>
           <p className="text-base sm:text-lg font-semibold text-primary">
-            {!sessionId ? "Preparing your test..." : "AI is generating your question..."}
+            {!sessionId ? t("preparing_test") : t("ai_generating_question")}
           </p>
-          <p className="text-base text-muted-foreground">This may take 5-20 seconds</p>
+          <p className="mt-2 text-base text-muted-foreground">{t("loading_time_hint")}</p>
         </div>
       </div>
     );
@@ -679,11 +429,14 @@ export default function TestPage() {
 
   if (!currentQuestion) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-base sm:text-lg font-semibold text-primary">AI is generating your question...</p>
-          <p className="text-base text-muted-foreground">This may take 5-20 seconds</p>
+      <div className="min-h-[calc(100vh-72px)] bg-background flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-md rounded-3xl border bg-card/95 p-8 text-center shadow-2xl">
+          <div className="relative mx-auto mb-6 h-16 w-16">
+            <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping"></div>
+            <div className="absolute inset-2 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
+          </div>
+          <p className="text-base sm:text-lg font-semibold text-primary">{t("ai_generating_question")}</p>
+          <p className="mt-2 text-base text-muted-foreground">{t("loading_time_hint")}</p>
         </div>
       </div>
     );
@@ -696,19 +449,26 @@ export default function TestPage() {
           <div className="flex items-center justify-between flex-wrap gap-3 sm:gap-4">
             <div>
               <h1 className="text-xl sm:text-2xl font-bold capitalize">
-                {config.mode === "science" ? config.scienceCategory : config.language} Test
+                {getSubjectTestTitle(
+                  config.mode === "science"
+                    ? config.scienceCategory
+                    : (config.subjectLanguage ?? config.language),
+                  t,
+                )}
               </h1>
               <p className="text-base text-muted-foreground">
-                Class {config.class} • {config.difficulty}
+                {t("class")} {config.class} • {t(config.difficulty)}
               </p>
             </div>
             <Button
               variant="outline"
-              onClick={() => navigate('/')}
+              onClick={() => {
+                void handleExitTest();
+              }}
               data-testid="button-exit"
-              className="h-11 text-base"
+              className="h-11 rounded-xl px-4 text-base"
             >
-              Exit Test
+              {t("exit_test")}
             </Button>
           </div>
 

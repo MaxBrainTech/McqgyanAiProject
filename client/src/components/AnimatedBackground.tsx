@@ -1,17 +1,9 @@
-import { useCallback } from "react";
-import Particles from "react-tsparticles";
-import { loadFull } from "tsparticles";
+import Particles from "@tsparticles/react";
 
 export default function AnimatedBackground() {
-
-  const particlesInit = useCallback(async (engine: any) => {
-    await loadFull(engine);
-  }, []);
-
   return (
     <Particles
       id="tsparticles"
-      init={particlesInit}
       className="absolute inset-0 pointer-events-none"
       options={{
         fullScreen: {
@@ -31,7 +23,8 @@ export default function AnimatedBackground() {
             value: 60,
             density: {
               enable: true,
-              area: 800,
+              width: 800,
+              height: 800,
             },
           },
 

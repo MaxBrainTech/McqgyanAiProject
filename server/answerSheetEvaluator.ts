@@ -1,11 +1,14 @@
 import OpenAI from "openai";
+import PDFDocument from "pdfkit";
+import { Request, Response } from "express";
+import { getServerAppUrl } from "./lib/appUrl";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 interface EvaluationParams {
-  images: string[]; // Base64 encoded images
+  images: string[];
   studentName: string;
   classLevel?: number;
   subject?: string;
@@ -15,10 +18,10 @@ interface EvaluationParams {
 interface AnswerEvaluation {
   questionNumber: number;
   extractedAnswer: string;
-  qualityScore: number; // 0-10
+  qualityScore: number;
   strengths: string[];
   improvements: string[];
-  correctAnswer?: string; // If answer was wrong
+  correctAnswer?: string;
   detailedFeedback: string;
 }
 
@@ -28,6 +31,16 @@ interface EvaluationResult {
   overallFeedback: string;
   answerEvaluations: AnswerEvaluation[];
 }
+
+type AnswerEvaluationItem = {
+  questionNumber: number | string;
+  extractedAnswer?: string;
+  qualityScore?: number;
+  strengths?: string[];
+  improvements?: string[];
+  correctAnswer?: string;
+  detailedFeedback?: string;
+};
 
 export async function evaluateAnswerSheet(
   params: EvaluationParams,
@@ -44,14 +57,13 @@ export async function evaluateAnswerSheet(
     `[EVAL] Starting evaluation of ${images.length} images using ${gptModel}`,
   );
 
-  // Prepare messages with all images
   const imageMessages: any[] = images.map((imageData) => ({
     type: "image_url",
     image_url: {
       url: imageData.startsWith("data:")
         ? imageData
         : `data:image/jpeg;base64,${imageData}`,
-      detail: "high", // High detail for better text recognition
+      detail: "high",
     },
   }));
 
@@ -105,7 +117,7 @@ EXAMPLE:
       "qualityScore": 8,
       "strengths": ["Clear definition", "Mentioned key components"],
       "improvements": ["Could include the chemical equation", "Mention chlorophyll's role"],
-      "correctAnswer": "Photosynthesis is the process by which plants convert light energy (usually from the sun) into chemical energy stored in glucose, using carbon dioxide and water, with chlorophyll as the catalyst. The equation is: 6CO2 + 6H2O + light energy → C6H12O6 + 6O2",
+      "correctAnswer": "Photosynthesis is the process by which plants convert light energy (usually from the sun) into chemical energy stored in glucose, using carbon dioxide and water, with chlorophyll as the catalyst. The equation is: 6CO2 + 6H2O + light energy -> C6H12O6 + 6O2",
       "detailedFeedback": "Excellent start! You've correctly identified the basic concept of photosynthesis. To make your answer more complete, try including the raw materials (CO2 and water), the products (glucose and oxygen), and the role of chlorophyll."
     }
   ]
@@ -129,7 +141,7 @@ IMPORTANT GUIDELINES:
         },
       ],
       max_tokens: 4000,
-      temperature: 0.3, // Lower temperature for more consistent evaluation
+      temperature: 0.3,
     });
 
     const content = response.choices[0]?.message?.content?.trim();
@@ -138,7 +150,6 @@ IMPORTANT GUIDELINES:
       throw new Error("No response from AI");
     }
 
-    // Extract JSON from response (might be wrapped in markdown)
     let jsonContent = content;
     if (content.includes("```json")) {
       const match = content.match(/```json\s*([\s\S]*?)\s*```/);
@@ -161,447 +172,7 @@ IMPORTANT GUIDELINES:
   }
 }
 
-// import PDFDocument from "pdfkit";
-// import { Request, Response } from "express";
-
-// export function generateEvaluationPDF(req: Request, res: Response) {
-//   const {
-//     studentName,
-//     classLevel,
-//     subject,
-//     totalAnswers,
-//     averageScore,
-//     overallFeedback,
-//     answerEvaluations,
-//   } = req.body;
-
-//   const doc = new PDFDocument({
-//     size: "A4",
-//     margins: {
-//       top: 100,
-//       bottom: 80,
-//       left: 50,
-//       right: 50,
-//     },
-//   });
-
-//   res.setHeader("Content-Type", "application/pdf");
-//   res.setHeader("Content-Disposition", "attachment; filename=evaluation-report.pdf");
-
-//   doc.pipe(res);
-//   let pageNumber = 1;
-
-//   const drawFooter = () => {
-//     const pageHeight = doc.page.height;
-//     const pageWidth = doc.page.width;
-
-//     doc
-//       .strokeColor("#cccccc")
-//       .moveTo(50, pageHeight - 60)
-//       .lineTo(pageWidth - 50, pageHeight - 60)
-//       .stroke();
-
-//     doc
-//       .fontSize(9)
-//       .fillColor("gray")
-//       .text(
-//         "Max Brain Technologies – https://themaxbrain.com/",
-//         50,
-//         pageHeight - 45,
-//         { width: pageWidth - 100, align: "center" }
-//       );
-
-//     doc
-//       .fontSize(9)
-//       .text(`Page ${pageNumber}`, pageWidth - 100, pageHeight - 45);
-//   };
-
-//   drawFooter();
-
-//   doc.on("pageAdded", () => {
-//     pageNumber++;
-//     drawFooter();
-//   });
-
-//   /* ================= HEADER ================= */
-
-//   doc.rect(0, 0, doc.page.width, 80).fill("#2f3e52");
-
-//   doc
-//     .fillColor("white")
-//     .fontSize(20)
-//     .text("Answer Sheet Evaluation Report", 50, 30);
-
-//   doc.fontSize(14).text("MCQGyaan AI", 420, 35);
-
-//   doc.fillColor("black");
-
-//   /* ================= STUDENT INFO ================= */
-
-//   doc.moveDown(2)
-
-//   doc
-//     .fontSize(14)
-//     .fillColor("#000")
-//     .text(`Student Name: ${studentName}`, {
-//       width: 500
-//     })
-
-//   doc
-//     .fontSize(12)
-//     .text(`Class: ${classLevel} | Subject: ${subject} | Total Answers: ${totalAnswers}`, {
-//       width: 500
-//     })
-
-//   doc.moveDown(2)
-
-//   /* ================= SUMMARY ================= */
-
-//   doc
-//   .fontSize(18)
-//   .fillColor("#1a237e")
-//   .text("Evaluation Summary");
-
-//   doc.moveDown(0.5);
-
-//   doc.fontSize(12).fillColor("black").text(`Average Score: ${averageScore}/10`);
-
-//   doc.moveDown();
-
-//   doc.fontSize(13).fillColor("#2f3e52").text("Overall Feedback");
-
-//   doc.moveDown(0.5);
-
-//   doc.fontSize(11).fillColor("#444").text(overallFeedback, {
-//     align: "justify",
-//   });
-
-//   doc.moveDown(2);
-
-//   /* ================= ANSWER SECTION ================= */
-
-//   answerEvaluations.forEach((ans: any) => {
-//     if (doc.y > doc.page.height - 150) {
-//       doc.addPage();
-//     }
-//     // doc
-//     //   .fontSize(15)
-//     //   .fillColor("#1a237e")
-//     doc
-//       .fontSize(15)
-//       .fillColor("#0d47a1")
-//       .text(`Question ${ans.questionNumber}`, {
-//         continued: true
-//       });
-
-//     doc
-//       .fontSize(12)
-//       .fillColor("#2e7d32")
-//       .text(`   Score: ${ans.qualityScore}/10`);
-
-//     doc.moveDown(0.7);
-
-//     /* Student Answer */
-
-//     doc
-//       .fontSize(12)
-//       .fillColor("#000")
-//       .text("Student Answer")
-
-//     doc
-//       .fontSize(11)
-//       .fillColor("#444")
-//       .text(ans.extractedAnswer, {
-//         width: 500,
-//         align: "justify"
-//       });
-
-//     doc.moveDown();
-
-//     /* Strengths */
-
-//     ans.strengths.forEach((s: string) => {
-//       doc
-//         .fontSize(11)
-//         .fillColor("#444")
-//         .text(`• ${s}`, { width: 500 });
-//     });
-
-//     doc.moveDown();
-
-//     /* Improvements */
-
-//     if (ans.improvements?.length) {
-//       doc.fontSize(12).fillColor("#f57f17").text("Areas for Improvement:");
-
-//       ans.improvements.forEach((i: string) => {
-//         doc.fontSize(11).fillColor("#333").text(`• ${i}`);
-//       });
-
-//       doc.moveDown();
-//     }
-
-//     /* Correct Answer */
-
-//     if (ans.correctAnswer) {
-//       doc.fontSize(12).fillColor("#1565c0").text("Correct Answer:");
-
-//       doc.fontSize(11).fillColor("#333").text(ans.correctAnswer, {
-//         align: "justify",
-//       });
-
-//       doc.moveDown();
-//     }
-
-//     /* Detailed Feedback */
-
-//     doc
-//       .fontSize(12)
-//       .fillColor("#000")
-//       .text("Detailed Feedback")
-
-//     doc
-//         .fontSize(11)
-//         .fillColor("#444")
-//         .text(ans.detailedFeedback, {
-//           width: 500,
-//           align: "justify"
-//         });
-
-//       if (doc.y > doc.page.height - 150) {
-//         doc.addPage();
-//       }
-
-//     doc.moveDown();
-
-//     /* divider line */
-
-//     doc
-//       .strokeColor("#e0e0e0")
-//       .lineWidth(1)
-//       .moveTo(50, doc.y)
-//       .lineTo(545, doc.y)
-//       .stroke()
-
-//     doc.moveDown(2)
-//    });
-//   doc.end();
-// }
-
-// import PDFDocument from "pdfkit";
-// import { Request, Response } from "express";
-
-// export function generateEvaluationPDF(req: Request, res: Response) {
-
-//   try {
-
-//     const {
-//       studentName,
-//       classLevel,
-//       subject,
-//       totalAnswers,
-//       averageScore,
-//       overallFeedback,
-//       answerEvaluations
-//     } = req.body;
-
-//     const doc = new PDFDocument({
-//       size: "A4",
-//       margins: { top: 100, bottom: 80, left: 50, right: 50 }
-//     });
-
-//     res.setHeader("Content-Type", "application/pdf");
-//     res.setHeader("Content-Disposition", "attachment; filename=evaluation-report.pdf");
-
-//     let pageNumber = 1;
-
-//     const drawFooter = () => {
-//       const pageHeight = doc.page.height;
-//       const pageWidth = doc.page.width;
-
-//       doc
-//         .strokeColor("#cccccc")
-//         .moveTo(50, pageHeight - 60)
-//         .lineTo(pageWidth - 50, pageHeight - 60)
-//         .stroke();
-
-//       doc
-//         .fontSize(9)
-//         .fillColor("gray")
-//         .text(
-//           "Max Brain Technologies – https://themaxbrain.com/",
-//           50,
-//           pageHeight - 45,
-//           { width: pageWidth - 100, align: "center" }
-//         );
-
-//       doc
-//         .fontSize(9)
-//         .text(`Page ${pageNumber}`, pageWidth - 80, pageHeight - 45);
-//     };
-//     doc.pipe(res);
-
-//     drawFooter();
-
-//     doc.on("pageAdded", () => {
-//       pageNumber++;
-//       drawFooter();
-//     });
-
-//     /* ---------- HEADER ---------- */
-
-//     doc.rect(0,0,doc.page.width,80).fill("#2f3e52");
-
-//     doc.fillColor("white")
-//       .fontSize(20)
-//       .text("Answer Sheet Evaluation Report",50,30);
-
-//     doc.fontSize(14).text("MCQGyaan AI",420,35);
-
-//     doc.fillColor("black");
-//     doc.y = 110;
-
-//     /* ---------- STUDENT INFO ---------- */
-
-//     doc.fontSize(14)
-//       .text(`Student Name: ${studentName}`,{ width:500 });
-
-//     doc.fontSize(12)
-//       .text(`Class: ${classLevel} | Subject: ${subject} | Total Answers: ${totalAnswers}`,{ width:500 });
-
-//     doc.moveDown(2);
-
-//     /* ---------- SUMMARY ---------- */
-
-//     doc.fontSize(18)
-//       .fillColor("#1a237e")
-//       .text("Evaluation Summary");
-
-//     doc.moveDown(0.5);
-
-//     doc.fontSize(12)
-//       .fillColor("black")
-//       .text(`Average Score: ${averageScore}/10`);
-
-//     doc.moveDown();
-
-//     doc.fontSize(13)
-//       .fillColor("#2f3e52")
-//       .text("Overall Feedback");
-
-//     doc.moveDown(0.5);
-
-//     doc.fontSize(11)
-//       .fillColor("#444")
-//       .text(overallFeedback,{
-//         width:500,
-//         align:"justify"
-//       });
-
-//     doc.moveDown(2);
-
-//     /* ---------- ANSWERS ---------- */
-
-//     answerEvaluations.forEach((ans:any)=>{
-
-//       if(doc.y > doc.page.height - 150){
-//         doc.addPage();
-//       }
-
-//       doc.fontSize(15)
-//         .fillColor("#0d47a1")
-//         .text(`Question ${ans.questionNumber}`,{continued:true});
-
-//       doc.fontSize(12)
-//         .fillColor("#2e7d32")
-//         .text(`   Score: ${ans.qualityScore}/10`);
-
-//       doc.moveDown();
-
-//       doc.fontSize(12).fillColor("#000").text("Student Answer");
-
-//       doc.fontSize(11)
-//         .fillColor("#444")
-//         .text(ans.extractedAnswer,{
-//           width:500,
-//           align:"justify"
-//         });
-
-//       doc.moveDown();
-
-//       if(ans.strengths?.length){
-//         doc.fontSize(12).fillColor("#2e7d32").text("Strengths");
-
-//         ans.strengths.forEach((s:string)=>{
-//           doc.fontSize(11).fillColor("#444").text(`• ${s}`);
-//         });
-
-//         doc.moveDown();
-//       }
-
-//       if(ans.improvements?.length){
-//         doc.fontSize(12).fillColor("#f57f17").text("Areas for Improvement");
-
-//         ans.improvements.forEach((i:string)=>{
-//           doc.fontSize(11).fillColor("#444").text(`• ${i}`);
-//         });
-
-//         doc.moveDown();
-//       }
-
-//       if(ans.correctAnswer){
-//         doc.fontSize(12).fillColor("#1565c0").text("Correct Answer");
-
-//         doc.fontSize(11)
-//           .fillColor("#444")
-//           .text(ans.correctAnswer,{
-//             width:500,
-//             align:"justify"
-//           });
-
-//         doc.moveDown();
-//       }
-
-//       doc.fontSize(12).fillColor("#000").text("Detailed Feedback");
-
-//       doc.fontSize(11)
-//         .fillColor("#444")
-//         .text(ans.detailedFeedback,{
-//           width:500,
-//           align:"justify"
-//         });
-
-//       doc.moveDown();
-
-//       doc.strokeColor("#e0e0e0")
-//         .lineWidth(1)
-//         .moveTo(50,doc.y)
-//         .lineTo(545,doc.y)
-//         .stroke();
-
-//       doc.moveDown(2);
-
-//     });
-
-//     /* IMPORTANT: close stream */
-//     doc.end();
-
-//   } catch (error) {
-
-//     console.error("PDF generation failed:", error);
-
-//     if (!res.headersSent) {
-//       res.status(500).json({ error: "Failed to generate PDF" });
-//     }
-
-//   }
-// }
-
-import PDFDocument from "pdfkit";
-import { Request, Response } from "express";
-
 export function generateEvaluationPDF(req: Request, res: Response) {
-
   const {
     studentName,
     classLevel,
@@ -609,200 +180,255 @@ export function generateEvaluationPDF(req: Request, res: Response) {
     totalAnswers,
     averageScore,
     overallFeedback,
-    answerEvaluations
+    answerEvaluations,
   } = req.body;
 
   const doc = new PDFDocument({
     size: "A4",
-    margins: { top: 90, bottom: 80, left: 60, right: 60 },
-    bufferPages: true
+    margins: { top: 58, bottom: 56, left: 54, right: 54 },
+    bufferPages: true,
   });
 
-  res.setHeader("Content-Type","application/pdf");
-  res.setHeader("Content-Disposition","attachment; filename=evaluation-report.pdf");
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", "attachment; filename=evaluation-report.pdf");
 
   doc.pipe(res);
 
   const pageWidth = doc.page.width;
   const pageHeight = doc.page.height;
-  const contentWidth = pageWidth - 120;
+  const left = 54;
+  const right = pageWidth - 54;
+  const contentWidth = pageWidth - left * 2;
+  const contentBottom = pageHeight - 76;
+  const footerY = pageHeight - 28;
+  const footerRuleY = pageHeight - 38;
 
-  /* HEADER */
+  const setBodyText = (fontSize = 11, color = "#263238", bold = false) => {
+    doc.fillColor(color);
+    doc.fontSize(fontSize);
+    doc.font(bold ? "Helvetica-Bold" : "Helvetica");
+  };
 
-  doc.rect(0,0,pageWidth,70).fill("#2f3e52");
+  const drawPageHeader = () => {
+    doc.save();
+    doc.strokeColor("#d1d5db").moveTo(left, 36).lineTo(right, 36).stroke();
+    doc.fillColor("#0f172a");
+    doc.font("Helvetica-Bold").fontSize(12).text("MCQGyaan AI", left, 16);
+    doc.font("Helvetica").fontSize(8.5).fillColor("#64748b").text("Answer Sheet Evaluation Report", right, 18, {
+      width: 140,
+      align: "right",
+      lineBreak: false,
+    });
+    doc.restore();
+  };
 
-  doc.fillColor("white")
-     .fontSize(20)
-     .text("Answer Sheet Evaluation Report",60,30);
+  const drawPageFooter = (pageNumber: number, totalPages: number) => {
+    doc.save();
+    doc.strokeColor("#e5e7eb").moveTo(left, footerRuleY).lineTo(right, footerRuleY).stroke();
+    doc.fillColor("#64748b").font("Helvetica").fontSize(8.25);
 
-  doc.fontSize(14)
-     .text("MCQGyaan AI",pageWidth-150,30);
+    const leftText = "Max Brain Technologies";
+    const centerText = `Page ${pageNumber} of ${totalPages}`;
+    const rightText = getServerAppUrl();
 
-  doc.fillColor("black");
+    const leftWidth = doc.widthOfString(leftText);
+    const centerWidth = doc.widthOfString(centerText);
+    const rightWidth = doc.widthOfString(rightText);
 
-  doc.y = 100;
+    doc.text(leftText, left, footerY, {
+      width: Math.max(leftWidth + 4, 140),
+      lineBreak: false,
+    });
+    doc.text(centerText, pageWidth / 2 - centerWidth / 2, footerY, {
+      width: Math.max(centerWidth + 4, 90),
+      align: "center",
+      lineBreak: false,
+    });
+    doc.text(rightText, pageWidth - rightWidth - left, footerY, {
+      width: Math.max(rightWidth + 4, 140),
+      align: "right",
+      lineBreak: false,
+    });
+    doc.restore();
+  };
 
-  /* STUDENT INFO */
+  const ensureSpace = (requiredHeight: number) => {
+    if (doc.y + requiredHeight <= contentBottom) return;
+    doc.addPage();
+    doc.y = 52;
+  };
 
-  doc.fontSize(14)
-     .text(`Student Name: ${studentName}`,60,doc.y,{width:contentWidth});
+  const blockHeight = (text: string | undefined, width: number, fontSize: number) => {
+    if (!text) return fontSize * 1.5;
+    doc.font("Helvetica").fontSize(fontSize);
+    return Math.max(doc.heightOfString(text, { width }), fontSize * 1.5);
+  };
 
-  doc.fontSize(12)
-     .text(`Class: ${classLevel} | Subject: ${subject} | Total Answers: ${totalAnswers}`,{
-       width:contentWidth
-     });
+  const bulletHeight = (items: string[] | undefined, width: number, fontSize: number) => {
+    if (!items?.length) return 0;
+    return items.reduce((total, item) => total + blockHeight(item, width - 10, fontSize) + 2, 0);
+  };
 
-  doc.moveDown(2);
+  const drawSectionTitle = (title: string, accent = "#1d4ed8") => {
+    setBodyText(14, accent, true);
+    doc.text(title, left, doc.y, { width: contentWidth });
+    doc.moveDown(0.12);
+    doc.strokeColor("#d7dce2").moveTo(left, doc.y).lineTo(right, doc.y).stroke();
+    doc.moveDown(0.35);
+  };
 
-  /* SUMMARY */
-
-  doc.fontSize(18)
-     .fillColor("#1a237e")
-     .text("Evaluation Summary",{width:contentWidth});
-
-  doc.moveDown(0.5);
-
-  doc.fontSize(12)
-     .fillColor("black")
-     .text(`Average Score: ${averageScore}/10`,{width:contentWidth});
-
-  doc.moveDown();
-
-  doc.fontSize(13)
-     .fillColor("#2f3e52")
-     .text("Overall Feedback",{width:contentWidth});
-
-  doc.moveDown(0.5);
-
-  doc.fontSize(11)
-     .fillColor("#444")
-     .text(overallFeedback,{
-       width:contentWidth,
-       align:"justify"
-     });
-
-  doc.moveDown(2);
-
-  /* QUESTIONS */
-
-  answerEvaluations.forEach((ans:any)=>{
-
-    if(doc.y > pageHeight - 150){
-      doc.addPage();
-    }
-
-    doc.fontSize(15)
-       .fillColor("#0d47a1")
-       .text(`Question ${ans.questionNumber} (${ans.qualityScore}/10)`,{
-         width:contentWidth
-       });
-
-    doc.moveDown();
-
-    doc.fontSize(12).fillColor("#000")
-       .text("Student Answer",{width:contentWidth});
-
-    doc.fontSize(11)
-       .fillColor("#444")
-       .text(ans.extractedAnswer,{
-         width:contentWidth,
-         align:"justify"
-       });
-
-    doc.moveDown();
-
-    if(ans.strengths?.length){
-
-      doc.fontSize(12)
-         .fillColor("#2e7d32")
-         .text("Strengths",{width:contentWidth});
-
-      ans.strengths.forEach((s:string)=>{
-        doc.fontSize(11)
-           .fillColor("#444")
-           .text(`• ${s}`,{width:contentWidth});
+  const drawBulletList = (items: string[]) => {
+    items.forEach((item) => {
+      setBodyText(10.5, "#374151", false);
+      doc.text(`- ${item}`, left + 2, doc.y, {
+        width: contentWidth - 12,
+        align: "left",
       });
+      doc.moveDown(0.05);
+    });
+  };
 
-      doc.moveDown();
+  drawPageHeader();
+  doc.y = 52;
+
+  doc.fillColor("#111827");
+  doc.font("Helvetica-Bold").fontSize(16).text(studentName || "Student", left, doc.y, {
+    width: contentWidth,
+  });
+  doc.moveDown(0.08);
+
+  setBodyText(10.5, "#475569", false);
+  doc.text(
+    `Class: ${classLevel ?? "N/A"}   |   Subject: ${subject || "N/A"}   |   Total Answers: ${totalAnswers ?? 0}`,
+    { width: contentWidth, lineGap: 1.1 },
+  );
+
+  doc.moveDown(0.45);
+  drawSectionTitle("Evaluation Summary");
+
+  const summaryFeedback = overallFeedback || "No overall feedback was provided.";
+  const summaryFeedbackHeight = blockHeight(summaryFeedback, contentWidth - 24, 10.5);
+  const summaryCardHeight = 34 + summaryFeedbackHeight;
+
+  ensureSpace(summaryCardHeight);
+  const summaryY = doc.y;
+  doc.fillColor("#0f172a");
+  doc.font("Helvetica-Bold").fontSize(12).text("Average Score", left, summaryY, {
+    width: contentWidth - 110,
+  });
+  doc.font("Helvetica-Bold").fontSize(22).fillColor("#1d4ed8").text(
+    `${Number(averageScore ?? 0).toFixed(1)}/10`,
+    right - 100,
+    summaryY - 2,
+    { width: 100, align: "right" },
+  );
+  setBodyText(10.5, "#475569", false);
+  doc.text(summaryFeedback, left, summaryY + 18, {
+    width: contentWidth,
+    align: "justify",
+    lineGap: 1.15,
+  });
+  doc.y = summaryY + summaryCardHeight + 4;
+
+  doc.moveDown(0.25);
+  drawSectionTitle("Answer Breakdown", "#0f766e");
+
+  const items = (answerEvaluations || []) as AnswerEvaluationItem[];
+  items.forEach((ans, index) => {
+    const answerHeight =
+      36 +
+      blockHeight(`Question ${ans.questionNumber}`, contentWidth - 130, 12.5) +
+      blockHeight(ans.extractedAnswer || "", contentWidth, 10.2) +
+      bulletHeight(ans.strengths, contentWidth, 10.2) +
+      bulletHeight(ans.improvements, contentWidth, 10.2) +
+      blockHeight(ans.correctAnswer || "", contentWidth, 10.2) +
+      blockHeight(ans.detailedFeedback || "", contentWidth, 10.2);
+
+    ensureSpace(answerHeight + 18);
+
+    const startY = doc.y;
+    const cardHeight = Math.max(answerHeight, 98);
+
+    let innerY = startY;
+
+    doc.fillColor("#0f172a");
+    doc.font("Helvetica-Bold").fontSize(12.5).text(`Question ${ans.questionNumber}`, left, innerY, {
+      width: contentWidth - 110,
+    });
+    setBodyText(10.25, "#1d4ed8", true);
+    doc.text(`Marks: ${typeof ans.qualityScore === "number" ? ans.qualityScore : "N/A"}/10`, right - 96, innerY, {
+      width: 96,
+      align: "right",
+    });
+    innerY += 16;
+    doc.strokeColor("#e5e7eb").moveTo(left, innerY).lineTo(right, innerY).stroke();
+    innerY += 8;
+
+    setBodyText(10.5, "#0f172a", true);
+    doc.text("Student Answer", left, innerY, { width: contentWidth });
+    innerY += 12;
+    setBodyText(10, "#334155", false);
+    doc.text(ans.extractedAnswer || "No answer extracted.", left, innerY, {
+      width: contentWidth,
+      align: "justify",
+      lineGap: 1.1,
+    });
+    innerY = doc.y + 4;
+
+    if (ans.strengths?.length) {
+      setBodyText(10.5, "#15803d", true);
+      doc.text("Strengths", left, innerY, { width: contentWidth });
+      innerY += 12;
+      doc.y = innerY;
+      drawBulletList(ans.strengths);
+      innerY = doc.y + 4;
     }
 
-    if(ans.improvements?.length){
+    if (ans.improvements?.length) {
+      setBodyText(10.5, "#c2410c", true);
+      doc.text("Areas for Improvement", left, innerY, { width: contentWidth });
+      innerY += 12;
+      doc.y = innerY;
+      drawBulletList(ans.improvements);
+      innerY = doc.y + 4;
+    }
 
-      doc.fontSize(12)
-         .fillColor("#f57f17")
-         .text("Areas for Improvement",{width:contentWidth});
-
-      ans.improvements.forEach((i:string)=>{
-        doc.fontSize(11)
-           .fillColor("#444")
-           .text(`• ${i}`,{width:contentWidth});
+    if (ans.correctAnswer) {
+      setBodyText(10.5, "#1d4ed8", true);
+      doc.text("Correct Answer", left, innerY, { width: contentWidth });
+      innerY += 12;
+      setBodyText(10, "#334155", false);
+      doc.text(ans.correctAnswer, left, innerY, {
+        width: contentWidth,
+        align: "justify",
+        lineGap: 1.1,
       });
-
-      doc.moveDown();
+      innerY = doc.y + 4;
     }
 
-    if(ans.correctAnswer){
+    setBodyText(10.5, "#0f172a", true);
+    doc.text("Detailed Feedback", left, innerY, { width: contentWidth });
+    innerY += 12;
+    setBodyText(10, "#334155", false);
+    doc.text(ans.detailedFeedback || "No detailed feedback provided.", left, innerY, {
+      width: contentWidth,
+      align: "justify",
+      lineGap: 1.1,
+    });
 
-      doc.fontSize(12)
-         .fillColor("#1565c0")
-         .text("Correct Answer",{width:contentWidth});
+    doc.y = Math.max(doc.y + 8, startY + cardHeight + 4);
 
-      doc.fontSize(11)
-         .fillColor("#444")
-         .text(ans.correctAnswer,{
-           width:contentWidth,
-           align:"justify"
-         });
-
-      doc.moveDown();
+    if (index < items.length - 1) {
+      doc.moveDown(0.3);
     }
-
-    doc.fontSize(12)
-       .fillColor("#000")
-       .text("Detailed Feedback",{width:contentWidth});
-
-    doc.fontSize(11)
-       .fillColor("#444")
-       .text(ans.detailedFeedback,{
-         width:contentWidth,
-         align:"justify"
-       });
-
-    doc.moveDown();
-
-    doc.moveTo(60,doc.y)
-       .lineTo(pageWidth-60,doc.y)
-       .strokeColor("#e0e0e0")
-       .stroke();
-
-    doc.moveDown(2);
-
   });
 
-  /* FOOTER */
-
   const pages = doc.bufferedPageRange();
-
-  for (let i = 0; i < pages.count; i++) {
-
+  const totalPages = pages.count;
+  for (let i = 0; i < pages.count; i += 1) {
     doc.switchToPage(i);
-
-    doc.fontSize(9)
-       .fillColor("gray")
-       .text(
-         "Max Brain Technologies – https://themaxbrain.com/",
-         60,
-         pageHeight - 40,
-         { width: contentWidth, align: "center", lineBreak:false }
-       );
-
-    doc.fontSize(9)
-       .text(
-         `Page ${i + 1} of ${pages.count}`,
-         pageWidth - 120,
-         pageHeight - 40,
-         { lineBreak:false }
-       );
+    drawPageHeader();
+    drawPageFooter(i + 1, totalPages);
   }
 
   doc.end();

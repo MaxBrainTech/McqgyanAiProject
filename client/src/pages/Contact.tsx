@@ -12,23 +12,24 @@ import { Mail, Phone, MapPin, Clock, Send, MessageSquare } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 
-const contactSchema = z.object({
-  fullName: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-  phoneNumber: z.string().optional(),
-  subject: z.string().min(5, "Subject must be at least 5 characters"),
-  message: z.string().min(10, "Message must be at least 10 characters"),
-  category: z.enum(["support", "partnership", "feedback", "other"]),
-});
+const getContactSchema = (t: (key: string) => string) =>
+  z.object({
+    fullName: z.string().min(2, t("contact_validation_name")),
+    email: z.string().email(t("contact_validation_email")),
+    phoneNumber: z.string().optional(),
+    subject: z.string().min(5, t("contact_validation_subject")),
+    message: z.string().min(10, t("contact_validation_message")),
+    category: z.enum(["support", "partnership", "feedback", "other"]),
+  });
 
-type ContactForm = z.infer<typeof contactSchema>;
+type ContactForm = z.infer<ReturnType<typeof getContactSchema>>;
 
 export default function Contact() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { t } = useTranslation();
   const form = useForm<ContactForm>({
-    resolver: zodResolver(contactSchema),
+    resolver: zodResolver(getContactSchema(t)),
     defaultValues: {
       fullName: "",
       email: "",
@@ -48,15 +49,15 @@ export default function Contact() {
       console.log("Form submitted:", data);
 
       toast({
-        title: "Message Sent!",
-        description: "Thank you for reaching out. We'll get back to you within 24 hours.",
+        title: t("contact_message_sent_title"),
+        description: t("contact_message_sent_desc"),
       });
 
       form.reset();
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
+        title: t("error"),
+        description: t("contact_message_failed"),
         variant: "destructive",
       });
     } finally {
@@ -178,7 +179,7 @@ export default function Contact() {
                 <div>
                   <h3 className="font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
                     <MessageSquare className="h-5 w-5 text-blue-600" />
-                    Common Inquiries
+                    {t("common_inquiries")}
                   </h3>
                   <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                     <li className="flex items-center gap-2">
@@ -217,7 +218,7 @@ export default function Contact() {
                         name="fullName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t("form_email")}</FormLabel>
+                            <FormLabel>{t("form_full_name")}</FormLabel>
                             <FormControl>
                               <Input
                                 placeholder="John Doe"
@@ -301,10 +302,10 @@ export default function Contact() {
                       name="subject"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Subject</FormLabel>
+                          <FormLabel>{t("form_subject")}</FormLabel>
                           <FormControl>
                             <Input
-                              placeholder="What is this regarding?"
+                              placeholder={t("form_subject_placeholder")}
                               {...field}
                               data-testid="input-subject"
                             />
@@ -323,7 +324,7 @@ export default function Contact() {
                           <FormLabel>{t("form_message")}</FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="Tell us what's on your mind... (minimum 10 characters)"
+                              placeholder={t("form_message_placeholder")}
                               rows={5}
                               {...field}
                               data-testid="textarea-message"
@@ -355,7 +356,7 @@ export default function Contact() {
                     </Button>
 
                     <p className="text-xs text-center text-gray-500 dark:text-gray-400">
-                      We'll get back to you within 24 business hours. Thank you!
+                      {t("contact_response_note")}
                     </p>
                   </form>
                 </Form>

@@ -22,9 +22,11 @@ i18n
   resources,
 
   fallbackLng: "en",
+  supportedLngs: ["en", "hi"],
 
   detection: {
     order: ["localStorage", "navigator"], // priority
+    lookupLocalStorage: "lang",
     caches: ["localStorage"]              // save here
   },
 
@@ -32,6 +34,19 @@ i18n
     escapeValue: false
   }
 });
+
+const syncDocumentLanguage = (language: string) => {
+  if (typeof document === "undefined") return;
+
+  const isHindi = language.toLowerCase().startsWith("hi");
+  document.documentElement.lang = isHindi ? "hi" : "en";
+  document.documentElement.classList.toggle("lang-hi", isHindi);
+};
+
+syncDocumentLanguage(i18n.language || "en");
+i18n.on("languageChanged", syncDocumentLanguage);
+
+export default i18n;
 
 // i18n
 //   .use(initReactI18next)

@@ -5,6 +5,7 @@ import { CheckCircle, XCircle, Lightbulb, Sparkles, Volume2, VolumeX } from "luc
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { getLocalizedText } from "@/lib/quizText";
 
 interface FeedbackSectionProps {
   score: number;
@@ -33,6 +34,14 @@ export default function FeedbackSection({
   const { t } = useTranslation();
 
   const percentage = (score / maxScore) * 100;
+  const explanationText =
+    getLocalizedText(feedback) ||
+    (isCorrect
+      ? t("answer_correct_explanation_fallback")
+      : t("answer_wrong_explanation_fallback"));
+  const encouragementText =
+    getLocalizedText(encouragement) ||
+    (isCorrect ? t("excellent_work") : t("keep_learning"));
   const [isPlaying, setIsPlaying] = useState(false);
   const [voicesLoaded, setVoicesLoaded] = useState(false);
 
@@ -135,16 +144,16 @@ export default function FeedbackSection({
     >
 
       <Card
-        className={`p-4 sm:p-5 md:p-6 ${
+        className={`overflow-hidden border-2 shadow-xl ${
           isCorrect
-            ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
+            ? "bg-green-50/80 dark:bg-green-950/20 border-green-200 dark:border-green-800"
             : score === 5
-            ? "bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800"
-            : "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800"
+            ? "bg-yellow-50/80 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800"
+            : "bg-red-50/80 dark:bg-red-950/20 border-red-200 dark:border-red-800"
         }`}
       >
 
-        <div className="space-y-3 sm:space-y-4">
+        <div className="space-y-4 p-4 sm:p-5 md:p-6">
 
           <div className="flex items-center justify-between flex-wrap gap-3 sm:gap-4">
 
@@ -157,6 +166,19 @@ export default function FeedbackSection({
               )}
 
               <div>
+
+                <div className="mb-1 flex items-center gap-2">
+                  <Badge
+                    variant={isCorrect ? "default" : "destructive"}
+                    className="rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide"
+                  >
+                    {isCorrect
+                      ? t("correct")
+                      : score === 5
+                      ? t("partial_credit")
+                      : t("incorrect")}
+                  </Badge>
+                </div>
 
                 <h3 className="text-lg sm:text-xl font-bold">
                   {isCorrect
@@ -175,17 +197,26 @@ export default function FeedbackSection({
             </div>
 
             <Badge
-              variant={isCorrect ? "default" : "destructive"}
-              className="text-base sm:text-lg px-3 sm:px-4 py-1.5 sm:py-2"
+              variant="outline"
+              className="text-base sm:text-lg px-3 sm:px-4 py-1.5 sm:py-2 bg-background/80"
             >
               {percentage.toFixed(0)}%
             </Badge>
 
           </div>
 
-          <div className="bg-card p-3 sm:p-4 rounded-lg">
-            <p className="text-base leading-relaxed font-medium">
-              {feedback}
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/25">
+            <div className="mb-2 flex items-center gap-2">
+              <Lightbulb className="h-5 w-5 text-amber-600 dark:text-amber-300" />
+              <p className="font-bold text-amber-900 dark:text-amber-100">
+                {t("explanation")}
+              </p>
+            </div>
+            <p className="mb-2 text-sm font-medium text-amber-800 dark:text-amber-200">
+              {isCorrect ? t("why_correct") : t("why_wrong")}
+            </p>
+            <p className="text-base leading-relaxed text-amber-950 dark:text-amber-50">
+              {explanationText}
             </p>
           </div>
 
@@ -206,7 +237,7 @@ export default function FeedbackSection({
                   <Button
                     variant={isPlaying ? "secondary" : "outline"}
                     onClick={isPlaying ? stopSpeech : speakAnswer}
-                    className="gap-2 flex-shrink-0 h-11 text-base"
+                    className="gap-2 flex-shrink-0 h-11 rounded-xl px-4 text-base"
                     data-testid="button-pronunciation"
                   >
 
@@ -247,7 +278,7 @@ export default function FeedbackSection({
               <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-accent mt-0.5 flex-shrink-0" />
 
               <p className="text-base font-medium italic">
-                {encouragement}
+                {encouragementText}
               </p>
 
             </div>
@@ -259,7 +290,7 @@ export default function FeedbackSection({
             <Button
               onClick={onNext}
               size="lg"
-              className="w-full sm:flex-1 text-base"
+              className="w-full sm:flex-1 rounded-xl px-5 py-6 text-base"
               data-testid="button-next-question"
             >
               {t("next_question")}
@@ -269,7 +300,7 @@ export default function FeedbackSection({
               onClick={onEndTest}
               variant="outline"
               size="lg"
-              className="w-full sm:flex-1 text-base"
+              className="w-full sm:flex-1 rounded-xl px-5 py-6 text-base"
               data-testid="button-end-test"
             >
               {t("end_test")}

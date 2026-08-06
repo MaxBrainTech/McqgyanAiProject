@@ -1,0 +1,120 @@
+ROUTES FILE LOADED
+[dotenv@17.3.1] injecting env (0) from .env [2m-- tip: ⚙️  enable debug logging with { debug: true }[0m
+DATABASE_URL: postgresql://postgres:password@helium/heliumdb?sslmode=disable
+12:52:27 PM [express] 🚀 serving on port 5000
+
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+12:53:06 PM [express] POST /api/teacher/login 200 in 85ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests 200 in 17ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/2b10a502-fab0-40fe-8f0c-3078545c4c57 200 in 13ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/3429ced2-846a-4f62-9a3f-ec5a7e53d4e2 200 in 6ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/1bcdd8bd-7fe7-45cb-aee8-608419c8f7b8 200 in 18ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/018ee6d2-fa43-461c-9736-0bc5f78bdeed 200 in 20ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/103ffc53-4857-44ad-87b6-919dab48b8a9 200 in 20ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/08ce98ba-d814-4c70-b6b5-68ef6027c0be 200 in 15ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/1616a368-42d3-4ad5-997f-6f4746ba7751 200 in 3ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/7d948f9d-01b0-4238-916e-8e98d3986422 200 in 3ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/006fa978-0ecf-4933-8d51-1b96c193559c 200 in 3ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/b1e895a5-66ac-4efb-ab08-fd2d3995ec10 200 in 3ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/57ac6d0c-8d3f-4bb7-a887-4c55a708bc5a 200 in 3ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/a1c6a00a-be79-453e-8da4-abc2710959a5 200 in 2ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/3386bf25-d56b-4e85-9c8a-74baffa48aa4 200 in 2ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/af37fa31-66e5-4485-b0fa-ad69bc8ca6e5 200 in 3ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/808aa6ff-eaa0-4d65-9fa9-7c3ef01dac96 200 in 2ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/58a79cce-a1e1-45a0-a4a6-193ce2d2b37d 200 in 2ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/3253b815-8aa1-4af9-855c-05c6fc178375 200 in 2ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/95abe057-d3b8-4e2d-8ec3-c168adc37aef 200 in 2ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/39af6539-e7eb-4e49-939b-c0b47d74f8b9 200 in 3ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/81a11d54-1bd3-423f-9cad-000b0cd190a1 200 in 2ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/a1324039-ecf7-4d97-9048-602a730786f7 200 in 3ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/a428df39-a94c-477a-af19-d6415842c51d 200 in 3ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/803c59fc-4916-4325-a031-fc28489182d3 200 in 3ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/95bc28b6-a87e-4cf6-a0e5-10417726c9fa 200 in 3ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/9e85181b-dbb2-43fd-a23d-8acb7ed3d999 200 in 2ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/caa027af-4faf-47e5-ae03-815725de4108 200 in 2ms
+12:53:07 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/7c8e1234-f223-482b-a719-8c1586fff16d 200 in 2ms
+12:55:32 PM [express] GET /api/chapters/Chemistry 200 in 1ms
+12:55:46 PM [express] GET /api/chapters/Chemistry 304 in 0ms
+12:56:43 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/7c8e1234-f223-482b-a719-8c1586fff16d 304 in 13ms
+12:58:04 PM [express] GET /api/custom-test/LGTLY9 200 in 12ms
+12:58:04 PM [express] POST /api/custom-test/start 200 in 38ms
+[AI] Evaluating answer: "A..."
+[AI] Answer evaluated in 4.5s using gpt-4o-mini - Score: 0/10 - Correct: false
+12:58:33 PM [express] POST /api/custom-test/evaluate 200 in 4486ms
+[AI] Evaluating answer: "C..."
+[AI] Answer evaluated in 3.2s using gpt-4o-mini - Score: 0/10 - Correct: false
+12:58:56 PM [express] POST /api/custom-test/evaluate 200 in 3231ms
+[AI] Evaluating answer: "A..."
+[AI] Answer evaluated in 3.4s using gpt-4o-mini - Score: 0/10 - Correct: false
+12:59:22 PM [express] POST /api/custom-test/evaluate 200 in 3425ms
+[AI] Evaluating answer: "C..."
+[AI] Answer evaluated in 3.9s using gpt-4o-mini - Score: 0/10 - Correct: false
+12:59:38 PM [express] POST /api/custom-test/evaluate 200 in 3942ms
+[AI] Evaluating answer: "C..."
+[AI] Answer evaluated in 7.1s using gpt-4o-mini - Score: 0/10 - Correct: false
+1:00:25 PM [express] POST /api/custom-test/evaluate 200 in 7154ms
+[AI] Evaluating answer: "C..."
+[AI] Answer evaluated in 6.9s using gpt-4o-mini - Score: 0/10 - Correct: false
+1:00:49 PM [express] POST /api/custom-test/evaluate 200 in 6891ms
+[AI] Evaluating answer: "C..."
+[AI] Answer evaluated in 3.0s using gpt-4o-mini - Score: 0/10 - Correct: false
+1:01:02 PM [express] POST /api/custom-test/evaluate 200 in 3000ms
+[AI] Evaluating answer: "C..."
+[AI] Answer evaluated in 3.3s using gpt-4o-mini - Score: 0/10 - Correct: false
+1:01:15 PM [express] POST /api/custom-test/evaluate 200 in 3330ms
+[AI] Evaluating answer: "B..."
+[AI] Answer evaluated in 6.3s using gpt-4o-mini - Score: 0/10 - Correct: false
+1:01:34 PM [express] POST /api/custom-test/evaluate 200 in 6291ms
+[AI] Evaluating answer: "B..."
+[AI] Answer evaluated in 3.4s using gpt-4o-mini - Score: 0/10 - Correct: false
+1:01:58 PM [express] POST /api/custom-test/evaluate 200 in 3459ms
+[AI] Evaluating answer: "A..."
+[AI] Answer evaluated in 3.6s using gpt-4o-mini - Score: 0/10 - Correct: false
+[AI] Evaluating answer: "C..."
+[AI] Answer evaluated in 3.4s using gpt-4o-mini - Score: 0/10 - Correct: false
+[AI] Evaluating answer: "A..."
+[AI] Answer evaluated in 3.2s using gpt-4o-mini - Score: 0/10 - Correct: false
+[AI] Evaluating answer: "C..."
+[AI] Answer evaluated in 3.1s using gpt-4o-mini - Score: 0/10 - Correct: false
+[AI] Evaluating answer: "C..."
+[AI] Answer evaluated in 3.8s using gpt-4o-mini - Score: 0/10 - Correct: false
+[AI] Evaluating answer: "C..."
+[AI] Answer evaluated in 6.7s using gpt-4o-mini - Score: 0/10 - Correct: false
+[AI] Evaluating answer: "C..."
+[AI] Answer evaluated in 3.4s using gpt-4o-mini - Score: 0/10 - Correct: false
+[AI] Evaluating answer: "C..."
+[AI] Answer evaluated in 2.2s using gpt-4o-mini - Score: 0/10 - Correct: false
+[AI] Evaluating answer: "B..."
+[AI] Answer evaluated in 3.5s using gpt-4o-mini - Score: 0/10 - Correct: false
+[AI] Evaluating answer: "B..."
+[AI] Answer evaluated in 3.0s using gpt-4o-mini - Score: 0/10 - Correct: false
+1:02:34 PM [express] POST /api/custom-test/submit 200 in 35975ms
+1:04:24 PM [express] POST /api/teacher/login 200 in 74ms
+1:04:24 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests 304 in 3ms
+1:04:24 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/018ee6d2-fa43-461c-9736-0bc5f78bdeed 304 in 4ms
+1:04:24 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/08ce98ba-d814-4c70-b6b5-68ef6027c0be 304 in 5ms
+1:04:24 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/1bcdd8bd-7fe7-45cb-aee8-608419c8f7b8 304 in 2ms
+1:04:24 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/1616a368-42d3-4ad5-997f-6f4746ba7751 304 in 1ms
+1:04:24 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/3429ced2-846a-4f62-9a3f-ec5a7e53d4e2 304 in 16ms
+1:04:24 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/103ffc53-4857-44ad-87b6-919dab48b8a9 304 in 3ms
+1:04:24 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/2b10a502-fab0-40fe-8f0c-3078545c4c57 304 in 2ms
+1:04:24 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/7d948f9d-01b0-4238-916e-8e98d3986422 304 in 3ms
+1:04:24 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/006fa978-0ecf-4933-8d51-1b96c193559c 304 in 2ms
+1:04:24 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/a1c6a00a-be79-453e-8da4-abc2710959a5 304 in 2ms
+1:04:24 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/b1e895a5-66ac-4efb-ab08-fd2d3995ec10 304 in 2ms
+1:04:24 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/57ac6d0c-8d3f-4bb7-a887-4c55a708bc5a 304 in 2ms
+1:04:24 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/3386bf25-d56b-4e85-9c8a-74baffa48aa4 304 in 2ms
+1:04:24 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/af37fa31-66e5-4485-b0fa-ad69bc8ca6e5 304 in 2ms
+1:04:24 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/808aa6ff-eaa0-4d65-9fa9-7c3ef01dac96 304 in 2ms
+1:04:24 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/3253b815-8aa1-4af9-855c-05c6fc178375 304 in 3ms
+1:04:24 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/58a79cce-a1e1-45a0-a4a6-193ce2d2b37d 304 in 2ms
+1:04:25 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/95abe057-d3b8-4e2d-8ec3-c168adc37aef 304 in 3ms
+1:04:25 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/39af6539-e7eb-4e49-939b-c0b47d74f8b9 304 in 2ms
+1:04:25 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/81a11d54-1bd3-423f-9cad-000b0cd190a1 304 in 3ms
+1:04:25 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/a1324039-ecf7-4d97-9048-602a730786f7 304 in 2ms
+1:04:25 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/95bc28b6-a87e-4cf6-a0e5-10417726c9fa 304 in 2ms
+1:04:25 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/a428df39-a94c-477a-af19-d6415842c51d 304 in 2ms
+1:04:25 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/803c59fc-4916-4325-a031-fc28489182d3 304 in 2ms
+1:04:25 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/9e85181b-dbb2-43fd-a23d-8acb7ed3d999 304 in 3ms
+1:04:25 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/caa027af-4faf-47e5-ae03-815725de4108 304 in 2ms
+1:04:25 PM [express] GET /api/teacher/c6350c3f-07fe-48c6-86af-71ad85073780/tests/7c8e1234-f223-482b-a719-8c1586fff16d 200 in 2ms

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Upload, X, Loader2, CheckCircle, AlertCircle, BookOpen } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 
 
@@ -29,6 +31,7 @@ interface EvaluationResult {
 }
 
 export default function AnswerSheetEvaluator() {
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const { toast } = useToast();
   const [studentName, setStudentName] = useState<string>("");
@@ -42,6 +45,22 @@ export default function AnswerSheetEvaluator() {
 
   const [questionImages, setQuestionImages] = useState<string[]>([]);
   const [questionPreviews, setQuestionPreviews] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    window.history.scrollRestoration = "manual";
+
+    return () => {
+      window.history.scrollRestoration = "auto";
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!evaluationResult) return;
+
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [evaluationResult]);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -162,6 +181,7 @@ export default function AnswerSheetEvaluator() {
 
       const data = await res.json();
       setEvaluationResult(data);
+      window.scrollTo({ top: 0, behavior: "auto" });
 
       toast({
         title: "Evaluation Complete!",
@@ -187,6 +207,19 @@ export default function AnswerSheetEvaluator() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-6">
       <div className="max-w-6xl mx-auto">
+        <button
+          onClick={() => {
+            navigate("/#features-section");
+            setTimeout(() => {
+              const section = document.getElementById("features-section");
+              section?.scrollIntoView({ behavior: "smooth" });
+            }, 100);
+          }}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white shadow-sm border hover:bg-gray-50 transition"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-sm font-medium">Back</span>
+        </button>
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -395,8 +428,8 @@ export default function AnswerSheetEvaluator() {
           /* Evaluation Results */
           <div className="space-y-6">
             {/* Overall Summary */}
-            <Card className="border-2 border-blue-500">
-              <CardHeader>
+            <Card className="overflow-hidden border-2 border-blue-500 shadow-sm">
+              <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-white">
                 <CardTitle className="flex items-center gap-2">
                   <CheckCircle className="w-6 h-6 text-green-600" />
                   {t("answerEvaluator.complete")}
@@ -410,8 +443,10 @@ export default function AnswerSheetEvaluator() {
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-semibold">{t("answerEvaluator.averageScore")}:</span>
-                      <span className={`text-2xl font-bold ${getScoreColor(evaluationResult.averageScore)}`}>
-                        {evaluationResult.averageScore.toFixed(1)}/10
+                      <span
+                        className={`text-2xl font-bold tabular-nums ${getScoreColor(evaluationResult.averageScore)}`}
+                      >
+                        Marks: {evaluationResult.averageScore.toFixed(1)}/10
                       </span>
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
@@ -432,16 +467,31 @@ export default function AnswerSheetEvaluator() {
 
             {/* Individual Answer Evaluations */}
             {evaluationResult.answerEvaluations.map((evaluation, index) => (
-              <Card key={index}>
-                <CardHeader>
+              <Card key={index} className="overflow-hidden shadow-sm">
+                <CardHeader className="border-b bg-slate-50/80">
                   <CardTitle className="flex items-center justify-between">
-                    <span>{t("answerEvaluator.answer")} {evaluation.questionNumber}</span>
-                    <span className={`text-xl font-bold ${getScoreColor(evaluation.qualityScore)}`}>
-                      {evaluation.qualityScore}/10
+
+                    {/* LEFT */}
+                    <div className="flex items-center gap-3">
+                      <span className="text-slate-800 text-xxxl font-bold tracking-wide">
+                        Answer
+                      </span>
+
+                      <span className="flex items-center justify-center h-8 w-8 rounded-full bg-indigo-100 text-indigo-600 font-bold text-xl shadow-sm">
+                        {evaluation.questionNumber}
+                      </span>
+                    </div>
+
+                    {/* RIGHT (MARKS) */}
+                    <span
+                      className={`inline-flex items-center rounded-full px-7 py-2 text-lg font-bold tabular-nums ${getScoreColor(evaluation.qualityScore)} bg-white border border-slate-200 shadow-sm`}
+                    >
+                      Marks: {evaluation.qualityScore}/10
                     </span>
+
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-5 py-5">
                   <div>
                     <h4 className="font-semibold mb-2">{t("answerEvaluator.studentAnswer")}:</h4>
                     <p className="text-sm bg-gray-50 dark:bg-gray-900 p-3 rounded border italic">
@@ -519,23 +569,12 @@ export default function AnswerSheetEvaluator() {
               className="w-full mb-4"
               onClick={async () => {
                 try {
-
-                  const res = await fetch("/api/download-evaluation-pdf", {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                      ...evaluationResult,
-                      studentName,
-                      classLevel,
-                      subject
-                    })
+                  const res = await apiRequest("POST", "/api/download-evaluation-pdf", {
+                    ...evaluationResult,
+                    studentName,
+                    classLevel,
+                    subject,
                   });
-
-                  if (!res.ok) {
-                    throw new Error("PDF generation failed");
-                  }
 
                   const blob = await res.blob();
                   const url = window.URL.createObjectURL(blob);

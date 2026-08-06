@@ -35,7 +35,7 @@
 //   const [answer, setAnswer] = useState("");
 //   const [selectedOption, setSelectedOption] = useState("");
 
-  
+
 
 //   const isMcq = questionType === "mcq";
 
@@ -153,7 +153,7 @@
 
 //               </div>
 
-             
+
 
 //             </RadioGroup>
 
@@ -228,6 +228,9 @@ interface QuestionCardProps {
   language?: string;
   onSubmit: (answer: string) => void;
   isSubmitting?: boolean;
+  value?: string;
+  onValueChange?: (value: string) => void;
+  disabled?: boolean;
 }
 
 export default function QuestionCard({
@@ -239,6 +242,9 @@ export default function QuestionCard({
   language = "English",
   onSubmit,
   isSubmitting = false,
+  value,
+  onValueChange,
+  disabled = false,
 }: QuestionCardProps) {
 
   const { t } = useTranslation();
@@ -248,13 +254,17 @@ export default function QuestionCard({
 
   const isMcq =
     (questionType || "").toLowerCase() === "mcq" || (options?.length ?? 0) > 0;
+  const activeAnswer = value ?? answer;
+  const activeOption = value ?? selectedOption;
 
   const handleSubmit = () => {
-    const finalAnswer = isMcq ? selectedOption : answer;
+    const finalAnswer = isMcq ? activeOption : activeAnswer;
     if (finalAnswer.trim()) {
       onSubmit(finalAnswer);
-      setAnswer("");
-      setSelectedOption("");
+      if (!value) {
+        setAnswer("");
+        setSelectedOption("");
+      }
     }
   };
 
@@ -328,7 +338,11 @@ export default function QuestionCard({
               </label>
             </div>
 
-            <RadioGroup value={selectedOption} onValueChange={setSelectedOption}>
+              <RadioGroup value={activeOption} onValueChange={(nextValue) => {
+                if (disabled) return;
+                if (onValueChange) onValueChange(nextValue);
+                setSelectedOption(nextValue);
+              }}>
 
               <div className="space-y-3">
 
@@ -339,12 +353,18 @@ export default function QuestionCard({
                     <div
                       key={index}
                       className="flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer"
-                      onClick={() => setSelectedOption(optionKey)}
+                      onClick={() => {
+                        if (!disabled) {
+                          if (onValueChange) onValueChange(optionKey);
+                          setSelectedOption(optionKey);
+                        }
+                      }}
                     >
                       <RadioGroupItem
                         value={optionKey}
                         id={`option-${index}`}
                         className="h-5 w-5"
+                        disabled={disabled}
                       />
 
                       <Label htmlFor={`option-${index}`} className="flex-1 text-lg">
@@ -377,9 +397,13 @@ export default function QuestionCard({
 
             <Textarea
               placeholder={t("type_answer")}
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
+              value={activeAnswer}
+              onChange={(e) => {
+                if (onValueChange) onValueChange(e.target.value);
+                setAnswer(e.target.value);
+              }}
               className="min-h-32 text-lg"
+              disabled={disabled}
             />
 
             <p className="text-base text-muted-foreground">
@@ -394,7 +418,7 @@ export default function QuestionCard({
 
         <Button
           onClick={handleSubmit}
-          disabled={(isMcq ? !selectedOption : !answer.trim()) || isSubmitting}
+          disabled={(isMcq ? !activeOption : !activeAnswer.trim()) || isSubmitting || disabled}
           className="w-full text-lg"
         >
 

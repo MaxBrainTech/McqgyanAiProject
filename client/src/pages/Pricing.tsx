@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const plans = [
   {
@@ -33,69 +34,61 @@ const plans = [
 
 export default function Pricing() {
   const [isYearly, setIsYearly] = useState(false);
+  const { t } = useTranslation();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 dark:from-gray-900 dark:to-black p-6">
-      {/* Title */}
-      <div className="text-center text-white mb-10">
-        <h1 className="text-3xl font-bold">Our Pricing & Plans</h1>
-        <p className="opacity-70">
-          Choose your plan that fits best for you.
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 p-6 dark:from-gray-900 dark:to-black">
+      <div className="mb-10 text-center text-white">
+        <h1 className="text-3xl font-bold">{t("pricing_legacy_title")}</h1>
+        <p className="opacity-70">{t("pricing_legacy_desc")}</p>
 
-        {/* Toggle Monthly / Yearly */}
-        <div className="mt-5 bg-white/20 p-2 rounded-xl inline-flex backdrop-blur">
+        <div className="mt-5 inline-flex rounded-xl bg-white/20 p-2 backdrop-blur">
           <button
             onClick={() => setIsYearly(false)}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold ${
-              !isYearly ? "bg-white text-black" : "text-white"
-            }`}
+            className={`rounded-lg px-4 py-2 text-sm font-semibold ${!isYearly ? "bg-white text-black" : "text-white"}`}
           >
-            Monthly
+            {t("month")}
           </button>
           <button
             onClick={() => setIsYearly(true)}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold ${
-              isYearly ? "bg-white text-black" : "text-white"
-            }`}
+            className={`rounded-lg px-4 py-2 text-sm font-semibold ${isYearly ? "bg-white text-black" : "text-white"}`}
           >
-            Yearly
+            {t("year")}
           </button>
         </div>
       </div>
 
-      {/* Pricing Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {plans.map((plan) => (
           <div
             key={plan.title}
-            className="bg-white/20 dark:bg-white/10 backdrop-blur-lg rounded-xl p-6 text-white shadow-lg"
+            className="rounded-xl bg-white/20 p-6 text-white shadow-lg backdrop-blur-lg dark:bg-white/10"
           >
-            <div className="inline-block bg-purple-500 text-xs font-bold px-3 py-1 rounded">
+            <div className="inline-block rounded bg-purple-500 px-3 py-1 text-xs font-bold">
               {plan.title}
             </div>
 
-            <h2 className="text-3xl font-bold mt-4">
+            <h2 className="mt-4 text-3xl font-bold">
               ${isYearly ? plan.yearly : plan.monthly}
-              <span className="text-sm opacity-70">/ {isYearly ? "year" : "mon"}</span>
+              <span className="text-sm opacity-70">/ {isYearly ? t("year") : t("month_short")}</span>
             </h2>
 
             <ul className="mt-4 space-y-2">
-              {plan.features.map((f) => (
-                <li key={f} className="flex gap-2 items-center">
-                  <span className="text-green-400">✔</span> {f}
+              {plan.features.map((feature) => (
+                <li key={feature} className="flex items-center gap-2">
+                  <span className="text-green-400">✓</span> {feature}
                 </li>
               ))}
 
-              {plan.missing.map((m) => (
-                <li key={m} className="flex gap-2 items-center opacity-50">
-                  <span className="text-red-400">✘</span> {m}
+              {plan.missing.map((feature) => (
+                <li key={feature} className="flex items-center gap-2 opacity-50">
+                  <span className="text-red-400">✕</span> {feature}
                 </li>
               ))}
             </ul>
 
-            <button className="mt-5 w-full py-2 bg-white text-black rounded-lg font-semibold hover:bg-gray-200">
-              BUY NOW
+            <button className="mt-5 w-full rounded-lg bg-white py-2 font-semibold text-black hover:bg-gray-200">
+              {t("buy_now")}
             </button>
           </div>
         ))}
@@ -103,13 +96,3 @@ export default function Pricing() {
     </div>
   );
 }
-
-
-
-
-
-
-
-// export default function Pricing() {
-//   return <div className="p-10 text-3xl font-bold">Pricing Page</div>;
-// }

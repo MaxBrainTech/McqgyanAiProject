@@ -2,11 +2,14 @@ import {
   type User, type InsertUser,
   type TestSession, type InsertTestSession,
   type Teacher, type InsertTeacher,
+  type StudentProfile, type InsertStudentProfile,
   type CustomTest, type InsertCustomTest,
+  type CustomTestSubmission, type InsertCustomTestSubmission,
   type CustomQuestion, type InsertCustomQuestion,
-  type AnswerSheetEvaluation, type InsertAnswerSheetEvaluation
+  type AnswerSheetEvaluation, type InsertAnswerSheetEvaluation,
+  type StudentScoreHistory, type InsertStudentScoreHistory
 } from "@shared/schema";
-import pool from "./db";
+import pool, { databaseReady, ensureStudentScoreHistoryTable } from "./db";
 
 // Normalize DB snake_case -> app camelCase for test_sessions
 const normalizeTestSession = (row: any) => {
@@ -15,6 +18,7 @@ const normalizeTestSession = (row: any) => {
     id: row.id,
     mode: row.mode,
     language: row.language,
+    subjectLanguage: row.subject_language ?? row.subjectLanguage ?? null,
     scienceCategory: row.science_category ?? row.scienceCategory ?? null,
     classLevel: row.class_level ?? row.classLevel,
     difficulty: row.difficulty,
@@ -28,6 +32,80 @@ const normalizeTestSession = (row: any) => {
     createdAt: row.created_at ?? row.createdAt,
     mcqTestId: row.mcq_test_id ?? row.mcqTestId ?? null,
   };
+};
+
+const normalizeCustomTest = (row: any) => {
+  if (!row) return row;
+  return {
+    ...row,
+    teacherId: row.teacherId ?? row.teacher_id ?? row.teacherID ?? null,
+    classLevel: row.classLevel ?? row.class_level ?? null,
+    durationMinutes: row.durationMinutes ?? row.duration_minutes ?? null,
+    numQuestions: row.numQuestions ?? row.num_questions ?? null,
+    testType: row.testType ?? row.test_type ?? null,
+    gptModel: row.gptModel ?? row.gpt_model ?? null,
+    shareCode: row.shareCode ?? row.share_code ?? null,
+    createdAt: row.createdAt ?? row.created_at ?? null,
+  };
+};
+
+const normalizeStudentScoreHistory = (row: any): StudentScoreHistory | undefined => {
+  if (!row) return row;
+  return {
+    id: row.id,
+    userId: row.user_id ?? row.userId,
+    userEmail: row.user_email ?? row.userEmail ?? null,
+    subject: row.subject,
+    mode: row.mode ?? null,
+    difficulty: row.difficulty ?? null,
+    language: row.language ?? "english",
+    score: row.score ?? 0,
+    maxScore: row.max_score ?? row.maxScore ?? 0,
+    percentage: row.percentage ?? 0,
+    totalQuestions: row.total_questions ?? row.totalQuestions ?? 0,
+    correctAnswers: row.correct_answers ?? row.correctAnswers ?? 0,
+    insights: row.insights ?? {},
+    createdAt: row.created_at ?? row.createdAt,
+  };
+};
+
+const normalizeStudentProfile = (row: any): StudentProfile | undefined => {
+  if (!row) return row;
+  const fullName = row.full_name ?? row.fullName ?? row.display_name ?? row.displayName ?? null;
+  return {
+    id: row.id,
+    userId: row.user_id ?? row.userId,
+    fullName,
+    displayName: row.display_name ?? row.displayName ?? fullName,
+    emailAddress: row.email_address ?? row.emailAddress ?? null,
+    classLevel: row.class_level ?? row.classLevel ?? null,
+    school: row.school ?? null,
+    medium: row.medium ?? null,
+    board: row.board ?? null,
+    country: row.country ?? null,
+    state: row.state ?? null,
+    city: row.city ?? null,
+    createdAt: row.created_at ?? row.createdAt,
+    updatedAt: row.updated_at ?? row.updatedAt,
+  };
+};
+
+const normalizeTeacher = (row: any): Teacher | undefined => {
+  if (!row) return row;
+
+  return {
+    id: row.id,
+    username: row.username,
+    password: row.password,
+    fullName: row.full_name ?? row.fullName ?? row.name ?? "",
+    email: row.email,
+    school: row.school ?? null,
+    createdAt: row.created_at ?? row.createdAt,
+    isVerified: row.is_verified ?? row.isVerified ?? "false",
+    isApproved: row.is_approved ?? row.isApproved ?? "false",
+    verifiedAt: row.verified_at ?? row.verifiedAt ?? null,
+    verificationToken: row.verification_token ?? row.verificationToken ?? null,
+  } as Teacher;
 };
 
 export class Storage {
@@ -48,6 +126,50 @@ export class Storage {
       [username]
     );
     return result.rows[0];
+  }
+
+  async getStudentProfile(userId: string): Promise<StudentProfile | undefined> {
+    const result = await pool.query(
+      "SELECT * FROM student_profiles WHERE user_id=$1",
+      [userId]
+    );
+    return normalizeStudentProfile(result.rows[0]);
+  }
+
+  async upsertStudentProfile(profile: InsertStudentProfile): Promise<StudentProfile> {
+    const fullName = (profile as any).fullName ?? profile.displayName ?? null;
+    const result = await pool.query(
+      `INSERT INTO student_profiles
+       (user_id, full_name, display_name, email_address, class_level, school, medium, board, country, state, city, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,now())
+       ON CONFLICT (user_id) DO UPDATE
+       SET full_name = EXCLUDED.full_name,
+           display_name = EXCLUDED.display_name,
+           email_address = EXCLUDED.email_address,
+           class_level = EXCLUDED.class_level,
+           school = EXCLUDED.school,
+           medium = EXCLUDED.medium,
+           board = EXCLUDED.board,
+           country = EXCLUDED.country,
+           state = EXCLUDED.state,
+           city = EXCLUDED.city,
+           updated_at = now()
+       RETURNING *`,
+      [
+        profile.userId,
+        fullName,
+        fullName,
+        profile.emailAddress ?? null,
+        profile.classLevel ?? null,
+        profile.school ?? null,
+        profile.medium ?? null,
+        profile.board ?? null,
+        profile.country ?? null,
+        profile.state ?? null,
+        profile.city ?? null,
+      ]
+    );
+    return normalizeStudentProfile(result.rows[0]) as StudentProfile;
   }
 
   async createUser(user: InsertUser): Promise<User> {
@@ -93,13 +215,14 @@ export class Storage {
     try {
       const result = await pool.query(
         `INSERT INTO test_sessions
-        (mode,language,science_category,class_level,difficulty,test_type,chapter,
+        (mode,language,subject_language,science_category,class_level,difficulty,test_type,chapter,
          test_length,current_question,total_score,correct_answers,conversation_history,mcq_test_id)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
          RETURNING *`,
         [
           session.mode,
           session.language,
+          session.subjectLanguage ?? null,
           session.scienceCategory,
           session.classLevel,
           session.difficulty,
@@ -123,13 +246,14 @@ export class Storage {
       if (message.includes("mcq_test_id")) {
         const fallback = await pool.query(
           `INSERT INTO test_sessions
-          (mode,language,science_category,class_level,difficulty,test_type,chapter,
+          (mode,language,subject_language,science_category,class_level,difficulty,test_type,chapter,
            test_length,current_question,total_score,correct_answers,conversation_history)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
            RETURNING *`,
           [
             session.mode,
             session.language,
+            session.subjectLanguage ?? null,
             session.scienceCategory,
             session.classLevel,
             session.difficulty,
@@ -202,7 +326,9 @@ export class Storage {
 
     const fieldMap: Record<string, string> = {
       scienceCategory: "science_category",
+      subjectLanguage: "subject_language",
       classLevel: "class_level",
+      durationMinutes: "duration_minutes",
       testType: "test_type",
       testLength: "test_length",
       currentQuestion: "current_question",
@@ -217,6 +343,7 @@ export class Storage {
 
     const numericFields = new Set([
       "class_level",
+      "duration_minutes",
       "chapter",
       "test_length",
       "current_question",
@@ -275,7 +402,7 @@ export class Storage {
       "SELECT * FROM teachers WHERE id=$1",
       [id]
     );
-    return result.rows[0];
+    return normalizeTeacher(result.rows[0]);
   }
 
   async getTeacherByUsername(username: string): Promise<Teacher | undefined> {
@@ -283,18 +410,21 @@ export class Storage {
       "SELECT * FROM teachers WHERE username=$1",
       [username]
     );
-    return result.rows[0];
+    return normalizeTeacher(result.rows[0]);
   }
 
   async getTeacherByEmail(email: string): Promise<Teacher | undefined> {
     const result = await pool.query(
-      "SELECT * FROM teachers WHERE email=$1",
+      "SELECT * FROM teachers WHERE LOWER(email)=LOWER($1)",
       [email]
     );
-    return result.rows[0];
+
+    return normalizeTeacher(result.rows[0]);
   }
 
   async createTeacher(teacher: InsertTeacher): Promise<Teacher> {
+
+    
 
     const result = await pool.query(
       `INSERT INTO teachers (username,password,full_name,email,school)
@@ -309,8 +439,118 @@ export class Storage {
       ]
     );
 
-    return result.rows[0];
+    return normalizeTeacher(result.rows[0]) as Teacher;
   }
+
+  async updateTeacherVerificationToken(
+    teacherId: string,
+    token: string
+  ): Promise<void> {
+    await pool.query(
+      `UPDATE teachers
+      SET verification_token = $1
+      WHERE id = $2`,
+      [token, teacherId]
+    );
+  }
+
+  async updateTeacherApproval(
+    teacherId: string,
+    isApproved: boolean
+  ): Promise<Teacher | undefined> {
+    const result = await pool.query(
+      `UPDATE teachers
+       SET is_approved = $1
+       WHERE id = $2
+       RETURNING *`,
+      [isApproved ? "true" : "false", teacherId]
+    );
+
+    return normalizeTeacher(result.rows[0]);
+  }
+
+  async verifyTeacher(token: string): Promise<Teacher | undefined> {
+
+  console.log("DB TOKEN:", token);
+
+  const result = await pool.query(
+    `UPDATE teachers
+     SET
+       is_verified = true,
+       verified_at = NOW(),
+       verification_token = NULL
+     WHERE verification_token = $1
+     RETURNING *`,
+    [token]
+  );
+
+  console.log("UPDATED ROWS:", result.rows);
+
+  return normalizeTeacher(result.rows[0]);
+}
+
+async updateTeacherResetToken(
+  teacherId: string,
+  token: string,
+  expires: Date
+): Promise<void> {
+
+  await pool.query(
+    `UPDATE teachers
+     SET
+       reset_password_token = $1,
+       reset_password_expires = $2
+     WHERE id = $3`,
+    [token, expires, teacherId]
+  );
+
+}
+
+async getTeacherByResetToken(
+  token: string
+): Promise<Teacher | undefined> {
+
+  const result = await pool.query(
+    `SELECT *
+     FROM teachers
+     WHERE
+       reset_password_token = $1
+       AND reset_password_expires > NOW()`,
+    [token]
+  );
+
+  return normalizeTeacher(result.rows[0]);
+
+}
+
+async updateTeacherPassword(
+  teacherId: string,
+  password: string
+): Promise<void> {
+
+  await pool.query(
+    `UPDATE teachers
+     SET password = $1
+     WHERE id = $2`,
+    [password, teacherId]
+  );
+
+}
+
+async clearTeacherResetToken(
+  teacherId: string
+): Promise<void> {
+
+  await pool.query(
+    `UPDATE teachers
+     SET
+       reset_password_token = NULL,
+       reset_password_expires = NULL
+     WHERE id = $1`,
+    [teacherId]
+  );
+
+}
 
   // ---------------- CUSTOM TEST ----------------
 
@@ -320,9 +560,9 @@ export class Storage {
 
     const result = await pool.query(
       `INSERT INTO custom_tests
-      (teacher_id,title,subject,class_level,difficulty,syllabus,num_questions,
+      (teacher_id,title,subject,class_level,difficulty,duration_minutes,syllabus,num_questions,
        language,test_type,gpt_model,share_code,instructions,status)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
       RETURNING *`,
       [
         test.teacherId,
@@ -330,6 +570,7 @@ export class Storage {
         test.subject,
         test.classLevel,
         test.difficulty,
+        test.durationMinutes ?? 30,
         test.syllabus,
         test.numQuestions,
         test.language,
@@ -341,7 +582,7 @@ export class Storage {
       ]
     );
 
-    return result.rows[0];
+    return normalizeCustomTest(result.rows[0]);
   }
 
   async getCustomTest(id: string): Promise<CustomTest | undefined> {
@@ -349,7 +590,7 @@ export class Storage {
       "SELECT * FROM custom_tests WHERE id=$1",
       [id]
     );
-    return result.rows[0];
+    return normalizeCustomTest(result.rows[0]);
   }
 
   async getCustomTestByShareCode(shareCode: string) {
@@ -357,7 +598,7 @@ export class Storage {
       "SELECT * FROM custom_tests WHERE share_code=$1",
       [shareCode]
     );
-    return result.rows[0];
+    return normalizeCustomTest(result.rows[0]);
   }
 
   async getCustomTestsByTeacher(teacherId: string) {
@@ -366,7 +607,7 @@ export class Storage {
       [teacherId]
     );
 
-    return result.rows;
+    return result.rows.map(normalizeCustomTest);
   }
 
   async updateCustomTest(id: string, updates: Partial<CustomTest>) {
@@ -380,6 +621,82 @@ export class Storage {
       `UPDATE custom_tests SET ${setQuery}
        WHERE id=$${fields.length + 1}
        RETURNING *`,
+      [...values, id]
+    );
+
+    return normalizeCustomTest(result.rows[0]);
+  }
+
+  async createCustomTestSubmission(submission: InsertCustomTestSubmission): Promise<CustomTestSubmission> {
+    const result = await pool.query(
+      `INSERT INTO custom_test_submissions
+      (test_id,student_name,score,total_questions,time_taken_seconds,submission_type,start_time,end_time,answers)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      RETURNING *`,
+      [
+        submission.testId,
+        submission.studentName,
+        submission.score,
+        submission.totalQuestions,
+        submission.timeTakenSeconds,
+        submission.submissionType,
+        submission.startTime,
+        submission.endTime,
+        submission.answers ?? "{}",
+      ]
+    );
+
+    return result.rows[0];
+  }
+
+  async getCustomTestSubmissionsByTestId(testId: string) {
+    const result = await pool.query(
+      `SELECT * FROM custom_test_submissions
+       WHERE test_id=$1
+       ORDER BY end_time DESC, created_at DESC`,
+      [testId]
+    );
+
+    return result.rows;
+  }
+
+  async getCustomTestSubmission(id: string): Promise<CustomTestSubmission | undefined> {
+    const result = await pool.query(
+      "SELECT * FROM custom_test_submissions WHERE id=$1",
+      [id]
+    );
+
+    return result.rows[0];
+  }
+
+  async updateCustomTestSubmission(
+    id: string,
+    updates: Partial<CustomTestSubmission>
+  ): Promise<CustomTestSubmission | undefined> {
+    const fields = Object.keys(updates).filter((key) => updates[key as keyof CustomTestSubmission] !== undefined);
+    if (fields.length === 0) {
+      return this.getCustomTestSubmission(id);
+    }
+
+    const fieldMap: Record<string, string> = {
+      testId: "test_id",
+      studentName: "student_name",
+      totalQuestions: "total_questions",
+      timeTakenSeconds: "time_taken_seconds",
+      submissionType: "submission_type",
+      startTime: "start_time",
+      endTime: "end_time",
+    };
+
+    const columns = fields.map((field) => fieldMap[field] ?? field);
+    const values = fields.map((field) => {
+      const value = (updates as any)[field];
+      return value;
+    });
+
+    const setQuery = columns.map((column, index) => `${column}=$${index + 1}`).join(", ");
+    const result = await pool.query(
+      `UPDATE custom_test_submissions SET ${setQuery} WHERE id=$${fields.length + 1} RETURNING *`,
       [...values, id]
     );
 
@@ -489,7 +806,135 @@ export class Storage {
 
     return result.rows;
   }
+
+  // ---------------- STUDENT SCORE HISTORY ----------------
+
+  async upsertStudentScoreHistory(entry: InsertStudentScoreHistory): Promise<StudentScoreHistory> {
+    try {
+      await databaseReady;
+      const result = await pool.query(
+        `INSERT INTO student_score_history
+        (id, user_id, user_email, subject, mode, difficulty, language, score, max_score, percentage, total_questions, correct_answers, insights)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+        ON CONFLICT (id) DO UPDATE SET
+          user_id = EXCLUDED.user_id,
+          user_email = EXCLUDED.user_email,
+          subject = EXCLUDED.subject,
+          mode = EXCLUDED.mode,
+          difficulty = EXCLUDED.difficulty,
+          language = EXCLUDED.language,
+          score = EXCLUDED.score,
+          max_score = EXCLUDED.max_score,
+          percentage = EXCLUDED.percentage,
+          total_questions = EXCLUDED.total_questions,
+          correct_answers = EXCLUDED.correct_answers,
+          insights = EXCLUDED.insights
+        RETURNING *`,
+        [
+          (entry as any).id,
+          entry.userId,
+          entry.userEmail ?? null,
+          entry.subject,
+          entry.mode ?? null,
+          entry.difficulty ?? null,
+          entry.language ?? "english",
+          entry.score,
+          entry.maxScore,
+          entry.percentage,
+          entry.totalQuestions,
+          entry.correctAnswers,
+          JSON.stringify(entry.insights ?? {}),
+        ]
+      );
+
+      return normalizeStudentScoreHistory(result.rows[0]) as StudentScoreHistory;
+    } catch (error: any) {
+      if (error?.code === "42P01") {
+        await ensureStudentScoreHistoryTable();
+        const result = await pool.query(
+          `INSERT INTO student_score_history
+          (id, user_id, user_email, subject, mode, difficulty, language, score, max_score, percentage, total_questions, correct_answers, insights)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+          ON CONFLICT (id) DO UPDATE SET
+            user_id = EXCLUDED.user_id,
+            user_email = EXCLUDED.user_email,
+            subject = EXCLUDED.subject,
+            mode = EXCLUDED.mode,
+            difficulty = EXCLUDED.difficulty,
+            language = EXCLUDED.language,
+            score = EXCLUDED.score,
+            max_score = EXCLUDED.max_score,
+            percentage = EXCLUDED.percentage,
+            total_questions = EXCLUDED.total_questions,
+            correct_answers = EXCLUDED.correct_answers,
+            insights = EXCLUDED.insights
+          RETURNING *`,
+          [
+            (entry as any).id,
+            entry.userId,
+            entry.userEmail ?? null,
+            entry.subject,
+            entry.mode ?? null,
+            entry.difficulty ?? null,
+            entry.language ?? "english",
+            entry.score,
+            entry.maxScore,
+            entry.percentage,
+            entry.totalQuestions,
+            entry.correctAnswers,
+            JSON.stringify(entry.insights ?? {}),
+          ]
+        );
+
+        return normalizeStudentScoreHistory(result.rows[0]) as StudentScoreHistory;
+      }
+
+      throw error;
+    }
+  }
+
+  async getStudentScoreHistory(userId: string): Promise<StudentScoreHistory[]> {
+    try {
+      await databaseReady;
+      const result = await pool.query(
+        `SELECT * FROM student_score_history
+         WHERE user_id = $1
+         ORDER BY created_at DESC`,
+        [userId]
+      );
+
+      return result.rows.map(normalizeStudentScoreHistory).filter(Boolean) as StudentScoreHistory[];
+    } catch (error: any) {
+      if (error?.code === "42P01") {
+        await ensureStudentScoreHistoryTable();
+        const result = await pool.query(
+          `SELECT * FROM student_score_history
+           WHERE user_id = $1
+           ORDER BY created_at DESC`,
+          [userId]
+        );
+
+        return result.rows.map(normalizeStudentScoreHistory).filter(Boolean) as StudentScoreHistory[];
+      }
+
+      throw error;
+    }
+  }
+
+  async deleteStudentScoreHistory(userId: string) {
+    try {
+      await databaseReady;
+      await pool.query("DELETE FROM student_score_history WHERE user_id = $1", [userId]);
+    } catch (error: any) {
+      if (error?.code === "42P01") {
+        await ensureStudentScoreHistoryTable();
+        await pool.query("DELETE FROM student_score_history WHERE user_id = $1", [userId]);
+        return;
+      }
+
+      throw error;
+    }
+  }
 }
 
 export const storage = new Storage();
-

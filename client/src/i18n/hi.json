@@ -5,683 +5,553 @@
   "contact": "संपर्क",
   "login": "लॉगिन",
   "logout": "लॉगआउट",
-
+  "nav_login": "लॉगिन",
+  "nav_logout": "लॉगआउट",
   "hero_title": "छात्रों के लिए स्मार्ट AI आधारित प्रैक्टिस और मूल्यांकन टूल",
-
   "hero_desc": "CBSE छात्रों के लिए मुफ्त AI आधारित मॉक टेस्ट। 6 भाषाएँ सीखें, 4 विज्ञान विषयों में महारत हासिल करें और अपने शैक्षणिक लक्ष्य प्राप्त करें।",
-
   "get_started": "मुफ्त शुरू करें",
-
   "features_title": "बेहतर सीखने के लिए शक्तिशाली फीचर्स",
-
   "ai_platform": "AI आधारित लर्निंग प्लेटफॉर्म",
-
   "hero_smart": "स्मार्ट",
   "hero_ai_practice": "AI आधारित प्रैक्टिस और मूल्यांकन",
   "hero_students": "छात्रों के लिए टूल",
-
   "six_languages": "6 भाषाएँ",
   "four_subjects": "4 विज्ञान विषय",
   "free_until": "31 दिसंबर तक मुफ्त",
-
   "start_learning": "अभी सीखना शुरू करें",
   "explore_features": "फीचर्स देखें",
-
   "ai_questions": "AI द्वारा बनाए गए प्रश्न",
   "active_students": "सक्रिय छात्र",
   "chapters_topics": "अध्याय और टॉपिक्स",
   "realtime": "रियल-टाइम",
   "ai_feedback": "AI फीडबैक",
-
   "choose_quiz_mode": "अपना क्विज़ मोड चुनें",
   "quiz_mode_desc": "भाषा सीखने या विज्ञान क्विज़ में से चुनें",
-
   "language_learning": "भाषा सीखना",
   "language_learning_desc": "फ्रेंच, जर्मन, स्पेनिश, हिंदी, मराठी और कन्नड़ का अभ्यास करें",
-
-  "science_quiz": "सामान्य विज्ञान क्विज़",
+  "science_quiz": "सभी प्रश्न",
   "science_quiz_desc": "भौतिकी, रसायन विज्ञान, जीवविज्ञान और अन्य विषयों में अपना ज्ञान परखें",
-
   "custom_mcq": "कस्टम MCQ",
   "custom_mcq_desc": "शिक्षक टेस्ट बनाते हैं, छात्र उन्हें देते हैं",
-
   "answer_sheet": "उत्तर पुस्तिका मूल्यांकन",
   "answer_sheet_desc": "हाथ से लिखी उत्तर पुस्तिकाओं का AI आधारित मूल्यांकन",
-
   "four_categories": "4 श्रेणियाँ",
   "teacher_student": "शिक्षक/छात्र",
   "upload_evaluate": "अपलोड और मूल्यांकन",
-
   "best_scores": "आपके सर्वश्रेष्ठ स्कोर",
+  "score_history": "स्कोर इतिहास",
+  "score_history_desc": "हर प्रयास को ट्रैक करें, एनालिसिस खोलें, और अपनी प्रगति देखें।",
+  "score_history_empty_hint": "जैसे ही आप टेस्ट पूरा करेंगे, यह यहां जीवनभर देखने के लिए सेव हो जाएगा जब तक आप इसे रीसेट नहीं करते।",
+  "overall_result": "कुल परिणाम",
+  "view_history": "इतिहास देखें",
+  "view_full_report": "पूरा रिपोर्ट देखें",
+  "full_report": "पूरा रिपोर्ट",
+  "download_pdf": "PDF डाउनलोड करें",
+  "download_question_paper": "प्रश्न पत्र डाउनलोड करें",
+  "subject_breakdown": "विषयवार विश्लेषण",
+  "generated_on": "जनरेट किया गया",
+  "recent_attempts": "हाल के प्रयास",
+  "recent_attempts_desc": "किसी भी प्रयास पर टैप करके AI जैसी विस्तृत एनालिसिस देखें।",
+  "performance_graph": "प्रदर्शन ग्राफ",
+  "performance_graph_desc": "सहेजे गए प्रयासों में आपका स्कोर ट्रेंड।",
+  "analysis_graph_desc": "यह चार्ट दिखाता है कि समय के साथ आपका प्रदर्शन कैसे बदला है।",
+  "quick_insights": "त्वरित जानकारी",
+  "quick_insights_desc": "आपके हाल के टेस्ट के आधार पर AI जैसा छोटा सारांश।",
+  "analysis": "विश्लेषण",
+  "analysis_desc": "सेव किए गए प्रयास को खोलकर सुधार, कमजोरियां और अगला कदम समझें।",
+  "view_analysis": "विश्लेषण देखें",
+  "ai_insight": "AI सुझाव",
+  "weaknesses": "कमज़ोरियाँ",
+  "improvement": "सुधार",
+  "attempts": "प्रयास",
+  "best_score": "सर्वश्रेष्ठ स्कोर",
+  "latest_score": "ताज़ा स्कोर",
+  "strongest_subject": "सबसे मजबूत विषय",
+  "weakest_subject": "सबसे कमजोर विषय",
+  "score_percentage": "स्कोर %",
+  "trend": "ट्रेंड",
+  "analysis_hint": "कैसे सुधार करें",
+  "analysis_hint_desc": "ग्राफ में गिरावट देखें और अगली परीक्षा से पहले उसी टॉपिक को दोबारा पढ़ें।",
+  "question_paper_review": "प्रश्न पत्र समीक्षा",
+  "view_question_paper": "प्रश्न पत्र देखें",
+  "hide_question_paper": "प्रश्न पत्र छिपाएँ",
+  "question_paper_title": "प्रश्न पत्र",
+  "answer_sheet_title": "उत्तर पत्रक",
+  "your_answer": "आपका उत्तर:",
+  "not_answered": "उत्तर नहीं दिया गया",
+  "question": "प्रश्न",
+  "options": "विकल्प",
+  "generated_by": "द्वारा जनरेट",
+  "share_code": "शेयर कोड",
   "reset_scores": "स्कोर रीसेट करें",
   "back": "वापस",
-
   "custom_mcq_platform": "कस्टम MCQ प्लेटफॉर्म",
   "choose_role": "जारी रखने के लिए अपनी भूमिका चुनें",
-
   "teacher_role": "मैं एक शिक्षक हूँ",
   "teacher_role_desc": "अपने छात्रों के लिए कस्टम MCQ टेस्ट बनाएं और मैनेज करें",
-
   "student_role": "मैं एक छात्र हूँ",
   "student_role_desc": "अपने शिक्षक के शेयर कोड का उपयोग करके टेस्ट दें",
-
   "aligned": "पाठ्यक्रम के अनुसार",
   "aligned_desc": "आधिकारिक पाठ्यक्रम कवरेज",
-
   "ai_powered": "AI आधारित",
   "ai_powered_desc": "एडैप्टिव प्रश्न जनरेशन",
-
   "track_progress": "प्रगति ट्रैक करें",
   "track_progress_desc": "अपनी प्रगति की निगरानी करें",
-
   "choose_language": "अपनी भाषा चुनें",
   "six_languages_available": "6 भाषाएँ उपलब्ध",
-
   "choose_category": "एक श्रेणी चुनें",
-
   "select_science_category": "विज्ञान श्रेणी चुनें",
   "science_categories": "4 श्रेणियाँ • 25 अध्याय",
-
-  "step_1_4": "स्टेप 1 में से 4",
-  "step_2_5": "स्टेप 2 में से 5",
-  "step_3_5": "स्टेप 3 में से 5",
-  "step_4_5": "स्टेप 4 में से 5",
-  "step_5_6": "स्टेप 5 में से 6",
+  "step_1_4": "स्टेप 6 में से 1",
+  "step_2_5": "स्टेप 6 में से 2",
+  "step_3_5": "स्टेप 6 में से 3",
+  "step_4_5": "स्टेप 6 में से 4",
+  "step_5_6": "स्टेप 6 में से 5",
+  "step_6_6": "स्टेप 6 में से 6",
   "step_6_settings": "स्टेप 6 में से 6 - अपने टॉपिक्स और सेटिंग दर्ज करें",
-
   "select_test_type": "टेस्ट प्रकार चुनें",
   "select_test_length": "टेस्ट लंबाई चुनें",
   "choose_test_mode": "टेस्ट मोड चुनें",
   "select_test_creation": "अपना टेस्ट बनाने का तरीका चुनें",
   "create_custom_test": "अपना कस्टम टेस्ट बनाएं",
-
   "test_topics": "टेस्ट टॉपिक्स",
   "topics_desc": "वे टॉपिक्स दर्ज करें जिन पर आप ध्यान देना चाहते हैं",
-
   "topic1_required": "टॉपिक 1 (आवश्यक)",
   "topic2_required": "टॉपिक 2 (आवश्यक)",
   "topic3_required": "टॉपिक 3 (आवश्यक)",
   "topic4_optional": "टॉपिक 4 (वैकल्पिक)",
   "topic5_optional": "टॉपिक 5 (वैकल्पिक)",
   "topic6_optional": "टॉपिक 6 (वैकल्पिक)",
-
   "ai_model_quality": "AI मॉडल क्वालिटी",
   "ai_model_desc": "बेहतर मॉडल बेहतर प्रश्न बनाते हैं लेकिन समय अधिक लेते हैं",
-
   "education_board": "शिक्षा बोर्ड",
   "board_desc": "प्रश्न आपके बोर्ड के पाठ्यक्रम के अनुसार होंगे",
-
+  "class_board_locked_profile": "आपकी कक्षा और बोर्ड आपके प्रोफ़ाइल से लिए गए हैं और इन्हें यहाँ बदला नहीं जा सकता।",
+  "from_profile": "प्रोफ़ाइल से",
+  "update_profile_to_change_class_board": "अपनी कक्षा या बोर्ड बदलने के लिए पहले अपनी प्रोफ़ाइल अपडेट करें।",
+  "complete_profile_to_continue": "जारी रखने के लिए अपनी प्रोफ़ाइल पूरी करें।",
+  "loading_profile": "प्रोफ़ाइल लोड हो रही है...",
   "test_config_summary": "टेस्ट कॉन्फ़िगरेशन सारांश",
-
   "type": "प्रकार",
   "topics": "टॉपिक्स",
   "class": "कक्षा",
   "subject": "विषय",
-
   "generating_test": "आपका टेस्ट बनाया जा रहा है...",
   "generate_custom_test": "कस्टम टेस्ट बनाएं",
-
   "features_hero_title": "बेहतर सीखने के लिए शक्तिशाली फीचर्स",
   "features_hero_desc": "MCQGyaan AI AI-आधारित लर्निंग, व्यापक आकलन और सहज टूल्स को मिलाकर छात्रों को बेहतर सीखने और शिक्षकों को प्रभावी ढंग से पढ़ाने में मदद करता है।",
-
-  "get_started_free": "मुफ्त शुरू करें",
-
+  "get_started_free": "निःशुल्क शुरू करें",
   "core_features": "मुख्य फीचर्स",
   "core_features_desc": "व्यापक सीखने और आकलन के लिए आपको जो कुछ चाहिए, सब कुछ",
-
   "advanced_capabilities": "उन्नत क्षमताएँ",
   "advanced_capabilities_desc": "बुनियादी सुविधाओं से आगे: क्या चीज़ MCQGyaan AI को खास बनाती है",
-
   "built_for_teachers": "शिक्षकों के लिए बनाया गया",
   "built_for_teachers_desc": "आकलन प्रक्रिया को आसान बनाएं और कक्षा की दक्षता बढ़ाएं",
-
   "powered_by_ai": "उन्नत AI द्वारा संचालित",
   "powered_by_ai_desc": "MCQGyaan अत्याधुनिक GPT मॉडलों का उपयोग करके उच्च-गुणवत्ता के प्रश्न बनाता है, बुद्धिमान फीडबैक देता है और छात्रों की सीखने की शैली के अनुसार खुद को अनुकूलित करता है।",
-
   "gpt4o_desc": "सही लिप्यंतरण के साथ बहुभाषी समर्थन",
   "gpt4o_mini_desc": "तेज़ और किफायती",
   "gpt35_desc": "कम लागत वाला विकल्प",
-
   "quality_control": "गुणवत्ता नियंत्रण",
   "quality_control_desc": "100% सत्यापित",
-
   "feature_comparison": "फीचर तुलना",
-
   "feature": "फीचर",
   "student": "छात्र",
   "teacher": "शिक्षक",
   "parent": "अभिभावक",
-
   "experience_mcqgyaan": "आज ही MCQGyaan AI का अनुभव लें",
   "experience_desc": "31 दिसंबर 2026 तक सभी फीचर्स का मुफ्त उपयोग शुरू करें। किसी क्रेडिट कार्ड की आवश्यकता नहीं है।",
-
   "start_learning_free": "मुफ्त सीखना शुरू करें",
   "view_pricing": "प्राइसिंग देखें",
-
   "smart_question_generation": "डुप्लिकेट से बचाव के साथ स्मार्ट प्रश्न निर्माण",
   "context_aware_feedback": "संदर्भ आधारित व्याख्या और फीडबैक",
   "adaptive_difficulty": "प्रदर्शन के आधार पर अनुकूली कठिनाई",
   "multilanguage_support": "सही लिप्यंतरण के साथ बहुभाषी समर्थन",
-
-    "feature_language_learning_title": "6 भाषा सीखने के मोड",
-    "feature_language_learning_desc": "AI आधारित इंटरैक्टिव लेसन्स के साथ फ्रेंच, जर्मन, स्पेनिश, हिंदी, मराठी और कन्नड़ सीखें।",
-
-    "benefit_real_pronunciation": "सही उच्चारण",
-    "benefit_cultural_context": "सांस्कृतिक संदर्भ",
-    "benefit_grammar_explanation": "व्याकरण की व्याख्या",
-    "benefit_progressive_difficulty": "क्रमिक कठिनाई स्तर",
-
-    "feature_science_quiz_title": "समग्र विज्ञान क्विज़",
-    "feature_science_quiz_desc": "CBSE पाठ्यक्रम के अनुसार भौतिकी, रसायन विज्ञान, जीवविज्ञान और सामान्य विज्ञान के प्रश्न।",
-
-    "benefit_real_world": "वास्तविक जीवन के उदाहरण",
-    "benefit_concept_clarity": "संकल्पना की स्पष्टता",
-    "benefit_step_solution": "स्टेप-बाय-स्टेप समाधान",
-    "benefit_visual_diagrams": "दृश्य आरेख",
-
-    "feature_custom_tests_title": "AI आधारित कस्टम टेस्ट",
-    "feature_custom_tests_desc": "विषय, कठिनाई और GPT मॉडल चुनकर असीमित MCQ टेस्ट बनाएं।",
-
-    "benefit_gpt_quality": "GPT-4o गुणवत्ता",
-    "benefit_cost_effective": "कम लागत विकल्प",
-    "benefit_no_duplication": "प्रश्नों की पुनरावृत्ति नहीं",
-    "benefit_instant_feedback": "तुरंत फीडबैक",
-
-    "feature_answer_eval_title": "उत्तर पुस्तिका मूल्यांकन",
-    "feature_answer_eval_desc": "उत्तर पुस्तिका अपलोड करें और AI से विस्तृत मूल्यांकन प्राप्त करें।",
-
-    "benefit_batch_processing": "बैच प्रोसेसिंग",
-    "benefit_quality_assessment": "गुणवत्ता मूल्यांकन",
-    "benefit_detailed_analysis": "विस्तृत विश्लेषण",
-    "benefit_score_tracking": "स्कोर ट्रैकिंग",
-
-    "premium_adaptive_difficulty": "अनुकूली कठिनाई स्तर",
-    "premium_progress_tracking": "रीयल-टाइम प्रगति ट्रैकिंग",
-    "premium_leaderboard": "लीडरबोर्ड",
-    "premium_multiboard": "मल्टी-बोर्ड सपोर्ट (CBSE/ICSE/IB)",
-    "premium_ai_feedback": "AI फीडबैक और व्याख्या",
-    "premium_pdf_reports": "डाउनलोड करने योग्य रिपोर्ट और PDF",
-    "premium_teacher_dashboard": "शिक्षक डैशबोर्ड",
-    "premium_anti_duplication": "डुप्लिकेशन नियंत्रण",
-    "premium_custom_content": "कस्टम शैक्षणिक सामग्री",
-    "premium_analytics": "उन्नत एनालिटिक्स",
-
-    "student_self_paced": "स्वयं की गति से सीखना",
-    "student_self_paced_desc": "24/7 एक्सेस के साथ अपनी गति से सीखें",
-
-    "student_instant_feedback": "तुरंत फीडबैक",
-    "student_instant_feedback_desc": "हर उत्तर के लिए तुरंत व्याख्या प्राप्त करें",
-
-    "student_performance_tracking": "प्रदर्शन ट्रैकिंग",
-    "student_performance_tracking_desc": "विस्तृत रिपोर्ट के साथ अपनी प्रगति देखें",
-
-    "student_confidence": "आत्मविश्वास निर्माण",
-    "student_confidence_desc": "क्रमशः कठिन प्रश्नों के साथ विषयों में महारत हासिल करें",
-
-    "student_exam_prep": "परीक्षा तैयारी",
-    "student_exam_prep_desc": "अपने बोर्ड पैटर्न के अनुसार प्रश्नों का अभ्यास करें",
-
-    "student_doubt_clarification": "संदेह समाधान",
-    "student_doubt_clarification_desc": "जटिल विषयों के लिए AI आधारित व्याख्या",
-
-    "teacher_test_creation": "कस्टम टेस्ट निर्माण",
-    "teacher_test_creation_desc": "बिना प्रश्न लिखे सेकंडों में टेस्ट बनाएं",
-
-    "teacher_time_saving": "समय की बचत",
-    "teacher_time_saving_desc": "आकलन प्रक्रिया को स्वचालित करें",
-
-    "teacher_student_analytics": "छात्र विश्लेषण",
-    "teacher_student_analytics_desc": "व्यक्तिगत और कक्षा प्रदर्शन देखें",
-
-    "teacher_flexible_assessment": "लचीला मूल्यांकन",
-    "teacher_flexible_assessment_desc": "MCQ और अन्य प्रश्न प्रकारों का मिश्रण",
-
-    "teacher_class_management": "कक्षा प्रबंधन",
-    "teacher_class_management_desc": "छात्रों को व्यवस्थित करें और प्रगति ट्रैक करें",
-
-    "teacher_answer_evaluation": "उत्तर मूल्यांकन",
-    "teacher_answer_evaluation_desc": "AI से उत्तर पुस्तिकाओं का मूल्यांकन",
-
-    "feature_language_learning": "भाषा सीखना",
-    "feature_science_quizzes": "विज्ञान क्विज़",
-    "feature_performance_analytics": "प्रदर्शन विश्लेषण",
-    "feature_custom_test_creation": "कस्टम टेस्ट निर्माण",
-    "feature_answer_evaluation": "उत्तर पुस्तिका मूल्यांकन",
-    "feature_class_management": "कक्षा प्रबंधन",
-    "feature_student_progress": "छात्र प्रगति ट्रैकिंग",
-    "feature_download_reports": "रिपोर्ट डाउनलोड",
-
-    "pricing_desc": "31 दिसंबर 2026 तक सभी उपयोगकर्ताओं के लिए सभी सुविधाएँ मुफ्त हैं। अपनी योजना चुनें और आज ही सीखना शुरू करें!",
-    "free_access_notice": "🎉 31 दिसंबर 2026 तक मुफ्त एक्सेस",
-
-    "plan_free": "फ्री",
-    "plan_pro": "प्रो",
-    "plan_premium": "प्रीमियम",
-
-    "plan_free_desc": "शुरुआती छात्रों के लिए उपयुक्त",
-    "plan_pro_desc": "गंभीर शिक्षार्थियों और शिक्षकों के लिए",
-    "plan_premium_desc": "शिक्षकों और संस्थानों के लिए",
-
-    "month": "महीना",
-
-    "cta_get_started": "शुरू करें",
-    "cta_upgrade_pro": "प्रो में अपग्रेड करें",
-    "cta_upgrade_premium": "प्रीमियम में अपग्रेड करें",
-
-    "recommended": "अनुशंसित",
-
-    "faq_title": "अक्सर पूछे जाने वाले प्रश्न",
-
-    "faq_change_plan": "क्या मैं अपनी योजना कभी भी बदल सकता हूँ?",
-
-    "faq_teacher_discount": "क्या शिक्षकों के लिए छूट है?",
-    "faq_teacher_discount_desc": "हाँ! शिक्षकों को प्रो और प्रीमियम योजनाओं पर 30% छूट मिलती है।",
-
-    "faq_payment_methods": "आप कौन से भुगतान तरीके स्वीकार करते हैं?",
-    "faq_payment_methods_desc": "हम क्रेडिट कार्ड, UPI और डिजिटल वॉलेट स्वीकार करते हैं।",
-
-    "start_free_now": "मुफ्त में शुरू करें",
-
-    "feature_10_questions": "प्रति टेस्ट 10 प्रश्न",
-    "feature_50_questions": "प्रति टेस्ट 50 प्रश्न",
-    "feature_100_questions": "प्रति टेस्ट 100 प्रश्न",
-
-    "feature_difficulty_levels": "कई कठिनाई स्तर",
-    "feature_instant_feedback": "उत्तर पर तुरंत फीडबैक",
-
-    "feature_custom_tests_limit": "कस्टम टेस्ट (प्रति माह 3)",
-    "feature_unlimited_custom_tests": "अनलिमिटेड कस्टम टेस्ट",
-
-    "feature_answer_sheet_evaluator": "उत्तर पुस्तिका मूल्यांकन",
-    "feature_answer_eval_10": "उत्तर पुस्तिका मूल्यांकन (10/माह)",
-    "feature_unlimited_answer_eval": "अनलिमिटेड उत्तर पुस्तिका मूल्यांकन",
-
-    "feature_teacher_dashboard": "टीचर डैशबोर्ड",
-    "feature_teacher_dashboard_basic": "टीचर डैशबोर्ड (बेसिक)",
-    "feature_teacher_dashboard_advanced": "टीचर डैशबोर्ड (एडवांस)",
-
+  "feature_language_learning_title": "6 भाषा सीखने के मोड",
+  "feature_language_learning_desc": "AI आधारित इंटरैक्टिव लेसन्स के साथ फ्रेंच, जर्मन, स्पेनिश, हिंदी, मराठी और कन्नड़ सीखें।",
+  "benefit_real_pronunciation": "सही उच्चारण",
+  "benefit_cultural_context": "सांस्कृतिक संदर्भ",
+  "benefit_grammar_explanation": "व्याकरण की व्याख्या",
+  "benefit_progressive_difficulty": "क्रमिक कठिनाई स्तर",
+  "feature_science_quiz_title": "समग्र विज्ञान क्विज़",
+  "feature_science_quiz_desc": "CBSE पाठ्यक्रम के अनुसार भौतिकी, रसायन विज्ञान, जीवविज्ञान और सामान्य विज्ञान के प्रश्न।",
+  "benefit_real_world": "वास्तविक जीवन के उदाहरण",
+  "benefit_concept_clarity": "संकल्पना की स्पष्टता",
+  "benefit_step_solution": "स्टेप-बाय-स्टेप समाधान",
+  "benefit_visual_diagrams": "दृश्य आरेख",
+  "feature_custom_tests_title": "AI आधारित कस्टम टेस्ट",
+  "feature_custom_tests_desc": "विषय, कठिनाई और GPT मॉडल चुनकर असीमित MCQ टेस्ट बनाएं।",
+  "benefit_gpt_quality": "GPT-4o गुणवत्ता",
+  "benefit_cost_effective": "कम लागत विकल्प",
+  "benefit_no_duplication": "प्रश्नों की पुनरावृत्ति नहीं",
+  "benefit_instant_feedback": "तुरंत फीडबैक",
+  "feature_answer_eval_title": "उत्तर पुस्तिका मूल्यांकन",
+  "feature_answer_eval_desc": "उत्तर पुस्तिका अपलोड करें और AI से विस्तृत मूल्यांकन प्राप्त करें।",
+  "benefit_batch_processing": "बैच प्रोसेसिंग",
+  "benefit_quality_assessment": "गुणवत्ता मूल्यांकन",
+  "benefit_detailed_analysis": "विस्तृत विश्लेषण",
+  "benefit_score_tracking": "स्कोर ट्रैकिंग",
+  "premium_adaptive_difficulty": "अनुकूली कठिनाई स्तर",
+  "premium_progress_tracking": "रीयल-टाइम प्रगति ट्रैकिंग",
+  "premium_leaderboard": "लीडरबोर्ड",
+  "premium_multiboard": "मल्टी-बोर्ड सपोर्ट (CBSE/ICSE/IB)",
+  "premium_ai_feedback": "AI फीडबैक और व्याख्या",
+  "premium_pdf_reports": "डाउनलोड करने योग्य रिपोर्ट और PDF",
+  "premium_teacher_dashboard": "शिक्षक डैशबोर्ड",
+  "premium_anti_duplication": "डुप्लिकेशन नियंत्रण",
+  "premium_custom_content": "कस्टम शैक्षणिक सामग्री",
+  "premium_analytics": "उन्नत एनालिटिक्स",
+  "student_self_paced": "स्वयं की गति से सीखना",
+  "student_self_paced_desc": "24/7 एक्सेस के साथ अपनी गति से सीखें",
+  "student_instant_feedback": "तुरंत फीडबैक",
+  "student_instant_feedback_desc": "हर उत्तर के लिए तुरंत व्याख्या प्राप्त करें",
+  "student_performance_tracking": "प्रदर्शन ट्रैकिंग",
+  "student_performance_tracking_desc": "विस्तृत रिपोर्ट के साथ अपनी प्रगति देखें",
+  "student_confidence": "आत्मविश्वास निर्माण",
+  "student_confidence_desc": "क्रमशः कठिन प्रश्नों के साथ विषयों में महारत हासिल करें",
+  "student_exam_prep": "परीक्षा तैयारी",
+  "student_exam_prep_desc": "अपने बोर्ड पैटर्न के अनुसार प्रश्नों का अभ्यास करें",
+  "student_doubt_clarification": "संदेह समाधान",
+  "student_doubt_clarification_desc": "जटिल विषयों के लिए AI आधारित व्याख्या",
+  "teacher_test_creation": "कस्टम टेस्ट निर्माण",
+  "teacher_test_creation_desc": "बिना प्रश्न लिखे सेकंडों में टेस्ट बनाएं",
+  "teacher_time_saving": "समय की बचत",
+  "teacher_time_saving_desc": "आकलन प्रक्रिया को स्वचालित करें",
+  "teacher_student_analytics": "छात्र विश्लेषण",
+  "teacher_student_analytics_desc": "व्यक्तिगत और कक्षा प्रदर्शन देखें",
+  "teacher_flexible_assessment": "लचीला मूल्यांकन",
+  "teacher_flexible_assessment_desc": "MCQ और अन्य प्रश्न प्रकारों का मिश्रण",
+  "teacher_class_management": "कक्षा प्रबंधन",
+  "teacher_class_management_desc": "छात्रों को व्यवस्थित करें और प्रगति ट्रैक करें",
+  "teacher_answer_evaluation": "उत्तर मूल्यांकन",
+  "teacher_answer_evaluation_desc": "AI से उत्तर पुस्तिकाओं का मूल्यांकन",
+  "feature_language_learning": "भाषा सीखना",
+  "feature_science_quizzes": "विज्ञान क्विज़",
+  "feature_performance_analytics": "प्रदर्शन विश्लेषण",
+  "feature_custom_test_creation": "कस्टम टेस्ट निर्माण",
+  "feature_answer_evaluation": "उत्तर पुस्तिका मूल्यांकन",
+  "feature_class_management": "कक्षा प्रबंधन",
+  "feature_student_progress": "छात्र प्रगति ट्रैकिंग",
+  "feature_download_reports": "रिपोर्ट डाउनलोड",
+  "pricing_desc": "31 दिसंबर 2026 तक सभी उपयोगकर्ताओं के लिए सभी सुविधाएँ मुफ्त हैं। अपनी योजना चुनें और आज ही सीखना शुरू करें!",
+  "free_access_notice": "🎉 31 दिसंबर 2026 तक मुफ्त एक्सेस",
+  "plan_free": "फ्री",
+  "plan_pro": "प्रो",
+  "plan_premium": "प्रीमियम",
+  "plan_free_desc": "शुरुआती छात्रों के लिए उपयुक्त",
+  "plan_pro_desc": "गंभीर शिक्षार्थियों और शिक्षकों के लिए",
+  "plan_premium_desc": "शिक्षकों और संस्थानों के लिए",
+  "month": "महीना",
+  "cta_get_started": "शुरू करें",
+  "cta_upgrade_pro": "प्रो में अपग्रेड करें",
+  "cta_upgrade_premium": "प्रीमियम में अपग्रेड करें",
+  "recommended": "अनुशंसित",
+  "faq_title": "अक्सर पूछे जाने वाले प्रश्न",
+  "faq_change_plan": "क्या मैं अपनी योजना कभी भी बदल सकता हूँ?",
+  "faq_teacher_discount": "क्या शिक्षकों के लिए छूट है?",
+  "faq_teacher_discount_desc": "हाँ! शिक्षकों को प्रो और प्रीमियम योजनाओं पर 30% छूट मिलती है।",
+  "faq_payment_methods": "आप कौन से भुगतान तरीके स्वीकार करते हैं?",
+  "faq_payment_methods_desc": "हम क्रेडिट कार्ड, UPI और डिजिटल वॉलेट स्वीकार करते हैं।",
+  "start_free_now": "मुफ्त में शुरू करें",
+  "feature_10_questions": "प्रति टेस्ट 10 प्रश्न",
+  "feature_50_questions": "प्रति टेस्ट 50 प्रश्न",
+  "feature_100_questions": "प्रति टेस्ट 100 प्रश्न",
+  "feature_difficulty_levels": "कई कठिनाई स्तर",
+  "feature_instant_feedback": "उत्तर पर तुरंत फीडबैक",
+  "feature_custom_tests_limit": "कस्टम टेस्ट (प्रति माह 3)",
+  "feature_unlimited_custom_tests": "अनलिमिटेड कस्टम टेस्ट",
+  "feature_answer_sheet_evaluator": "उत्तर पुस्तिका मूल्यांकन",
+  "feature_answer_eval_10": "उत्तर पुस्तिका मूल्यांकन (10/माह)",
+  "feature_unlimited_answer_eval": "अनलिमिटेड उत्तर पुस्तिका मूल्यांकन",
+  "feature_teacher_dashboard": "टीचर डैशबोर्ड",
+  "feature_teacher_dashboard_basic": "टीचर डैशबोर्ड (बेसिक)",
+  "feature_teacher_dashboard_advanced": "टीचर डैशबोर्ड (एडवांस)",
   "pricing_title": "सरल और पारदर्शी प्राइसिंग",
   "pricing_desc_before": "31 दिसंबर 2026 तक सभी उपयोगकर्ताओं के लिए सभी संस्करण मुफ्त हैं ",
   "pricing_free_date": "31 दिसंबर 2026",
   "pricing_desc_after": "। अपनी योजना चुनें और आज ही सीखना शुरू करें!",
-
-    "comparison_language_learning": "भाषा सीखने के मोड",
-    "comparison_science_quiz": "विज्ञान क्विज़ श्रेणियाँ",
-    "comparison_custom_mcq": "कस्टम MCQ जनरेशन",
-    "comparison_gpt_model": "GPT मॉडल चयन",
-    "comparison_answer_evaluation": "उत्तर पुस्तिका मूल्यांकन",
-    "comparison_offline_access": "ऑफलाइन एक्सेस",
-    "comparison_api_access": "API एक्सेस",
-    "comparison_priority_support": "प्राथमिक सहायता",
-
-    "faq_refund": "क्या आप रिफंड देते हैं?",
-    "faq_refund_desc": "यदि आप हमारी सेवा से संतुष्ट नहीं हैं तो हम 7-दिन की मनी-बैक गारंटी देते हैं। बिना किसी सवाल के!",
-
-    "cta_ready_learning": "क्या आप सीखना शुरू करने के लिए तैयार हैं?",
-    "cta_join_students": "MCQGyaan AI का उपयोग करने वाले हजारों छात्रों और शिक्षकों से जुड़ें",
-
+  "comparison_language_learning": "भाषा सीखने के मोड",
+  "comparison_science_quiz": "विज्ञान क्विज़ श्रेणियाँ",
+  "comparison_custom_mcq": "कस्टम MCQ जनरेशन",
+  "comparison_gpt_model": "GPT मॉडल चयन",
+  "comparison_answer_evaluation": "उत्तर पुस्तिका मूल्यांकन",
+  "comparison_offline_access": "ऑफलाइन एक्सेस",
+  "comparison_api_access": "API एक्सेस",
+  "comparison_priority_support": "प्राथमिक सहायता",
+  "faq_refund": "क्या आप रिफंड देते हैं?",
+  "faq_refund_desc": "यदि आप हमारी सेवा से संतुष्ट नहीं हैं तो हम 7-दिन की मनी-बैक गारंटी देते हैं। बिना किसी सवाल के!",
+  "cta_ready_learning": "क्या आप सीखना शुरू करने के लिए तैयार हैं?",
+  "cta_join_students": "MCQGyaan AI का उपयोग करने वाले हजारों छात्रों और शिक्षकों से जुड़ें",
   "free_until_date": "31 दिसंबर 2026 तक मुफ्त",
-
   "faq_free_features": "क्या 31 दिसंबर 2026 तक सभी फीचर्स मुफ्त हैं?",
   "faq_free_features_desc": "हाँ! 31 दिसंबर 2026 तक सभी उपयोगकर्ताओं के लिए सभी प्लान पूरी तरह से मुफ्त हैं। उसके बाद पेड प्लान लागू होंगे।",
-
   "faq_change_plan_desc": "हाँ, आप किसी भी समय अपनी योजना अपग्रेड या डाउनग्रेड कर सकते हैं। बदलाव तुरंत प्रभावी हो जाते हैं।",
   "contact_title": "संपर्क करें",
   "contact_desc": "MCQGyaan AI के बारे में कोई प्रश्न है? हमें आपसे सुनकर खुशी होगी। हमें संदेश भेजें और हम जल्द ही जवाब देंगे।",
-
   "send_message": "हमें संदेश भेजें",
   "send_message_desc": "नीचे दिया गया फॉर्म भरें और हम जल्द ही आपसे संपर्क करेंगे।",
-
+  "contact_message_sent_title": "संदेश भेज दिया गया!",
+  "contact_message_sent_desc": "संपर्क करने के लिए धन्यवाद। हम 24 घंटे के भीतर आपसे संपर्क करेंगे।",
+  "contact_message_failed": "संदेश भेजने में समस्या हुई। कृपया फिर से प्रयास करें।",
+  "contact_validation_name": "नाम कम से कम 2 अक्षरों का होना चाहिए",
+  "contact_validation_email": "ईमेल पता अमान्य है",
+  "contact_validation_subject": "विषय कम से कम 5 अक्षरों का होना चाहिए",
+  "contact_validation_message": "संदेश कम से कम 10 अक्षरों का होना चाहिए",
+  "common_inquiries": "सामान्य पूछताछ",
+  "form_subject": "विषय",
+  "form_subject_placeholder": "यह किस बारे में है?",
+  "form_message_placeholder": "हमें अपना संदेश लिखें... (कम से कम 10 अक्षर)",
+  "contact_response_note": "हम 24 व्यावसायिक घंटों के भीतर आपसे संपर्क करेंगे। धन्यवाद!",
   "why_contact": "हमसे संपर्क क्यों करें?",
   "why_contact_desc": "यदि आपके पास प्रश्न, सुझाव या सहायता की आवश्यकता है, तो हमारी टीम आपकी मदद के लिए यहाँ है।",
-
   "contact_support": "तकनीकी सहायता",
   "contact_partnership": "साझेदारी के अवसर",
   "contact_feature_request": "फीचर अनुरोध",
   "contact_account_issue": "अकाउंट से जुड़ी समस्याएँ",
-
   "form_full_name": "पूरा नाम",
   "form_email": "ईमेल पता",
   "form_phone": "फोन नंबर (वैकल्पिक)",
   "form_category": "श्रेणी",
   "form_message": "संदेश",
-
   "contact_feedback": "फीडबैक",
   "contact_other": "अन्य",
-
   "sending": "भेजा जा रहा है...",
   "send_message_btn": "संदेश भेजें",
-
   "faq_response_time_q": "मुझे जवाब कितनी जल्दी मिलेगा?",
   "faq_response_time_a": "हम 24 कार्य घंटों के भीतर सभी प्रश्नों का उत्तर देने का प्रयास करते हैं।",
-
   "faq_school_discount_q": "क्या स्कूलों के लिए छूट है?",
   "faq_school_discount_a": "हाँ! स्कूलों और संस्थानों के लिए विशेष छूट उपलब्ध है।",
-
   "faq_offline_q": "क्या मैं MCQGyaan AI को ऑफलाइन उपयोग कर सकता हूँ?",
   "faq_offline_a": "फिलहाल MCQGyaan AI के लिए इंटरनेट कनेक्शन आवश्यक है।",
-
   "faq_free_trial_q": "क्या फ्री ट्रायल उपलब्ध है?",
   "faq_free_trial_a": "हाँ! सभी फीचर्स 31 दिसंबर 2026 तक मुफ्त हैं।",
-
   "faq_api_q": "क्या API एक्सेस उपलब्ध है?",
   "faq_api_a": "API एक्सेस हमारे Premium प्लान में उपलब्ध है।",
-
   "faq_data_security_q": "मेरा डेटा कितना सुरक्षित है?",
   "faq_data_security_a": "हम एंटरप्राइज़ स्तर की एन्क्रिप्शन का उपयोग करते हैं।",
-
   "contact_email_title": "ईमेल",
   "contact_email_detail1": "support@mcqgyaan.com",
   "contact_email_detail2": "info@mcqgyaan.com",
   "contact_email_desc": "त्वरित सहायता के लिए",
-
   "contact_phone_title": "फोन",
   "contact_phone_detail1": "+91 9950143179",
   "contact_phone_detail2": "+91 7597493655",
   "contact_phone_desc": "सुबह 9 बजे से शाम 6 बजे तक उपलब्ध",
-
   "contact_location_title": "कार्यालय स्थान",
   "contact_location_detail1": "SF-77 जयपुर इलेक्ट्रॉनिक्स मार्केट",
   "contact_location_detail2": "जयपुर-302018, भारत",
   "contact_location_desc": "मैक्सब्रेन टेक्नोलॉजीज प्रा. लि.",
-
   "contact_response_title": "प्रतिक्रिया समय",
   "contact_response_detail1": "24 घंटे के भीतर",
   "contact_response_detail2": "सोम - शुक्र (कार्य दिवस)",
   "contact_response_desc": "हम जल्दी जवाब देते हैं",
-
   "terms_title": "नियम और शर्तें",
   "terms_last_updated": "अंतिम अपडेट: मार्च 2026",
-
   "terms_section1_title": "1. शर्तों की स्वीकृति",
   "terms_section1_desc": "MCQGyaan AI का उपयोग करने से आप इन नियमों और शर्तों को स्वीकार करते हैं। यदि आप सहमत नहीं हैं तो कृपया इस सेवा का उपयोग न करें।",
-
   "terms_section2_title": "2. उपयोग लाइसेंस",
   "terms_section2_desc": "आपको MCQGyaan AI की सामग्री को केवल व्यक्तिगत और गैर-व्यावसायिक उपयोग के लिए देखने की अनुमति दी जाती है। इसके अंतर्गत आप यह नहीं कर सकते:",
-
   "terms_section2_li1": "सामग्री को संशोधित या कॉपी करना",
   "terms_section2_li2": "सामग्री का व्यावसायिक उपयोग करना",
   "terms_section2_li3": "सॉफ्टवेयर को रिवर्स इंजीनियर करना",
   "terms_section2_li4": "सामग्री को किसी अन्य व्यक्ति को ट्रांसफर करना",
   "terms_section2_li5": "कॉपीराइट या मालिकाना नोटिस हटाना",
-
   "terms_section3_title": "3. अस्वीकरण",
   "terms_section3_desc": "MCQGyaan AI की सामग्री केवल शैक्षिक उद्देश्यों के लिए प्रदान की जाती है।",
-
   "terms_section4_title": "4. दायित्व की सीमा",
   "terms_section4_desc": "MCQGyaan AI प्लेटफॉर्म के उपयोग से होने वाले किसी भी नुकसान के लिए जिम्मेदार नहीं होगा।",
-
   "terms_section5_title": "5. सामग्री की सटीकता",
   "terms_section5_desc": "वेबसाइट की सामग्री में त्रुटियाँ हो सकती हैं और इसकी सटीकता की गारंटी नहीं है।",
-
   "terms_section6_title": "6. उपयोगकर्ता खाते",
   "terms_section6_desc": "खाता बनाते समय सही जानकारी देना आवश्यक है और पासवर्ड की सुरक्षा की जिम्मेदारी उपयोगकर्ता की होगी।",
-
   "terms_section7_title": "7. फ्री ट्रायल",
   "terms_section7_desc": "सभी फीचर 31 दिसंबर 2026 तक मुफ्त हैं। उसके बाद कुछ फीचर के लिए भुगतान करना पड़ सकता है।",
-
   "terms_section8_title": "8. संशोधन",
   "terms_section8_desc": "MCQGyaan AI किसी भी समय इन नियमों में बदलाव कर सकता है।",
-
   "terms_section9_title": "9. लागू कानून",
   "terms_section9_desc": "ये नियम भारत के कानूनों के अनुसार लागू होंगे और विवाद जयपुर न्यायालय के अंतर्गत आएंगे।",
-
   "privacy_title": "गोपनीयता नीति",
   "privacy_last_updated": "अंतिम अपडेट: मार्च 2026",
-
   "privacy_intro_title": "परिचय",
   "privacy_intro_desc": "MCQGyaan AI इस वेबसाइट का संचालन करता है। यह पेज आपके व्यक्तिगत डेटा के संग्रह और उपयोग की जानकारी देता है।",
-
   "privacy_collection_title": "जानकारी का संग्रह",
   "privacy_collection_desc": "हम विभिन्न उद्देश्यों के लिए अलग-अलग प्रकार की जानकारी एकत्र करते हैं:",
-
   "privacy_collection_li1": "व्यक्तिगत डेटा: नाम, ईमेल, फोन नंबर, शिक्षा बोर्ड, कक्षा स्तर",
   "privacy_collection_li2": "उपयोग डेटा: ब्राउज़र प्रकार, देखे गए पेज, बिताया गया समय",
   "privacy_collection_li3": "डिवाइस जानकारी: IP पता, ऑपरेटिंग सिस्टम, डिवाइस प्रकार",
-
   "privacy_use_title": "डेटा का उपयोग",
   "privacy_use_desc": "MCQGyaan AI निम्न उद्देश्यों के लिए डेटा का उपयोग करता है:",
-
   "privacy_use_li1": "हमारी सेवा प्रदान करने और बनाए रखने के लिए",
   "privacy_use_li2": "सेवा में बदलाव की जानकारी देने के लिए",
   "privacy_use_li3": "व्यक्तिगत शिक्षण सुझाव देने के लिए",
   "privacy_use_li4": "सेवा सुधार के लिए विश्लेषण करने के लिए",
   "privacy_use_li5": "प्लेटफॉर्म के उपयोग की निगरानी के लिए",
-
   "privacy_security_title": "डेटा सुरक्षा",
   "privacy_security_desc": "हम आपके डेटा की सुरक्षा के लिए उद्योग मानक एन्क्रिप्शन का उपयोग करते हैं।",
-
   "privacy_cookies_title": "कुकीज़",
   "privacy_cookies_desc": "हम आपकी वेबसाइट अनुभव बेहतर बनाने के लिए कुकीज़ का उपयोग करते हैं।",
-
   "privacy_children_title": "बच्चों की गोपनीयता",
   "privacy_children_desc": "हमारी सेवा 11-16 वर्ष के छात्रों के लिए बनाई गई है।",
-
   "privacy_changes_title": "नीति में बदलाव",
   "privacy_changes_desc": "हम समय-समय पर इस गोपनीयता नीति को अपडेट कर सकते हैं।",
-
   "privacy_contact_title": "संपर्क करें",
   "privacy_contact_desc": "यदि आपके कोई प्रश्न हैं तो privacy@mcqgyaan.com पर संपर्क करें।",
-
   "refund_title": "रिफंड नीति",
   "refund_last_updated": "अंतिम अपडेट: मार्च 2026",
-
   "refund_guarantee_title": "7-दिन मनी-बैक गारंटी",
   "refund_guarantee_desc": "यदि आप खरीद के 7 दिनों के भीतर संतुष्ट नहीं हैं तो हम 100% रिफंड देंगे।",
-
   "refund_eligibility_title": "रिफंड पात्रता",
   "refund_eligibility_desc": "रिफंड के लिए निम्न शर्तें पूरी होनी चाहिए:",
-
   "refund_eligibility_li1": "खरीद के 7 दिनों के भीतर अनुरोध",
   "refund_eligibility_li2": "वार्षिक सदस्यता के लिए 30 दिनों के भीतर",
   "refund_eligibility_li3": "मूल भुगतान विधि वैध होनी चाहिए",
   "refund_eligibility_li4": "खाते में दुरुपयोग नहीं होना चाहिए",
-
   "refund_request_title": "रिफंड कैसे प्राप्त करें",
   "refund_request_desc": "रिफंड के लिए ये स्टेप फॉलो करें:",
-
   "refund_request_li1": "support@mcqgyaan.com पर संपर्क करें",
   "refund_request_li2": "अपना ऑर्डर या सब्सक्रिप्शन ID दें",
   "refund_request_li3": "रिफंड का कारण बताएं",
   "refund_request_li4": "5-7 कार्य दिवस में प्रक्रिया पूरी होगी",
-
   "refund_processing_title": "प्रोसेसिंग समय",
   "refund_processing_desc": "स्वीकृत रिफंड 5-10 कार्य दिवसों में आपके खाते में जमा होगा।",
-
   "refund_special_title": "विशेष मामले",
   "refund_special_desc1": "फ्री ट्रायल: सभी फीचर 31 दिसंबर 2026 तक मुफ्त हैं।",
   "refund_special_desc2": "जिन शिक्षक खातों ने टेस्ट बनाए हैं वे रिफंड के पात्र नहीं होंगे।",
-
   "refund_exceptions_title": "अपवाद",
   "refund_exceptions_desc": "इन मामलों में रिफंड नहीं मिलेगा:",
-
   "refund_exceptions_li1": "समय सीमा के बाद अनुरोध",
   "refund_exceptions_li2": "नियम उल्लंघन वाले खाते",
   "refund_exceptions_li3": "गिफ्ट कार्ड खरीद",
   "refund_exceptions_li4": "पहले से दिए गए रिफंड",
-
   "refund_contact_title": "सपोर्ट से संपर्क",
   "refund_contact_desc": "रिफंड से जुड़े प्रश्नों के लिए संपर्क करें:",
-
   "refund_contact_email": "ईमेल: support@mcqgyaan.com",
   "refund_contact_time": "प्रतिक्रिया समय: 24 घंटे के भीतर",
-
   "disclaimer_title": "अस्वीकरण",
   "disclaimer_last_updated": "अंतिम अपडेट: मार्च 2026",
-
   "disclaimer_edu_title": "शैक्षिक उपयोग",
   "disclaimer_edu_desc": "MCQGyaan AI छात्रों के लिए एक सहायक शैक्षिक उपकरण है।",
-
   "disclaimer_ai_title": "AI द्वारा उत्पन्न सामग्री",
   "disclaimer_ai_desc": "प्रश्न और उत्तर AI तकनीक से उत्पन्न हो सकते हैं और कभी-कभी त्रुटियाँ हो सकती हैं।",
-
   "disclaimer_results_title": "परिणाम की गारंटी नहीं",
   "disclaimer_results_desc": "MCQGyaan AI किसी विशेष परीक्षा परिणाम की गारंटी नहीं देता।",
-
   "disclaimer_curriculum_title": "पाठ्यक्रम संरेखण",
   "disclaimer_curriculum_desc": "हमारी सामग्री CBSE पाठ्यक्रम के अनुसार बनाई जाती है लेकिन छात्रों को आधिकारिक अपडेट जांचने चाहिए।",
-
   "disclaimer_technical_title": "तकनीकी सीमाएँ",
   "disclaimer_technical_desc": "सेवा बिना किसी गारंटी के प्रदान की जाती है और कभी-कभी तकनीकी समस्याएँ हो सकती हैं।",
-
   "disclaimer_thirdparty_title": "थर्ड-पार्टी सामग्री",
   "disclaimer_thirdparty_desc": "हम बाहरी वेबसाइटों की सामग्री के लिए जिम्मेदार नहीं हैं।",
-
   "disclaimer_liability_title": "दायित्व की सीमा",
   "disclaimer_liability_desc": "MCQGyaan AI प्लेटफॉर्म के उपयोग से होने वाले किसी भी नुकसान के लिए जिम्मेदार नहीं होगा।",
-
   "disclaimer_professional_title": "व्यावसायिक सलाह",
   "disclaimer_professional_desc": "यह प्लेटफॉर्म चिकित्सा, कानूनी या पेशेवर सलाह प्रदान नहीं करता।",
-
   "disclaimer_user_title": "उपयोगकर्ता की जिम्मेदारी",
   "disclaimer_user_desc": "उपयोगकर्ता निम्नलिखित के लिए जिम्मेदार हैं:",
-
   "disclaimer_user_li1": "खाते की सुरक्षा बनाए रखना",
   "disclaimer_user_li2": "प्लेटफॉर्म नीतियों का पालन करना",
   "disclaimer_user_li3": "गैरकानूनी उपयोग से बचना",
   "disclaimer_user_li4": "बौद्धिक संपदा अधिकारों का सम्मान करना",
-
   "about_title": "MCQGyaan AI के बारे में",
   "about_subtitle": "CBSE छात्रों के लिए AI आधारित शिक्षा के माध्यम से सीखने में क्रांति ला रहे हैं।",
-
   "about_mission_title": "हमारा मिशन",
   "about_mission_desc": "AI की मदद से गुणवत्तापूर्ण शिक्षा को सभी छात्रों तक पहुँचाना और सीखने को रोचक बनाना।",
-
   "about_vision_title": "हमारा विज़न",
   "about_vision_desc": "लाखों छात्रों को शैक्षणिक सफलता दिलाने वाला अग्रणी AI लर्निंग प्लेटफॉर्म बनना।",
-
   "about_why_title": "हमें क्यों चुनें?",
-
   "about_feature1": "CBSE आधारित",
   "about_feature2": "व्यक्तिगत सीखना",
   "about_feature3": "नवाचार",
   "about_feature4": "प्रभावी",
-
   "about_start_learning": "मुफ्त में सीखना शुरू करें",
-
   "subject_physics": "भौतिकी",
   "subject_chemistry": "रसायन विज्ञान",
   "subject_biology": "जीव विज्ञान",
   "subject_general_science": "सामान्य विज्ञान",
-
+  "subject_english": "अंग्रेज़ी",
+  "subject_hindi": "हिंदी",
+  "subject_mathematics": "गणित",
+  "subject_science": "विज्ञान",
+  "subject_social_science": "सामाजिक विज्ञान",
+  "subject_computer": "कंप्यूटर",
   "subject_french": "फ्रेंच",
   "subject_german": "जर्मन",
   "subject_spanish": "स्पेनिश",
-  "subject_hindi": "हिंदी",
   "subject_marathi": "मराठी",
   "subject_kannada": "कन्नड़",
-
   "class_6": "कक्षा 6",
   "class_7": "कक्षा 7",
   "class_8": "कक्षा 8",
   "class_9": "कक्षा 9",
   "class_10": "कक्षा 10",
-
   "difficulty_easy": "आसान",
   "difficulty_medium": "मध्यम",
   "difficulty_hard": "कठिन",
-
   "test_type_mixed_title": "मिक्स्ड टेस्ट",
   "test_type_mixed_desc": "MCQ + लिखित प्रश्न",
   "test_type_mixed_extra": "50% MCQ और 50% लिखित प्रश्न अभ्यास के लिए",
-
   "test_type_mcq_title": "केवल MCQ टेस्ट",
   "test_type_mcq_desc": "सिर्फ बहुविकल्पीय प्रश्न",
   "test_type_mcq_extra": "तेज़ टेस्ट जिसमें तुरंत परिणाम मिलता है",
-
   "test_quick": "क्विक टेस्ट",
   "test_quick_questions": "10 प्रश्न",
   "test_quick_time": "~10 मिनट",
-
   "test_standard": "स्टैंडर्ड टेस्ट",
   "test_standard_questions": "20 प्रश्न",
   "test_standard_time": "~20 मिनट",
-
   "test_extended": "एक्सटेंडेड टेस्ट",
   "test_extended_questions": "30 प्रश्न",
   "test_extended_time": "~30 मिनट",
-
   "test_full": "फुल टेस्ट",
   "test_full_questions": "50 प्रश्न",
   "test_full_time": "~50 मिनट",
-
-  "class": "कक्षा",
-
   "test_type_mcq_short": "केवल MCQ",
   "test_type_mixed_short": "मिक्स्ड",
-
   "chapter_predefined": "पूर्व निर्धारित अध्याय",
   "chapter_predefined_desc": "पाठ्यक्रम के तैयार अध्यायों में से चुनें",
   "chapter_predefined_details": "पूरा सिलेबस कवर करने वाले 25 अध्याय",
-
   "chapter_custom": "कस्टम टॉपिक्स",
   "chapter_custom_desc": "अपने विषयों के साथ टेस्ट बनाएं",
   "chapter_custom_details": "अपने टॉपिक्स दर्ज करें और सेटिंग्स कस्टमाइज़ करें",
-  "education_board": "शिक्षा बोर्ड",
   "select_board": "बोर्ड चुनें",
-
   "board_cbse": "CBSE (केंद्रीय बोर्ड)",
   "board_icse": "ICSE (काउंसिल फॉर इंडियन स्कूल)",
   "board_ib": "IB (इंटरनेशनल बैकलॉरिएट)",
   "board_rbse": "RBSE (राजस्थान बोर्ड)",
   "board_state": "राज्य बोर्ड",
-
-  "subject": "विषय",
-  "class": "कक्षा",
   "difficulty_label": "कठिनाई",
-  "difficulty_easy": "आसान",
-  "difficulty_medium": "मध्यम",
-  "difficulty_hard": "कठिन",
-  "type": "प्रकार",
   "questions": "प्रश्न",
-  "topics": "टॉपिक्स",
-
   "topics_count": "टॉपिक",
-
   "test_type_mcq": "केवल MCQ",
   "test_type_mixed": "मिक्स्ड",
-
   "topic_placeholder1": "उदाहरण: बेसिक ग्रीटिंग्स, क्रिया रूपांतरण, कोशिका संरचना",
   "topic_placeholder2": "उदाहरण: संख्या और गिनती, भूतकाल",
   "topic_placeholder3": "उदाहरण: परिवार के सदस्य, प्रकाश संश्लेषण",
   "topic_placeholder4": "उदाहरण: भोजन और पेय, रासायनिक अभिक्रियाएँ",
   "topic_placeholder5": "उदाहरण: काल अभ्यास, बीजगणित की मूल बातें",
   "topic_placeholder6": "उदाहरण: ज्यामिति, मानव पाचन तंत्र",
-
   "select_ai_model": "AI मॉडल चुनें",
-
   "model_hf": "MCQGyaan HF मॉडल 🤗",
   "model_ft_pricer": "FT Pricer 4.1 Nano (कस्टम ट्रेन किया हुआ) 🧠🔥",
-
   "model_gpt52": "GPT-5.2 (नवीनतम • सबसे बुद्धिमान) 🧠🔥",
   "model_gpt51": "GPT-5.1 (तेज़ • GPT-5.2 के करीब गुणवत्ता) ⚡",
-
   "model_gpt4o": "GPT-4o (सर्वश्रेष्ठ गुणवत्ता) ⭐",
   "model_gpt4o_mini": "GPT-4o Mini (तेज़ और किफायती) ⚡",
-
   "model_gpt35": "GPT-3.5 Turbo (सबसे सस्ता) 💰",
-
   "progress": "प्रगति:",
-  "questions": "प्रश्न",
   "score": "स्कोर:",
   "points": "अंक",
-
-  "question": "प्रश्न",
   "of": "में से",
   "multiple_choice": "बहुविकल्पीय",
   "read_carefully": "ध्यान से पढ़ें",
-
   "select_answer": "अपना उत्तर चुनें:",
   "tip_select_best": "सुझाव: ऊपर दिए गए विकल्पों में से सबसे सही उत्तर चुनें",
-
-  "your_answer": "आपका उत्तर:",
   "type_answer": "यहाँ अपना उत्तर लिखें...",
   "tip_check_spelling": "सुझाव: उत्तर जमा करने से पहले वर्तनी और व्याकरण जाँच लें",
-
   "submit_answer": "उत्तर जमा करें",
-  "evaluating": "जाँच हो रही है...",
-
+  "evaluating": "मूल्यांकन हो रहा है... कृपया प्रतीक्षा करें",
   "redirecting": "रीडायरेक्ट किया जा रहा है...",
+  "preparing_test": "आपका टेस्ट तैयार हो रहा है...",
+  "loading_time_hint": "इसमें 5-20 सेकंड लग सकते हैं",
   "error": "त्रुटि",
   "failed_start_test": "टेस्ट शुरू नहीं हो सका। कृपया फिर से प्रयास करें।",
   "failed_generate_question": "प्रश्न उत्पन्न नहीं हो सका।",
@@ -691,130 +561,145 @@
   "excellent_work": "शानदार! आप बहुत अच्छा कर रहे हैं।",
   "keep_learning": "चिंता न करें, अभ्यास करते रहें और आप बेहतर होंगे।",
   "ai_generating_question": "AI आपका प्रश्न तैयार कर रहा है...",
+  "answer_correct_explanation_fallback": "आपका उत्तर सही उत्तर से मेल खाता है। कॉन्सेप्ट मजबूत करने के लिए व्याख्या पढ़ें।",
+  "answer_wrong_explanation_fallback": "आपका उत्तर सही उत्तर से मेल नहीं खाता। व्याख्या पढ़ें और कॉन्सेप्ट दोबारा समझें।",
+  "why_correct": "यह सही क्यों है",
+  "why_wrong": "इसमें सुधार क्यों चाहिए",
+  "speech_not_supported": "इस ब्राउज़र में आवाज़ चलाने की सुविधा उपलब्ध नहीं है।",
+  "listen_audio": "सुनें",
+  "stop_audio": "रोकें",
+  "scores_reset_title": "स्कोर रीसेट हो गए",
+  "scores_reset_desc": "आपके सभी टेस्ट स्कोर सफलतापूर्वक हटा दिए गए हैं।",
   "test": "टेस्ट",
-  "class": "कक्षा",
   "exit_test": "टेस्ट छोड़ें",
-
-  "error": "त्रुटि",
   "enter_share_code": "कृपया शेयर कोड दर्ज करें",
   "test_not_found": "टेस्ट नहीं मिला",
   "invalid_share_code": "अमान्य शेयर कोड। कृपया जाँच कर पुनः प्रयास करें।",
   "provide_answer": "कृपया उत्तर दर्ज करें",
   "evaluate_failed": "उत्तर का मूल्यांकन नहीं हो सका",
   "allow_popup_pdf": "PDF डाउनलोड करने के लिए पॉपअप की अनुमति दें",
-
   "print_dialog_opened": "प्रिंट विंडो खुल गई",
   "choose_save_pdf": "डाउनलोड करने के लिए 'Save as PDF' चुनें",
-
+  "choose_save_pdf_answer_sheet": "उत्तर पत्रक डाउनलोड करने के लिए 'Save as PDF' चुनें",
+  "invalid_topics_title": "अमान्य टॉपिक",
+  "required_topics_missing_title": "जरूरी टॉपिक छूट गए हैं",
+  "required_topics_missing_desc": "कृपया टॉपिक 1, टॉपिक 2 और टॉपिक 3 भरें। ये सभी जरूरी हैं।",
+  "test_generated_title": "टेस्ट तैयार हो गया!",
+  "test_generated_desc": "{{count}} यूनिक प्रश्न सफलतापूर्वक तैयार हुए। शुभकामनाएँ!",
+  "generation_failed_title": "टेस्ट जनरेट नहीं हो सका",
+  "generation_failed_desc": "कस्टम टेस्ट जनरेट नहीं हो सका। कृपया फिर से प्रयास करें।",
   "take_custom_test": "कस्टम टेस्ट दें",
   "enter_share_code_teacher": "अपने शिक्षक द्वारा दिया गया शेयर कोड दर्ज करें",
-  "share_code": "शेयर कोड",
   "enter_code_placeholder": "6 अक्षरों का कोड दर्ज करें",
-
   "start_test": "टेस्ट शुरू करें",
-  "back": "वापस",
   "loading": "लोड हो रहा है...",
-
   "test_completed": "टेस्ट पूरा हुआ!",
   "out_of": "में से",
   "correct": "सही",
-  "total_score": "कुल अंक:",
-
-  "your_answer": "आपका उत्तर:",
-  "correct_answer": "सही उत्तर:",
+  "total_score": "कुल अंक",
+  "correct_answer": "सही उत्तर",
   "explanation": "व्याख्या:",
-
   "download_answer_sheet": "उत्तर शीट डाउनलोड करें",
   "take_another_test": "फिर से टेस्ट दें",
-
-  "exit_test": "टेस्ट छोड़ें",
   "download_questions": "प्रश्न डाउनलोड करें",
-
-  "question": "प्रश्न",
-  "of": "में से",
-  "class": "कक्षा",
-
   "titleFormat": "कक्षा {{class}} {{subject}}",
-
   "type_answer_here": "यहाँ अपना उत्तर लिखें...",
-  "evaluating": "जाँच हो रही है...",
   "next_question": "अगला प्रश्न",
   "finish_test": "टेस्ट समाप्त करें",
-
-  "correct": "सही!",
   "incorrect": "गलत",
   "partial_credit": "आंशिक अंक",
-
-  "correct_answer": "सही उत्तर",
-
   "listen": "सुनें",
   "stop": "रोकें",
-
   "listen_pronunciation": "सही उच्चारण सुनने के लिए \"सुनें\" पर क्लिक करें",
-
-  "next_question": "अगला प्रश्न",
   "end_test": "टेस्ट समाप्त करें",
-
   "easy": "आसान",
   "medium": "मध्यम",
   "hard": "कठिन",
-
   "test_complete": "टेस्ट पूरा हुआ!",
   "great_work": "आपने इस टेस्ट में अच्छा काम किया:",
   "quiz": "क्विज़",
-
-  "total_score": "कुल अंक",
+  "subject_test_title": "{{subject}} टेस्ट",
   "accuracy": "सटीकता",
-  "correct": "सही",
-
+  "correct_answers": "सही उत्तर",
+  "total_questions": "कुल प्रश्न",
+  "percentage": "प्रतिशत",
+  "performance": "प्रदर्शन",
+  "performance_excellent": "उत्कृष्ट",
+  "performance_good": "अच्छा",
+  "performance_average": "औसत",
+  "performance_poor": "कमज़ोर",
+  "performance_needs_improvement": "सुधार की आवश्यकता",
+  "result_subject": "विषय",
+  "result_date_time": "दिनांक और समय",
+  "result_language": "भाषा",
+  "language_english": "अंग्रेज़ी",
+  "language_hindi": "हिंदी",
+  "test_language": "परीक्षा भाषा",
+  "choose_test_language": "इस परीक्षा के लिए भाषा चुनें",
+  "confirm_exit_test": "क्या आप सच में टेस्ट छोड़ना चाहते हैं? आपकी प्रगति खो जाएगी।",
+  "page": "पेज",
+  "pdf_download_ready": "आपकी PDF सफलतापूर्वक डाउनलोड हो गई है।",
+  "pdf_generation_failed": "PDF जनरेट नहीं हो सकी। कृपया फिर से प्रयास करें।",
   "outstanding": "शानदार! आप इस भाषा में बहुत अच्छे हो रहे हैं!",
   "good_progress": "अच्छा काम! आप अच्छी प्रगति कर रहे हैं!",
   "keep_practicing": "अच्छा प्रयास! अभ्यास जारी रखें और आप जल्दी बेहतर होंगे!",
-
   "try_another_test": "एक और टेस्ट करें",
   "back_home": "होम पर जाएँ",
-
+  "my_profile": "मेरा प्रोफ़ाइल",
+  "profile": "प्रोफ़ाइल",
+  "profile_desc": "अपनी छात्र प्रोफ़ाइल जानकारी और खाते के विवरण देखें।",
+  "profile_overview": "प्रोफ़ाइल अवलोकन",
+  "profile_overview_desc": "आपका खाता स्थिति और लॉगिन प्रदाता यहां दिखाया गया है।",
+  "login_provider": "लॉगिन प्रदाता",
+  "account_status": "खाता स्थिति",
+  "full_name": "पूरा नाम",
+  "email_address": "ईमेल पता",
+  "registered_email": "पंजीकृत ईमेल",
+  "not_available_short": "N/ए",
+  "not_available": "उपलब्ध नहीं",
+  "edit_profile": "प्रोफ़ाइल संपादित करें",
+  "profile_edit_desc": "अनुभव को निजी बनाने के लिए अपनी प्रोफ़ाइल जानकारी अपडेट करें।",
+  "select_class": "कक्षा चुनें",
+  "class_11": "कक्षा 11",
+  "class_12": "कक्षा 12",
+  "medium_english": "अंग्रेज़ी",
+  "medium_hindi": "हिंदी",
+  "select_medium": "माध्यम चुनें",
+  "country": "देश",
+  "state": "राज्य",
+  "city": "शहर",
+  "profile_complete_warning": "होम पेज पर वापस जाने से पहले कृपया अपनी प्रोफ़ाइल के सभी आवश्यक विवरण पूरे करें।",
+  "profile_complete_warning_desc": "आपकी प्रोफ़ाइल पूरी होने के बाद ही टेस्ट जनरेशन उपलब्ध होगी।",
+  "profile_save_success": "प्रोफ़ाइल सहेजी गई",
+  "profile_save_success_desc": "आपकी छात्र प्रोफ़ाइल सफलतापूर्वक अपडेट हो गई।",
+  "profile_save_error": "प्रोफ़ाइल सहेजने में विफल। कृपया पुन: प्रयास करें।",
+  "profile_load_failed": "प्रोफ़ाइल डेटा लोड करने में असमर्थ। कृपया पृष्ठ को रिफ्रेश करें।",
+  "saving": "सहेजा जा रहा है...",
+  "save_changes": "परिवर्तनों को सहेजें",
+  "reset": "रीसेट करें",
   "no_scores": "अभी कोई स्कोर नहीं है। टेस्ट शुरू करें और अपना परिणाम देखें!",
-
   "answer_sheet_evaluator": "उत्तर-पत्र मूल्यांकन",
   "ai_feedback_desc": "उत्तर पुस्तिकाएँ अपलोड करें और AI द्वारा विस्तृत फीडबैक प्राप्त करें",
-
   "student_information": "छात्र जानकारी (वैकल्पिक)",
   "personalized_feedback": "व्यक्तिगत फीडबैक के लिए विवरण दें",
-
   "student_name": "छात्र का नाम",
   "enter_student_name": "छात्र का नाम दर्ज करें",
-
   "class_level": "कक्षा स्तर",
-  "select_class": "कक्षा चुनें",
-  "class": "कक्षा",
-
-  "subject": "विषय",
   "enter_subject": "विषय दर्ज करें",
-
   "upload_answer_sheets": "उत्तर-पत्र अपलोड करें",
   "upload_20_images": "अधिकतम 20 चित्र अपलोड करें",
-
   "upload_question_paper": "प्रश्नपत्र अपलोड करें (वैकल्पिक)",
   "optional_question_upload": "अधिक सटीक मूल्यांकन के लिए प्रश्नपत्र अपलोड करें",
-
   "click_upload_images": "चित्र अपलोड करने के लिए क्लिक करें",
   "click_upload_questions": "प्रश्न चित्र अपलोड करने के लिए क्लिक करें",
-
   "evaluate_answer_sheets": "उत्तर-पत्र का मूल्यांकन करें",
-  "evaluating": "मूल्यांकन हो रहा है... कृपया प्रतीक्षा करें",
-
   "evaluation_complete": "मूल्यांकन पूर्ण",
   "answers_evaluated": "उत्तर मूल्यांकित",
   "average_score": "औसत अंक",
-
   "evaluate_another_sheet": "एक और उत्तर-पत्र का मूल्यांकन करें",
-
   "no_images": "कोई चित्र नहीं",
   "upload_answer_sheet": "कृपया उत्तर-पत्र चित्र अपलोड करें",
-
   "evaluation_failed": "मूल्यांकन असफल",
-
   "answerEvaluator": {
     "title": "उत्तर पुस्तिका मूल्यांकन",
     "subtitle": "उत्तर पुस्तिकाएँ अपलोड करें और AI से मूल्यांकन प्राप्त करें",
@@ -851,7 +736,6 @@
     "downloadPDF": "PDF रिपोर्ट डाउनलोड करें",
     "evaluateAnother": "नई उत्तर पुस्तिका जांचें"
   },
-
   "teacherDashboard": {
     "title": "शिक्षक डैशबोर्ड",
     "welcome": "स्वागत है",
@@ -884,9 +768,8 @@
     "downloadPDF": "PDF डाउनलोड करें",
     "copyCode": "कोड कॉपी करें",
     "editQuestion": "प्रश्न संपादित करें",
-    "aiEdit": "AI से संपादन",
+    "aiEdit": "AI संपादन",
     "improveAI": "AI से सुधारें",
-
     "testTitlePlaceholder": "उदाहरण: अध्याय 5 भौतिकी टेस्ट",
     "selectSubject": "विषय चुनें",
     "class": "कक्षा",
@@ -908,34 +791,25 @@
     "modelAnswer": "मॉडल उत्तर",
     "explanation": "व्याख्या",
     "edit": "संपादित करें",
-    "aiEdit": "AI संपादन",
     "manualEditDesc": "प्रश्न, विकल्प, उत्तर और व्याख्या को मैन्युअली संपादित करें",
     "aiEditDesc": "AI को बताएं कि आप इस प्रश्न में क्या सुधार चाहते हैं",
     "currentQuestion": "वर्तमान प्रश्न:",
     "feedbackLabel": "AI के लिए फीडबैक (कम से कम 10 अक्षर)",
     "improving": "सुधार हो रहा है...",
-    "cancel": "रद्द करें",
     "correctOption": "सही विकल्प",
     "correctAnswer": "सही उत्तर",
     "option": "विकल्प",
-    "saving": "सहेजा जा रहा है...",
-    "class": "कक्षा",
-    "topic": "विषय",
-    "questions": "प्रश्न"
-
+    "saving": "सहेजा जा रहा है..."
   },
-
   "status": {
     "published": "प्रकाशित",
     "draft": "ड्राफ्ट"
   },
-
   "difficulty": {
     "easy": "आसान",
     "medium": "मध्यम",
     "hard": "कठिन"
   },
-
   "subjects": {
     "math": "गणित",
     "science": "विज्ञान",
@@ -954,10 +828,14 @@
     "german": "जर्मन",
     "spanish": "स्पेनिश",
     "general": "सामान्य",
+    "general_science": "सामान्य विज्ञान",
     "social_studies": "सामाजिक विज्ञान"
   },
-
   "teacherAuth": {
+    "passwordRequirements": "पासवर्ड कम से कम 8 अक्षरों का होना चाहिए और उसमें कम से कम 1 विशेष चिन्ह होना चाहिए।",
+    "passwordMinLength": "कम से कम 8 अक्षर",
+    "passwordSpecial": "कम से कम 1 विशेष चिन्ह",
+    "invalidPassword": "अमान्य पासवर्ड",
     "portal": "शिक्षक पोर्टल",
     "loginDescription": "कस्टम MCQ टेस्ट बनाने के लिए लॉगिन करें",
     "registerDescription": "शिक्षक के रूप में रजिस्टर करें",
@@ -965,7 +843,7 @@
     "password": "पासवर्ड",
     "email": "ईमेल",
     "fullName": "पूरा नाम",
-    "school": "स्कूल (वैकल्पिक)",
+    "school": "स्कूल",
     "enterUsername": "यूज़रनेम दर्ज करें",
     "enterPassword": "पासवर्ड दर्ज करें",
     "chooseUsername": "यूज़रनेम चुनें",
@@ -984,25 +862,50 @@
     "couldNotCreate": "खाता नहीं बनाया जा सका",
     "noAccount": "क्या आपके पास अकाउंट नहीं है? रजिस्टर करें",
     "haveAccount": "क्या आपके पास पहले से अकाउंट है? लॉगिन करें",
-
-      "usernameMin": "यूज़रनेम कम से कम 3 अक्षरों का होना चाहिए",
-      "passwordMin": "पासवर्ड कम से कम 6 अक्षरों का होना चाहिए",
-      "fullNameMin": "पूरा नाम कम से कम 2 अक्षरों का होना चाहिए",
-      "invalidEmail": "अमान्य ईमेल पता"
-
+    "usernameMin": "यूज़रनेम कम से कम 3 अक्षरों का होना चाहिए",
+    "passwordMin": "पासवर्ड कम से कम 6 अक्षरों का होना चाहिए",
+    "fullNameMin": "पूरा नाम कम से कम 2 अक्षरों का होना चाहिए",
+    "invalidEmail": "अमान्य ईमेल पता"
   },
-  "login": {
-    "title": "लॉगिन",
+  "loginPage": {
+    "kicker": "लॉगिन",
+    "title": "छात्र लॉगिन",
+    "subtitle": "अपने छात्र अकाउंट से प्रोफ़ाइल खोलें, विवरण अपडेट करें और परिणाम देखें।",
+    "studentLoginTitle": "अपने छात्र अकाउंट में लॉगिन करें",
+    "studentLoginDesc": "अपना ईमेल और पासवर्ड डालकर छात्र प्रोफ़ाइल खोलें।",
     "email": "ईमेल",
     "emailPlaceholder": "अपना ईमेल दर्ज करें",
     "password": "पासवर्ड",
     "passwordPlaceholder": "अपना पासवर्ड दर्ज करें",
     "button": "लॉगिन करें",
     "loading": "लॉगिन हो रहा है...",
+    "invalidCredentials": "गलत ईमेल या पासवर्ड",
     "noAccount": "क्या आपका अकाउंट नहीं है?",
-    "signup": "साइन अप करें"
+    "signup": "साइन अप करें",
+    "orContinue": "या जारी रखें",
+    "teacherHintKicker": "शिक्षक प्रवेश",
+    "teacherLoginTitle": "क्या आप शिक्षक हैं?",
+    "teacherLoginDesc": "शिक्षक पोर्टल खोलकर लॉगिन करें और डैशबोर्ड का उपयोग करें।",
+    "teacherLogin": "टीचर लॉगिन",
+    "quickNoteTitle": "अकाउंट चाहिए?",
+    "quickNoteDesc": "नया छात्र अकाउंट जल्दी बनाने के लिए साइन अप करें।"
+  },
+  "loginChoice": {
+    "title": "लॉगिन का तरीका चुनें",
+    "subtitle": "आगे बढ़ने के लिए छात्र या शिक्षक के रूप में लॉगिन करें।",
+    "studentTitle": "छात्र लॉगिन",
+    "studentDesc": "अपना छात्र प्रोफ़ाइल, प्रैक्टिस टेस्ट और परिणाम देखें।",
+    "studentNote": "छात्र खाते से आगे बढ़ें।",
+    "studentAction": "छात्र के रूप में जारी रखें",
+    "teacherTitle": "शिक्षक लॉगिन",
+    "teacherDesc": "टेस्ट बनाने और मैनेज करने के लिए शिक्षक डैशबोर्ड खोलें।",
+    "teacherNote": "कक्षाओं और क्विज़ को मैनेज करने के लिए शिक्षक खाते का उपयोग करें।",
+    "teacherAction": "शिक्षक के रूप में जारी रखें"
   },
   "signup": {
+    "passwordRequirements": "कृपया पासवर्ड की सभी आवश्यकताओं को पूरा करें।",
+    "passwordMinLength": "कम से कम 8 अक्षर",
+    "passwordSpecial": "कम से कम 1 विशेष चिन्ह (!@#$ आदि)",
     "title": "खाता बनाएं",
     "name": "नाम",
     "namePlaceholder": "अपना नाम दर्ज करें",
@@ -1012,7 +915,10 @@
     "passwordPlaceholder": "पासवर्ड बनाएं",
     "confirmPassword": "पासवर्ड की पुष्टि करें",
     "confirmPasswordPlaceholder": "पासवर्ड दोबारा दर्ज करें",
+    "allFieldsRequired": "सभी फ़ील्ड भरना आवश्यक है",
     "passwordMismatch": "पासवर्ड मेल नहीं खा रहे हैं",
+    "passwordMin": "पासवर्ड कम से कम 6 अक्षरों का होना चाहिए",
+    "signupFailed": "साइन अप विफल रहा। कृपया फिर से प्रयास करें।",
     "button": "साइन अप करें",
     "loading": "अकाउंट बनाया जा रहा है...",
     "haveAccount": "क्या आपके पास पहले से अकाउंट है?",
@@ -1023,6 +929,158 @@
     "successTitle": "लॉगिन सफल",
     "successDesc": "Google से साइन इन किया गया",
     "errorTitle": "Google साइन-इन विफल"
-  }
-
+  },
+  "notFound": {
+    "title": "ओह! यह पेज नहीं मिला",
+    "description": "आप जिस पेज को खोज रहे हैं वह मौजूद नहीं है, उसे स्थानांतरित कर दिया गया है, या दर्ज किया गया URL सही नहीं है।",
+    "home": "होम पेज पर जाएँ",
+    "back": "वापस जाएँ",
+    "footer": "आइए <1>MCQGyaan AI</1> के साथ फिर से अपनी सीखने की यात्रा शुरू करें।"
+  },
+  "back_to_login": "बाद में लॉगिन पर जाएं",
+  "forgot_password": "पासवर्ड भूल गए?",
+  "teacher_forgot_password": "पासवर्ड भूल गए?",
+  "teacher_register_success_title": "पंजीकरण सफल हुआ",
+  "teacher_register_success_desc": "सत्यापन ईमेल आपके ईमेल पत्ते पर भेज दी गई है।",
+  "teacher_dashboard": "शिक्षक डैशबोर्ड",
+  "teacher_account": "शिक्षक खाता",
+  "student_account": "छात्र खाता",
+  "teacher_profile_load_failed": "शिक्षक प्रोफाइल लोड नहीं हो सका",
+  "teacher_dashboard_signed_in": "आप पहले से शिक्षक के रूप में लॉग इन हैं। जारी रखने के लिए अपना डैशबोर्ड खोलें।",
+  "toggle_theme": "थीम बदलें",
+  "toggle_menu": "मेनू खोलें",
+  "year": "वर्ष",
+  "month_short": "माह",
+  "buy_now": "अब क्रय करें",
+  "pricing_legacy_title": "हमारी प्राइसिंग और योजनाएँ",
+  "pricing_legacy_desc": "अपनी जरूरत के अनुसार योजना चुनें।",
+  "footer_tagline": "CBSE शिक्षा के लिए AI-संचालित सीखने का समर्थन करें।",
+  "footer_copyright": "© {{year}} MaxBrain Technologies. सर्वाधिकार सुरक्षित हैं।",
+  "footer_product": "प्रोडक्ट",
+  "footer_support": "सहायता",
+  "footer_legal": "कानूनी",
+  "footer_contact": "संपर्क",
+  "footer_about_us": "हमारे बारे में",
+  "footer_terms": "शर्तें",
+  "footer_privacy": "गोपनीयता",
+  "footer_refund": "रिफंड",
+  "footer_disclaimer": "अस्वीकरण",
+  "footer_email_support": "ईमेल सहायता",
+  "footer_call_us": "हमें कॉल करें",
+  "footer_location": "जयपुर, भारत",
+  "footer_bottom_note": "31 दिसंबर 2026 तक निःशुल्क और शिक्षा के लिए समर्पित",
+  "homepage": {
+    "title": "होम पेज",
+    "startTest": "टेस्ट शुरू करें",
+    "teacherLogin": "शिक्षक लॉगिन",
+    "customTest": "कस्टम टेस्ट",
+    "answerEvaluator": "उत्तर मूल्यांकन"
+  },
+  "adminLogin": {
+    "title": "एडमिन लॉगिन",
+    "description": "MCQGyaan AI के एडमिन सेशन के लिए सुरक्षित पहुँच।",
+    "email": "एडमिन ईमेल",
+    "emailPlaceholder": "admin@mcqgyaan.ai",
+    "password": "एडमिन पासवर्ड",
+    "passwordPlaceholder": "एडमिन पासवर्ड दाखिल करें",
+    "showPassword": "पासवर्ड दिखाएँ",
+    "hidePassword": "पासवर्ड छुपाएँ",
+    "button": "एडमिन में साइन इन करें",
+    "successTitle": "एडमिन पहुँच मिल गई",
+    "successDesc": "अब आप एडमिन सेशन में लॉग इन हैं।",
+    "failedTitle": "एडमिन लॉगिन विफल",
+    "invalidCredentials": "गलत एडमिन प्रमाणपत्र।",
+    "invalidEmail": "वैध एडमिन ईमेल दाखिल करें",
+    "passwordRequired": "पासवर्ड आवश्यक है"
+  },
+  "forgotPassword": {
+    "title": "पासवर्ड भूल गए?",
+    "subtitle": "अपना रजिस्टर किया हुआ ईमेल दाखिल करें।",
+    "placeholder": "अपना ईमेल दाखिल करें",
+    "sending": "भेजा जा रहा है...",
+    "send": "रीसेट लिंक भेजें",
+    "sent": "यदि यह ईमेल मौजूद है, तो पासवर्ड रीसेट लिंक भेज दिया गया है।",
+    "failed": "कुछ गलत हो गया। कृपया फिर से कोशिश करें।"
+  },
+  "resetPassword": {
+    "title": "पासवर्ड रीसेट करें",
+    "subtitle": "अपने अकाउंट के लिए एक मजबूत पासवर्ड बनाएँ।",
+    "newPassword": "नया पासवर्ड",
+    "newPasswordPlaceholder": "नया पासवर्ड दाखिल करें",
+    "confirmPassword": "पासवर्ड फिर से लिखें",
+    "confirmPasswordPlaceholder": "पासवर्ड फिर से दाखिल करें",
+    "requirementsTitle": "पासवर्ड की शर्तें",
+    "minimumLength": "कम से कम 8 अक्षर",
+    "specialCharacter": "कम से कम एक विशेष चिह्न",
+    "resetting": "रीसेट किया जा रहा है...",
+    "button": "पासवर्ड रीसेट करें",
+    "invalidLinkTitle": "अमान्य लिंक",
+    "invalidLinkDesc": "रीसेट पासवर्ड लिंक अमान्य है।",
+    "mismatchTitle": "पासवर्ड मैच नहीं करता",
+    "mismatchDesc": "दोनों पासवर्ड एक होने चाहिए।",
+    "weakTitle": "कमजोर पासवर्ड",
+    "weakDesc": "कृपया पासवर्ड की शर्तों का पालन करें।",
+    "successTitle": "पासवर्ड सफलतापूर्वक रीसेट हो गया",
+    "successDesc": "अब अपने नए पासवर्ड से लॉग इन करें।",
+    "failedTitle": "रीसेट विफल",
+    "failedDesc": "अमान्य या अवसान पा चुका रीसेट लिंक।"
+  },
+  "teacherVerification": {
+    "title": "अपना ईमेल सत्यापित करें",
+    "subtitle": "हमने एक वेरिफिकेशन ईमेल इस पते पर भेज दिया है",
+    "defaultEmail": "teacher@email.com",
+    "beforeDashboard": "टीचर डैशबोर्ड खोलने से पहले",
+    "step1": "अपना इनबॉक्स खोलें।",
+    "step2": "वेरिफिकेशन ईमेल पर क्लिक करें।",
+    "step3": "“Verify Teacher Account” बटन पर क्लिक करें।",
+    "step4": "वेरिफिकेशन के बाद MCQGyaan AI पर वापस आएँ।",
+    "sending": "भेजा जा रहा है...",
+    "resend": "फिर से वेरिफिकेशन ईमेल भेजें",
+    "resendIn": "{{seconds}}s बाद फिर से भेजें",
+    "sentTitle": "वेरिफिकेशन ईमेल भेज दिया गया",
+    "failedTitle": "ईमेल फिर से भेजने में विफल",
+    "failedDesc": "वेरिफिकेशन ईमेल फिर से भेजने में असमर्थ है।",
+    "noEmail": "कोई ईमेल नहीं मिला?",
+    "spamHint": "कृपया Spam / Junk फोल्डर चेक करें।"
+  },
+  "teacherApproval": {
+    "reviewing": "एडमिन समीक्षा चल रही है",
+    "title": "आपका शिक्षक खाता एडमिन अनुमोदन में है",
+    "subtitle": "हमने आपका ईमेल पता सत्यापित कर लिया है। डैशबोर्ड पहुँच सक्रिय होने से पहले अब अंतिम समीक्षा का इंतजार है।",
+    "email": "ईमेल",
+    "status": "स्थिति",
+    "verifiedWaiting": "सत्यापित, अनुमोदन का इंतजार",
+    "underway": "अंतिम समीक्षा चल रही है",
+    "details": "जैसे ही एडमिन टीम आपके खाते को अनुमोदित करेगी, आप टीचर डैशबोर्ड देख सकेंगे और टेस्ट, क्लास और रिजल्ट मैनेज कर सकेंगे।",
+    "step1": "आपका ईमेल सत्यापन पूरा हो चुका है।",
+    "step2": "एडमिन अनुमोदन मिलने तक पहुँच बंद है।",
+    "step3": "नीचे दिए गए चेक बटन से अपनी स्थिति रिफ्रेश करें।",
+    "checking": "जाँच की जा रही है...",
+    "checkStatus": "अनुमोदन स्थिति चेक करें"
+  },
+  "loading_teacher_access": "शिक्षक की पहुँच लोड हो रही है...",
+  "select_chapter": "अध्याय चुनें",
+  "verifying_admin_session": "एडमिन सत्यापन किया जा रहा है...",
+  "loading_teacher_details": "शिक्षक विवरण लोड हो रहे हैं...",
+  "teacher_not_found": "शिक्षक नहीं मिला",
+  "teacher_not_available": "शिक्षक उपलब्ध नहीं है",
+  "back_to_admin_dashboard": "एडमिन डैशबोर्ड पर वापस जाएं",
+  "student_profile_title": "छात्र प्रोफ़ाइल",
+  "student_profile_description": "अपनी छात्र प्रोफ़ाइल खोलने, विवरण संपादित करने और परिणाम देखने के लिए लॉगिन करें।",
+  "teacher_details": "शिक्षक विवरण",
+  "teacher_detail_view": "शिक्षक विवरण दृश्य",
+  "detailed_teacher_profile": "विस्तृत शिक्षक प्रोफाइल, प्लेटफॉर्म उपयोग और गतिविधि सारांश।",
+  "detailed_analytics_next_phase": "विस्तृत विश्लेषण अगले चरण में जोड़ा जाएगा।",
+  "student_details": "छात्र विवरण",
+  "student_detail_view": "छात्र विवरण दृश्य",
+  "detailed_student_analytics": "विस्तृत विश्लेषण अगले चरण में जोड़ा जाएगा।",
+  "teacher_login": "शिक्षक लॉगिन",
+  "admin_dashboard": "एडमिन डैशबोर्ड",
+  "admin_dashboard_summary": "शिक्षक और छात्र प्रबंधन",
+  "admin_dashboard_desc": "एक ही जगह से पूरी शिक्षक डायरेक्टरी, छात्र डायरेक्टरी और आवलोकन मेट्रिक्स प्रबंधित करें।",
+  "admin_dashboard_logout": "लॉगआउट",
+  "logging_out": "लॉगआउट हो रहा है...",
+  "admin_dashboard_logged_out": "?????? ???",
+  "admin_dashboard_cleared": "????? ???? ???? ?? ???? ??? ???",
+  "admin_dashboard_logout_error": "????? ???? ?????? ???? ???? ?? ????"
 }

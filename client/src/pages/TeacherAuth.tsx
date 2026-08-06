@@ -1,603 +1,49 @@
-// import { useState } from "react";
-// import { useNavigate } from "react-router-dom";
-// import { useForm } from "react-hook-form";
-// import { zodResolver } from "@hookform/resolvers/zod";
-// import { z } from "zod";
-// import { Button } from "@/components/ui/button";
-// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-// import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-// import { Input } from "@/components/ui/input";
-// import { useToast } from "@/hooks/use-toast";
-// import { apiRequest } from "@/lib/queryClient";
-// import { GraduationCap } from "lucide-react";
-
-// // async function handleRegister(data: RegisterForm) {
-// //   console.log("REGISTER FORM DATA 👉", data);
-// // }
-
-// const loginSchema = z.object({
-//   username: z.string().min(3, "Username must be at least 3 characters"),
-//   password: z.string().min(6, "Password must be at least 6 characters"),
-// });
-
-// const registerSchema = z.object({
-//   username: z.string().min(3, "Username must be at least 3 characters"),
-//   password: z.string().min(6, "Password must be at least 6 characters"),
-//   fullName: z.string().min(2, "Full name is required"),
-//   email: z.string().email("Invalid email address"),
-//   school: z.string().optional(),
-// });
-
-// type LoginForm = z.infer<typeof loginSchema>;
-// type RegisterForm = z.infer<typeof registerSchema>;
-
-// export default function TeacherAuth() {
-//   const navigate = useNavigate();
-//   const [isLogin, setIsLogin] = useState(true);
-//   const { toast } = useToast();
-
-//   const loginForm = useForm<LoginForm>({
-//     resolver: zodResolver(loginSchema),
-//     defaultValues: {
-//       username: "",
-//       password: "",
-//     },
-//   });
-
-//   const registerForm = useForm<RegisterForm>({
-//     resolver: zodResolver(registerSchema),
-//     defaultValues: {
-//       username: "",
-//       password: "",
-//       fullName: "",
-//       email: "",
-//       school: "",
-//     },
-//   });
-
-//   async function handleLogin(data: LoginForm) {
-//     try {
-//       const res = await apiRequest("POST", "/api/teacher/login", data);
-//       const response = await res.json();
-
-//       toast({
-//         title: "Success!",
-//         description: "Welcome back, teacher!",
-//       });
-
-//       navigate('/teacher-dashboard', { state: { teacherData: response } });
-//     } catch (error: any) {
-//       toast({
-//         variant: "destructive",
-//         title: "Login failed",
-//         description: error.message || "Invalid credentials",
-//       });
-//     }
-//   }
-
-//   async function handleRegister(data: RegisterForm) {
-//     try {
-//       const res = await apiRequest("POST", "/api/teacher/register", data);
-//       const response = await res.json();
-
-//       toast({
-//         title: "Success!",
-//         description: "Account created successfully!",
-//       });
-
-//       navigate('/teacher-dashboard', { state: { teacherData: response } });
-//     } catch (error: any) {
-//       toast({
-//         variant: "destructive",
-//         title: "Registration failed",
-//         description: error.message || "Could not create account",
-//       });
-//     }
-//   }
-
-//   return (
-//     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-//       <Card className="w-full max-w-md">
-//         <CardHeader className="text-center">
-//           <div className="flex justify-center mb-4">
-//             <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-//               <GraduationCap className="h-8 w-8 text-white" />
-//             </div>
-//           </div>
-//           <CardTitle className="text-2xl">Teacher Portal</CardTitle>
-//           <CardDescription>
-//             {isLogin ? "Login to create custom MCQ tests" : "Register as a teacher"}
-//           </CardDescription>
-//         </CardHeader>
-//         <CardContent>
-//           {isLogin ? (
-//             <Form {...loginForm}>
-//               <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
-//                 <FormField
-//                   control={loginForm.control}
-//                   name="username"
-//                   render={({ field }) => (
-//                     <FormItem>
-//                       <FormLabel>Username</FormLabel>
-//                       <FormControl>
-//                         <Input 
-//                           placeholder="Enter username" 
-//                           {...field}
-//                           data-testid="input-username"
-//                         />
-//                       </FormControl>
-//                       <FormMessage />
-//                     </FormItem>
-//                   )}
-//                 />
-//                 <FormField
-//                   control={loginForm.control}
-//                   name="password"
-//                   render={({ field }) => (
-//                     <FormItem>
-//                       <FormLabel>Password</FormLabel>
-//                       <FormControl>
-//                         <Input 
-//                           type="password" 
-//                           placeholder="Enter password" 
-//                           {...field}
-//                           data-testid="input-password"
-//                         />
-//                       </FormControl>
-//                       <FormMessage />
-//                     </FormItem>
-//                   )}
-//                 />
-//                 <Button 
-//                   type="submit" 
-//                   className="w-full"
-//                   disabled={loginForm.formState.isSubmitting}
-//                   data-testid="button-login"
-//                 >
-//                   {loginForm.formState.isSubmitting ? "Logging in..." : "Login"}
-//                 </Button>
-//               </form>
-//             </Form>
-//           ) : (
-//             <Form {...registerForm}>
-//               <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-4">
-//                 <FormField
-//                   control={registerForm.control}
-//                   name="fullName"
-//                   render={({ field }) => (
-//                     <FormItem>
-//                       <FormLabel>Full Name</FormLabel>
-//                       <FormControl>
-//                         {/* <Input 
-//                           placeholder="Enter username" 
-//                           {...field}
-//                           data-testid="input-username"
-//                         /> */}
-//                         <Input 
-//                           placeholder="John Doe" 
-//                           value={field.value}
-//                           onChange={field.onChange}
-//                           onBlur={field.onBlur}
-//                           name={field.name}
-//                           data-testid="input-fullname"
-//                         />
-//                       </FormControl>
-//                       <FormMessage />
-//                     </FormItem>
-//                   )}
-//                 />
-//                 <FormField
-//                   control={registerForm.control}
-//                   name="email"
-//                   render={({ field }) => (
-//                     <FormItem>
-//                       <FormLabel>Email</FormLabel>
-//                       <FormControl>
-//                         {/* <Input 
-//                            type="password" 
-//                            placeholder="Enter password" 
-//                            {...field}
-//                            data-testid="input-password"
-//                         /> */}
-//                         <Input 
-//                           type="email" 
-//                           placeholder="teacher@school.com" 
-//                           value={field.value}
-//                           onChange={field.onChange}
-//                           onBlur={field.onBlur}
-//                           name={field.name}
-//                           data-testid="input-email"
-//                         />
-//                       </FormControl>
-//                       <FormMessage />
-//                     </FormItem>
-//                   )}
-//                 />
-//                 <FormField
-//                   control={registerForm.control}
-//                   name="username"
-//                   render={({ field }) => (
-//                     <FormItem>
-//                       <FormLabel>Username</FormLabel>
-//                       <FormControl>
-//                         <Input 
-//                           placeholder="Choose username" 
-//                           value={field.value}
-//                           onChange={field.onChange}
-//                           onBlur={field.onBlur}
-//                           name={field.name}
-//                           data-testid="input-username-register"
-//                         />
-//                       </FormControl>
-//                       <FormMessage />
-//                     </FormItem>
-//                   )}
-//                 />
-//                 <FormField
-//                   control={registerForm.control}
-//                   name="password"
-//                   render={({ field }) => (
-//                     <FormItem>
-//                       <FormLabel>Password</FormLabel>
-//                       <FormControl>
-//                         <Input 
-//                           type="password" 
-//                           placeholder="Minimum 6 characters" 
-//                           value={field.value}
-//                           onChange={field.onChange}
-//                           onBlur={field.onBlur}
-//                           name={field.name}
-//                           data-testid="input-password-register"
-//                         />
-//                       </FormControl>
-//                       <FormMessage />
-//                     </FormItem>
-//                   )}
-//                 />
-//                 <FormField
-//                   control={registerForm.control}
-//                   name="school"
-//                   render={({ field }) => (
-//                     <FormItem>
-//                       <FormLabel>School (Optional)</FormLabel>
-//                       <FormControl>
-//                         <Input 
-//                           placeholder="Your school name" 
-//                           value={field.value || ""}
-//                           onChange={field.onChange}
-//                           onBlur={field.onBlur}
-//                           name={field.name}
-//                           data-testid="input-school"
-//                         />
-//                       </FormControl>
-//                       <FormMessage />
-//                     </FormItem>
-//                   )}
-//                 />
-//                 <Button 
-//                   type="submit" 
-//                   className="w-full"
-//                   disabled={registerForm.formState.isSubmitting}
-//                   data-testid="button-register"
-//                 >
-//                   {registerForm.formState.isSubmitting ? "Creating account..." : "Register"}
-//                 </Button>
-//               </form>
-//             </Form>
-//           )}
-
-//           <div className="mt-4 text-center">
-//             <Button
-//               variant="ghost"
-//               onClick={() => setIsLogin(!isLogin)}
-//               data-testid="button-toggle-mode"
-//             >
-//               {isLogin ? "Don't have an account? Register" : "Already have an account? Login"}
-//             </Button>
-//           </div>
-//         </CardContent>
-//       </Card>
-//     </div>
-//   );
-// }
-
-
-// import { useState } from "react";
-// import { useNavigate } from "react-router-dom";
-// import { useForm } from "react-hook-form";
-// import { zodResolver } from "@hookform/resolvers/zod";
-// import { z } from "zod";
-// import { Eye, EyeOff, GraduationCap } from "lucide-react";
-
-// import { Button } from "@/components/ui/button";
-// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-// import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-// import { Input } from "@/components/ui/input";
-// import { useToast } from "@/hooks/use-toast";
-// import { apiRequest } from "@/lib/queryClient";
-
-
-// // ================== SCHEMAS ==================
-
-// const loginSchema = z.object({
-//   username: z.string().min(3, "Username must be at least 3 characters"),
-//   password: z.string().min(6, "Password must be at least 6 characters"),
-// });
-
-// const registerSchema = z.object({
-//   username: z.string().min(3, "Username must be at least 3 characters"),
-//   password: z.string().min(6, "Password must be at least 6 characters"),
-//   fullName: z.string().min(2, "Full name is required"),
-//   email: z.string().email("Invalid email address"),
-//   school: z.string().optional(),
-// });
-
-// type LoginForm = z.infer<typeof loginSchema>;
-// type RegisterForm = z.infer<typeof registerSchema>;
-
-
-// // ================== COMPONENT ==================
-
-// export default function TeacherAuth() {
-//   const navigate = useNavigate();
-//   const [isLogin, setIsLogin] = useState(true);
-//   const { toast } = useToast();
-
-//   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
-//   const [showLoginPassword, setShowLoginPassword] = useState(false);
-
-//   const loginForm = useForm<LoginForm>({
-//     resolver: zodResolver(loginSchema),
-//     defaultValues: {
-//       username: "",
-//       password: "",
-//     },
-//   });
-
-//   const registerForm = useForm<RegisterForm>({
-//     resolver: zodResolver(registerSchema),
-//     defaultValues: {
-//       username: "",
-//       password: "",
-//       fullName: "",
-//       email: "",
-//       school: "",
-//     },
-//   });
-
-//   // ================== HANDLERS ==================
-
-//   async function handleLogin(data: LoginForm) {
-//     try {
-//       const res = await apiRequest("POST", "/api/teacher/login", data);
-//       const response = await res.json();
-
-//       toast({
-//         title: "Success!",
-//         description: "Welcome back, teacher!",
-//       });
-
-//       navigate("/teacher-dashboard", { state: { teacherData: response } });
-//     } catch (error: any) {
-//       toast({
-//         variant: "destructive",
-//         title: "Login failed",
-//         description: error.message || "Invalid credentials",
-//       });
-//     }
-//   }
-
-//   async function handleRegister(data: RegisterForm) {
-//     try {
-//       const res = await apiRequest("POST", "/api/teacher/register", data);
-//       const response = await res.json();
-
-//       toast({
-//         title: "Success!",
-//         description: "Account created successfully!",
-//       });
-
-//       navigate("/teacher-dashboard", { state: { teacherData: response } });
-//     } catch (error: any) {
-//       toast({
-//         variant: "destructive",
-//         title: "Registration failed",
-//         description: error.message || "Could not create account",
-//       });
-//     }
-//   }
-
-//   // ================== UI ==================
-
-//   return (
-//     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-//       <Card className="w-full max-w-md">
-//         <CardHeader className="text-center">
-//           <div className="flex justify-center mb-4">
-//             <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-//               <GraduationCap className="h-8 w-8 text-white" />
-//             </div>
-//           </div>
-//           <CardTitle className="text-2xl">Teacher Portal</CardTitle>
-//           <CardDescription>
-//             {isLogin ? "Login to create custom MCQ tests" : "Register as a teacher"}
-//           </CardDescription>
-//         </CardHeader>
-
-//         <CardContent>
-//           {/* LOGIN FORM */}
-//           <div className={isLogin ? "block" : "hidden"}>
-//             <Form {...loginForm}>
-//               <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
-
-//                 <FormField
-//                   control={loginForm.control}
-//                   name="username"
-//                   render={({ field }) => (
-//                     <FormItem>
-//                       <FormLabel>Username</FormLabel>
-//                       <FormControl>
-//                         <Input placeholder="Enter username" {...field} />
-//                       </FormControl>
-//                       <FormMessage />
-//                     </FormItem>
-//                   )}
-//                 />
-
-//                 <FormField
-//                   control={loginForm.control}
-//                   name="password"
-//                   render={({ field }) => (
-//                     <FormItem>
-//                       <FormLabel>Password</FormLabel>
-//                       <FormControl>
-//                         <div className="relative">
-//                           <Input
-//                             type={showLoginPassword ? "text" : "password"}
-//                             placeholder="Enter password"
-//                             {...field}
-//                           />
-
-//                           <button
-//                             type="button"
-//                             onClick={() => setShowLoginPassword(!showLoginPassword)}
-//                             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
-//                           >
-//                             {showLoginPassword ? <EyeOff size={18}/> : <Eye size={18}/>}
-//                           </button>
-//                         </div>
-//                       </FormControl>
-//                       <FormMessage />
-//                     </FormItem>
-//                   )}
-//                 />
-
-//                 <Button type="submit" className="w-full">
-//                   Login
-//                 </Button>
-
-//               </form>
-//             </Form>
-//           </div>
-
-//           {/* REGISTER FORM */}
-//           <div className={!isLogin ? "block" : "hidden"}>
-//             <Form {...registerForm}>
-//               <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-4">
-
-//                 <FormField
-//                   control={registerForm.control}
-//                   name="fullName"
-//                   render={({ field }) => (
-//                     <FormItem>
-//                       <FormLabel>Full Name</FormLabel>
-//                       <FormControl>
-//                         <Input placeholder="John Doe" {...field} />
-//                       </FormControl>
-//                       <FormMessage />
-//                     </FormItem>
-//                   )}
-//                 />
-
-//                 <FormField
-//                   control={registerForm.control}
-//                   name="email"
-//                   render={({ field }) => (
-//                     <FormItem>
-//                       <FormLabel>Email</FormLabel>
-//                       <FormControl>
-//                         <Input type="email" placeholder="teacher@school.com" {...field} />
-//                       </FormControl>
-//                       <FormMessage />
-//                     </FormItem>
-//                   )}
-//                 />
-//                 <FormField
-//                   control={registerForm.control}
-//                   name="username"
-//                   render={({ field }) => (
-//                     <FormItem>
-//                       <FormLabel>Username</FormLabel>
-//                       <FormControl>
-//                         <Input placeholder="Choose username" {...field} />
-//                       </FormControl>
-//                       <FormMessage />
-//                     </FormItem>
-//                   )}
-//                 />
-//                 <FormField
-//                   control={registerForm.control}
-//                   name="password"
-//                   render={({ field }) => (
-//                     <FormItem>
-//                       <FormLabel>Password</FormLabel>
-//                       <FormControl>
-//                         <div className="relative">
-//                           <Input
-//                             type={showRegisterPassword ? "text" : "password"}
-//                             placeholder="Minimum 6 characters"
-//                             {...field}
-//                           />
-
-//                           <button
-//                             type="button"
-//                             onClick={() => setShowRegisterPassword(!showRegisterPassword)}
-//                             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
-//                           >
-//                             {showLoginPassword ? <EyeOff size={18}/> : <Eye size={18}/>}
-//                           </button>
-//                         </div>
-//                       </FormControl>
-//                       <FormMessage />
-//                     </FormItem>
-//                   )}
-//                 />
-
-//                 <FormField
-//                   control={registerForm.control}
-//                   name="school"
-//                   render={({ field }) => (
-//                     <FormItem>
-//                       <FormLabel>School (Optional)</FormLabel>
-//                       <FormControl>
-//                         <Input placeholder="Your school name" {...field} />
-//                       </FormControl>
-//                       <FormMessage />
-//                     </FormItem>
-//                   )}
-//                 />
-
-//                 <Button type="submit" className="w-full">
-//                   Register
-//                 </Button>
-
-//               </form>
-//             </Form>
-//           </div>
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import AuthBackground from "@/components/auth/AuthBackground";
+import {
+  validatePassword,
+  getPasswordValidation,
+} from "@/lib/passwordValidation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Eye, EyeOff, GraduationCap } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import SignInWithGoogle from "@/components/SignInWithGoogle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { clearAuthSession, getStoredAuthRole, getStoredTeacherId, setTeacherSession } from "@/lib/authSession";
 
 const loginSchema = z.object({
   username: z.string().min(3, { message: "teacherAuth.usernameMin" }),
-  password: z.string().min(6, { message: "teacherAuth.passwordMin" }),
+  password: z
+  .string()
+  .min(8, { message: "teacherAuth.passwordMinLength" })
+  .refine(
+    (value) => /[!@#$%^&*(),.?":{}|<>]/.test(value),
+    {
+      message: "teacherAuth.passwordSpecial",
+    }
+  ),
 });
 
 const registerSchema = z.object({
   username: z.string().min(3, { message: "teacherAuth.usernameMin" }),
-  password: z.string().min(6, { message: "teacherAuth.passwordMin" }),
+  password: z
+  .string()
+  .min(8, { message: "teacherAuth.passwordMinLength" })
+  .refine(
+    (value) => /[!@#$%^&*(),.?":{}|<>]/.test(value),
+    {
+      message: "teacherAuth.passwordSpecial",
+    }
+  ),
   fullName: z.string().min(2, { message: "teacherAuth.fullNameMin" }),
   email: z.string().email({ message: "teacherAuth.invalidEmail" }),
   school: z.string().optional(),
@@ -605,6 +51,20 @@ const registerSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 type RegisterForm = z.infer<typeof registerSchema>;
+
+const normalizeTeacherProfile = (teacher: any = {}) => ({
+  ...teacher,
+  fullName:
+    teacher.fullName ||
+    teacher.full_name ||
+    teacher.name ||
+    "",
+  approved:
+    teacher.approved ??
+    teacher.isApproved ??
+    teacher.is_approved ??
+    false,
+});
 
 export default function TeacherAuth() {
 
@@ -614,7 +74,69 @@ export default function TeacherAuth() {
 
   const [isLogin, setIsLogin] = useState(true);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+ 
   const [showLoginPassword, setShowLoginPassword] = useState(false);
+
+  useEffect(() => {
+    const storedTeacherId = getStoredTeacherId();
+    const storedRole = getStoredAuthRole();
+
+    if (storedRole !== "teacher" && !storedTeacherId) {
+      return;
+    }
+
+    if (!storedTeacherId) {
+      clearAuthSession();
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await fetch(`/api/teacher/${storedTeacherId}`, {
+          credentials: "include",
+        });
+
+        if (!res.ok) {
+          throw new Error(t("teacher_profile_load_failed"));
+        }
+
+        const response = normalizeTeacherProfile(await res.json());
+
+        if (cancelled) return;
+
+        if (!response.verified) {
+          navigate("/teacher-verification-pending", {
+            state: { teacher: response },
+            replace: true,
+          });
+          return;
+        }
+
+        if (!response.approved) {
+          navigate("/teacher-approval-pending", {
+            state: { teacher: response },
+            replace: true,
+          });
+          return;
+        }
+
+        navigate("/teacher-dashboard", {
+          state: { teacherData: response },
+          replace: true,
+        });
+      } catch {
+        if (!cancelled) {
+          clearAuthSession();
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate]);
 
   const loginForm = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -634,43 +156,74 @@ export default function TeacherAuth() {
       school: "",
     },
   });
+   const registerPassword = registerForm.watch("password");
+const passwordValidation = getPasswordValidation(registerPassword || "");
 
-  async function handleLogin(data: LoginForm) {
-    try {
+ async function handleLogin(data: LoginForm) {
+  try {
+    const res = await apiRequest("POST", "/api/teacher/login", data);
+    const response = normalizeTeacherProfile(await res.json());
 
-      const res = await apiRequest("POST", "/api/teacher/login", data);
-      const response = await res.json();
+    if (response.verified) {
+      setTeacherSession(response.id);
 
-      toast({
-        title: t("teacherAuth.success"),
-        description: t("teacherAuth.loginSuccess"),
+      if (!response.approved) {
+        navigate("/teacher-approval-pending", {
+          state: {
+            teacher: response,
+          },
+        });
+        return;
+      }
+
+      navigate("/teacher-dashboard", {
+        state: {
+          teacherData: response,
+        },
       });
-
-      navigate("/teacher-dashboard", { state: { teacherData: response } });
-
-    } catch (error: any) {
-
-      toast({
-        variant: "destructive",
-        title: t("teacherAuth.loginFailed"),
-        description: error.message || t("teacherAuth.invalidCredentials"),
+    } else {
+      navigate("/teacher-verification-pending", {
+        state: {
+          teacher: response,
+        },
       });
-
     }
+  } catch (error: any) {
+    toast({
+      variant: "destructive",
+      title: t("teacherAuth.loginFailed"),
+      description: error.message || t("teacherAuth.invalidCredentials"),
+    });
   }
+}
 
   async function handleRegister(data: RegisterForm) {
-    try {
+    const validation = validatePassword(data.password);
 
-      const res = await apiRequest("POST", "/api/teacher/register", data);
-      const response = await res.json();
-
+    if (!validation.valid) {
       toast({
-        title: t("teacherAuth.success"),
-        description: t("teacherAuth.registerSuccess"),
+        variant: "destructive",
+        title: t("teacherAuth.invalidPassword"),
+        description: t("teacherAuth.passwordRequirements"),
       });
 
-      navigate("/teacher-dashboard", { state: { teacherData: response } });
+      return;
+    }
+        try {
+
+      const res = await apiRequest("POST", "/api/teacher/register", data);
+      const response = normalizeTeacherProfile(await res.json());
+
+      toast({
+        title: t("teacher_register_success_title"),
+        description: t("teacher_register_success_desc"),
+      });
+
+      navigate("/teacher-verification-pending", {
+        state: {
+          teacher: response,
+        },
+      });
 
     } catch (error: any) {
 
@@ -684,10 +237,25 @@ export default function TeacherAuth() {
   }
 
   return (
+    <AuthBackground>
 
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div
+  className={`w-full transition-all duration-300 ${
+    isLogin ? "max-w-md" : "max-w-lg"
+  }`}
+>
 
-      <Card className="w-full max-w-md">
+    <Card
+      className="
+        rounded-[1.75rem]
+        border border-blue-200/70
+        bg-white/90
+        backdrop-blur-xl
+        shadow-[0_20px_60px_rgba(59,130,246,0.18)]
+        dark:border-blue-900/30
+        dark:bg-slate-950/80
+      "
+    >
 
         <CardHeader className="text-center">
 
@@ -781,10 +349,20 @@ export default function TeacherAuth() {
 
                   )}
                 />
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => navigate("/teacher/forgot-password")}
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    {t("teacher_forgot_password")}
+                  </button>
+                </div>
 
                 <Button type="submit" className="w-full">
                   {t("teacherAuth.login")}
                 </Button>
+                <SignInWithGoogle role="teacher" />
 
               </form>
 
@@ -900,6 +478,29 @@ export default function TeacherAuth() {
                       <FormMessage>
                         {fieldState.error?.message && t(fieldState.error.message)}
                       </FormMessage>
+                      <div className="mt-2 space-y-1 text-xs">
+                        <div
+                          className={`flex items-center gap-2 ${
+                            passwordValidation.minLength
+                              ? "text-green-600"
+                              : "text-muted-foreground"
+                          }`}
+                        >
+                          <span>{passwordValidation.minLength ? "✓" : "○"}</span>
+                          <span>{t("teacherAuth.passwordMinLength")}</span>
+                        </div>
+
+                        <div
+                          className={`flex items-center gap-2 ${
+                            passwordValidation.specialCharacter
+                              ? "text-green-600"
+                              : "text-muted-foreground"
+                          }`}
+                        >
+                          <span>{passwordValidation.specialCharacter ? "✓" : "○"}</span>
+                          <span>{t("teacherAuth.passwordSpecial")}</span>
+                        </div>
+                      </div>
 
                     </FormItem>
 
@@ -954,167 +555,9 @@ export default function TeacherAuth() {
       </Card>
 
     </div>
+  </AuthBackground>
 
   );
 }
 
-          {/* {isLogin ? (
-            // ================= LOGIN =================
-            <Form {...loginForm}>
-              <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
-
-                <FormField
-                  control={loginForm.control}
-                  name="username"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Username</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter username" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={loginForm.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="Enter password" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={loginForm.formState.isSubmitting}
-                >
-                  {loginForm.formState.isSubmitting ? "Logging in..." : "Login"}
-                </Button>
-
-              </form>
-            </Form>
-          ) : (
-            // ================= REGISTER =================
-            <Form {...registerForm}>
-              <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-4">
-
-                <FormField
-                  control={registerForm.control}
-                  name="fullName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Full Name</FormLabel>
-                      <FormControl>
-                        {/* <input
-                          className="border p-2 w-full"
-                          placeholder="Test typing"
-                        /> */}
-                        {/* <Input
-                        placeholder="John Doe"
-                        {...field}
-                        onChange={(e) => {
-                          console.log("Typing:", e.target.value);
-                          field.onChange(e);
-                        }}
-                      />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={registerForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="teacher@school.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                /> */}
-
-                {/* <FormField
-                  control={registerForm.control}
-                  name="username"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Username</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Choose username" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                /> */}
-
-                {/* <FormField
-                  control={registerForm.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="Minimum 6 characters" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={registerForm.control}
-                  name="school"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>School (Optional)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Your school name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                /> */}
-
-                {/* <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={registerForm.formState.isSubmitting}
-                >
-                  {registerForm.formState.isSubmitting ? "Creating account..." : "Register"}
-                </Button>
-
-              </form>
-            </Form>
-          // )} */} 
-
-//           <div className="mt-4 text-center">
-//             <Button
-//               variant="ghost"
-//               onClick={() => {
-//                 console.log("Toggle clicked");
-//                 setIsLogin(!isLogin);
-//               }}
-//             >
-//               {isLogin
-//                 ? "Don't have an account? Register"
-//                 : "Already have an account? Login"}
-//             </Button>
-//           </div>
-
-//         </CardContent>
-//       </Card>
-//     </div>
-//   );
-// }
+       

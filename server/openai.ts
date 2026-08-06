@@ -22,58 +22,6 @@ export const AI_CONFIG = {
   max_tokens: 2500,
 };
 
-// export async function generateMCQs(
-//   prompt: string,
-//   modelToUse: string
-// ) {
-//   // ✅ model safety yahin decide hogi
-//     const SAFE_MODEL =
-//       modelToUse.startsWith("gpt-5")
-//         ? "gpt-4o"
-//         : modelToUse;
-
-//     const response = await openai.chat.completions.create({
-//       model: SAFE_MODEL,
-//       messages: [{ role: "user", content: prompt }],
-//       temperature: AI_CONFIG.temperature,
-//       max_tokens: AI_CONFIG.max_tokens,
-//     });
-
-//       return response.choices[0]?.message?.content;
-//   }
-
-// export async function generateMCQs(
-//   prompt: string,
-//   model: string
-// ): Promise<string | null> {
-//   try {
-//     const response = await openai.responses.create({
-//       model: model || "gpt-3.5-turbo",
-//       input: prompt,
-//       max_output_tokens: 2500,
-//       temperature: 0.7, 
-//     });
-
-//     return response.output_text;
-//   } catch (error) {
-//     console.error("OpenAI error:", error);
-//     return null;
-//   }
-// }
-
-// const openai = new OpenAI({
-//   apiKey: process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-//   baseURL: process.env.OPENAI_API_KEY ? undefined : process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-// });
-
-// export async function generateMCQs(prompt: string) {
-//   const response = await openai.responses.create({
-//     model: GPT_MODELS.GPT_5_2, // 👈 YAHAN MODEL USE HOTA HAI
-//     input: prompt,
-//   });
-
-//   return response.output_text;
-// }
 
 // Embedding model for semantic similarity detection
 const EMBEDDING_MODEL = "text-embedding-3-small";
@@ -130,7 +78,7 @@ export const GPT_MODELS = {
 
   // GPT-4 series - General purpose advanced models
   ADVANCED: "gpt-4o",           // GPT-4 Optimized - Most capable, balanced cost/performance
-  STANDARD: "gpt-4o-mini",      // GPT-4 Mini - Faster, cheaper, still very capable
+  STANDARD: "ft:gpt-4.1-mini-2025-04-14:maxbrain-technologies:430-example:E4OP0nFv",      // GPT-4 Mini - Faster, cheaper, still very capable
 
   // Legacy models
   GPT_35_TURBO: "gpt-3.5-turbo", // Fastest, cheapest, good for simple tasks
@@ -505,95 +453,6 @@ export async function generateMCQs(
     - Only JSON
     `;
 
-//     try {
-//       const response = await openai.chat.completions.create({
-//         model,
-//         messages: [{ role: "user", content: prompt }],
-//         temperature: TEMPERATURE,
-//         max_tokens: MAX_TOKENS,
-//       });
-
-//       const content = response.choices[0]?.message?.content;
-//       if (!content) continue;
-
-//       const parsed = JSON.parse(content);
-//         if (
-//         parsed &&
-//         Array.isArray(parsed.questions) &&
-//         parsed.questions.length > 0
-//       ) {
-//         allQuestions.push(...parsed.questions);
-//       } else {
-//         console.warn("No valid questions in batch:", parsed);
-//       }
-//     } catch (error: any) {
-//       console.error(`[MCQ BATCH ERROR] Failed to generate MCQ batch:`, error.message || error);
-//       continue;
-//     }
-//   }
-
-//   return allQuestions.slice(0, totalQuestions);
-// }
-
-//  try {
-//       console.log(`AI attempt ${attempts} | generating ${currentBatch}`);
-
-//       // const response = await openai.chat.completions.create({
-//       //   model,
-//       //   messages: [{ role: "user", content: prompt }],
-//       //   temperature: TEMPERATURE,
-//       //   max_tokens: MAX_TOKENS,
-//       // });
-
-
-//       let content: string | undefined;
-
-// if (model.startsWith("hf-")) {
-//   // HuggingFace Model
-//   content = await generateFromHF(prompt);
-// } else {
-//   const response = await openai.chat.completions.create({
-//     model,
-//     messages: [{ role: "user", content: prompt }],
-//     temperature: TEMPERATURE,
-//     max_tokens: MAX_TOKENS,
-//   });
-
-//   content = response.choices[0]?.message?.content;
-// }
-
-// if (!content) continue;
-
-// let parsed;
-// try {
-//   parsed = JSON.parse(content);
-// } catch (err) {
-//   console.error("Invalid JSON, retrying...", err);
-//   continue;
-// }
-
-//       // const content = response.choices[0]?.message?.content;
-//       if (!content) continue;
-
-//       let parsed;
-
-//       try {
-//         parsed = JSON.parse(content);
-//       } catch (err) {
-//         console.error("Invalid JSON, retrying...", err);
-//         continue;
-//       }
-
-//       if (Array.isArray(parsed.questions)) {
-//         allQuestions.push(...parsed.questions);
-//       }
-
-//     } catch (err) {
-//       console.error("AI failed:", err);
-//       continue;
-//     }
-//   }
-
   try {
     console.log(`AI attempt ${attempts} | generating ${currentBatch}`);
 
@@ -679,7 +538,7 @@ export async function generateQuestion(params: QuestionGenerationParams & { isMc
     : '';
 
   const previousQuestionsContext = previousQuestions && previousQuestions.length > 0
-    ? `\n\n⚠️ CRITICAL: DO NOT REPEAT THESE QUESTIONS - Generate a completely NEW and DIFFERENT question:\n${previousQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}\n`
+    ? `\n\n⚠️ CRITICAL UNIQUENESS RULE:\nDO NOT repeat, paraphrase, reword, or slightly modify any of these previous questions.\nYour new question must test a DIFFERENT concept, use a DIFFERENT framing style, and avoid the same stem pattern.\nPreviously used questions:\n${previousQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}\n`
     : '';
 
   if (isMcq && language) {
@@ -747,18 +606,7 @@ VALIDATION CHECKLIST before responding:
 
   const guidelines = CBSE_CLASS_GUIDELINES[classLevel as keyof typeof CBSE_CLASS_GUIDELINES];
 
-//   const prompt = `You are a strict CBSE ${language} teacher for Class ${classLevel} following the official CBSE curriculum.
-// Generate a ${difficulty} level ${language} MCQ question.
 
-// The question, options, explanation and answer must be in ${language} language.
-
-// Return in JSON format.
-// Return in JSON format.
-//   Language Selected: ${language}
-//   IMPORTANT LANGUAGE RULE:
-//   - If language is Hindi, generate question, options, correct answer and explanation ONLY in Hindi.
-//   - Do NOT use English words when language is Hindi.
-//   - If language is English, generate everything strictly in English.
 
   const prompt = `
   You are an expert CBSE exam question generator.
@@ -778,6 +626,11 @@ VALIDATION CHECKLIST before responding:
   - Only ONE correct answer
   - Provide a short explanation
   - Never translate English question to Hindi unless language = Hindi
+  - The question must be genuinely unique and not a paraphrase of any previous question
+  - Change the concept focus, sentence structure, and distractor pattern from earlier questions
+  - Avoid overused stems like "What is", "Which of the following", and "Define" unless necessary
+  - Prefer application, scenario-based, comparison-based, cause-effect, assertion-reason, or example-based framing
+  - If the chapter is broad, choose a fresh sub-concept that has not already been used
 
   Return ONLY valid JSON.
 
@@ -1322,7 +1175,7 @@ export async function generateScienceQuestion(params: {
     : '';
 
   const previousQuestionsContext = previousQuestions && previousQuestions.length > 0
-    ? `\n\n⚠️ CRITICAL: DO NOT REPEAT THESE QUESTIONS - Generate a completely NEW and DIFFERENT question:\n${previousQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}\n`
+    ? `\n\n⚠️ CRITICAL UNIQUENESS RULE:\nDO NOT repeat, paraphrase, reword, or slightly modify any of these previous questions.\nYour new question must test a DIFFERENT concept, use a DIFFERENT framing style, and avoid the same stem pattern.\nPreviously used questions:\n${previousQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}\n`
     : '';
 
   const categoryContext = {
@@ -1343,41 +1196,6 @@ export async function generateScienceQuestion(params: {
       ? "Generate EVERYTHING strictly in Hindi (Devanagari script). Do NOT use any English words."
       : "Generate EVERYTHING strictly in English.";
 
-//  const prompt = `
-//   Generate a ${difficulty} MCQ for Class ${classLevel}.
-
-//   Subject: ${scienceCategory || "Science"}
-//   Language: ${language}
-//   Respond ONLY in ${language}. If the language is Hindi, do not use English words.
-
-//   IMPORTANT:
-//   If language is Hindi → return everything in Hindi.
-//   If language is English → return everything in English.
-
-//   Return JSON format:
-//   {
-//    "question": "",
-//    "options": ["", "", "", ""],
-//    "correctOption": "A",
-//    "correctAnswer": "",
-//    "explanation": ""
-//   }
-//       {
-
-//       IMPORTANT RULE:
-//       If language = English then output ONLY in English.
-//       Hindi or any other language is NOT allowed.
-
-//     // IMPORTANT LANGUAGE RULE:
-//     // Generate question, options, correct answer and explanation ONLY in Hindi.
-//     // Do NOT use English words.
-
-// 🎯 CBSE CLASS ${classLevel} BLUEPRINT REQUIREMENTS:
-// - Bloom's Taxonomy Level: ${guidelines.bloomLevel}
-// - Vocabulary Level: ${guidelines.vocabulary}
-// - Cognitive Skills: ${guidelines.cognitiveLevel}
-// - Question Type Examples: ${guidelines.examples}
-// - Typical Mark Allocation: ${guidelines.marks}
 
   const prompt = `
   Generate 1 ${difficulty} multiple choice question for CBSE Class ${classLevel}.
@@ -1400,6 +1218,10 @@ export async function generateScienceQuestion(params: {
   - Label options as A, B, C, D.
   - Only one option must be correct.
   - Explanation must be 1–2 lines.
+  - Generate a question that is clearly different from earlier questions in concept and wording.
+  - Do not reuse the same opening pattern or the same knowledge point repeatedly.
+  - Prefer fresh sub-topics, real-life applications, comparisons, reasoning, or cause-effect framing.
+  - Avoid producing paraphrased duplicates of earlier questions.
 
   Return ONLY valid JSON in this format:
 
@@ -1908,4 +1730,3 @@ ${isMCQ ? `{
     throw new Error(`Failed to improve question: ${error.message || "Unknown error"}`);
   }
 }
-

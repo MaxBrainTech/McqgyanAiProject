@@ -1,0 +1,12 @@
+ROUTES FILE LOADED
+[dotenv@17.3.1] injecting env (0) from .env [2m-- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com[0m
+DATABASE_URL: postgresql://postgres:password@helium/heliumdb?sslmode=disable
+8:39:16 AM [express] 🚀 serving on port 5000
+
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+[ANSWER SHEET EVAL] Processing 1 images for Suhana Parveen
+[EVAL] Starting evaluation of 1 images using gpt-4o
+[EVAL] ✓ Evaluated 4 answers. Average score: 7.5/10
+[ANSWER SHEET EVAL] ✓ Evaluation completed. ID: d09e1228-4619-4ab6-b706-1afeef673b5c
+8:39:52 AM [express] POST /api/evaluate-answer-sheet 200 in 9713ms
+8:39:58 AM [express] POST /api/download-evaluation-pdf 200 in 55ms

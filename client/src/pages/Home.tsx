@@ -1,7 +1,7 @@
 import AnimatedBackground from "@/components/AnimatedBackground";
-import { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Languages, BookOpen, Sparkles, Trophy, RotateCcw, GraduationCap, Book, Library, ScrollText, Atom, Beaker, Dna, Zap, Settings2, Loader2 } from "lucide-react";
+import { Languages, BookOpen, Sparkles, Trophy, RotateCcw, GraduationCap, Book, Library, ScrollText, Atom, Beaker, Dna, Zap, Settings2, Loader2, ArrowRight } from "lucide-react";
 import LanguageCard from "@/components/LanguageCard";
 import SelectionGrid from "@/components/SelectionGrid";
 import ChapterList from "@/components/ChapterList";
@@ -14,6 +14,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import LeaderboardCard from "@/components/LeaderboardCard";
 import { toast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { getTopicValidationMessage } from "@/lib/topicValidation";
+import { getStoredAuthRole, getStoredTeacherId } from "@/lib/authSession";
+import {
+  loadRemoteScoreHistory,
+  loadScoreHistory,
+  mergeScoreHistoryEntries,
+  resetRemoteScoreHistory,
+  resetScoreHistory,
+  type ScoreHistoryEntry,
+} from "@/lib/scoreHistory";
+
+import { getAuth, onAuthStateChanged, type User } from "firebase/auth";
 
 import { useTranslation } from "react-i18next";
 
@@ -50,12 +62,24 @@ export interface Chapter {
   description: LocalizedText;
 }
 
+interface StudentProfileData {
+  fullName?: string | null;
+  emailAddress?: string | null;
+  classLevel?: number | string | null;
+  school?: string | null;
+  medium?: string | null;
+  board?: string | null;
+  country?: string | null;
+  state?: string | null;
+  city?: string | null;
+}
+
 // const [chapters, setChapters] = useState<Chapter[]>([]);
 
 export default function Home() {
 
 
-  const hasInitialized = { current: false };  
+  const hasInitialized = useRef(false);  
   const navigate = useNavigate();
   const location = useLocation();
   const [step, setStep] = useState<"mode" | "subject" | "class" | "difficulty" | "testType" | "testLength" | "testMode" | "chapter" | "customTopics" | "custom">("mode");
@@ -70,14 +94,34 @@ const [selectedSubjectLanguage, setSelectedSubjectLanguage] =
 const [selectedMedium, setSelectedMedium] =
   useState<"english" | "hindi">("english");
 
-const [leaderboard, setLeaderboard] = useState([]);
+  const [leaderboard, setLeaderboard] = useState<ScoreHistoryEntry[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [studentProfile, setStudentProfile] = useState<StudentProfileData | null>(null);
+  const [profileLoading, setProfileLoading] = useState<boolean>(false);
+  const storedAuthRole = getStoredAuthRole();
+  const storedTeacherId = getStoredTeacherId();
+  const isTeacherSession = storedAuthRole === "teacher" || Boolean(storedTeacherId);
+  const isStudentSession = storedAuthRole === "student" || Boolean(currentUser);
+
+const availableLanguageSubjectKeys: string[] = ["french", "german", "spanish", "hindi", "marathi", "kannada"];
+const scienceSubjectKeysByClass: Record<"primary" | "secondary", string[]> = {
+  primary: [
+    "school_english",
+    "school_hindi",
+    "school_mathematics",
+    "school_science",
+    "school_social_science",
+    "school_computer",
+  ],
+  secondary: ["physics", "chemistry", "biology", "general"],
+};
 
 // Science category
 const [selectedScienceCategory, setSelectedScienceCategory] =
   useState<string>("");
   // const [selectedScienceCategory, setSelectedScienceCategory] = useState<"english" | "hindi">("english");
-  const [selectedLanguage, setSelectedLanguage] = useState<string>("english");
-  const [selectedClass, setSelectedClass] = useState<number>(0);
+const [selectedLanguage, setSelectedLanguage] = useState<string>("english");
+  const [selectedClass, setSelectedClass] = useState<number>(6);
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("");
   const [selectedTestType, setSelectedTestType] = useState<string>("");
   const [selectedTestLength, setSelectedTestLength] = useState<number>(0);
@@ -90,13 +134,55 @@ const [selectedScienceCategory, setSelectedScienceCategory] =
   const [customTopic6, setCustomTopic6] = useState<string>("");
 
   // const [selectedGptModel, setSelectedGptModel] = useState<string>("gpt-5.2");
-  const [selectedGptModel, setSelectedGptModel] = useState<string>("gpt-4o-mini");
-  const [selectedBoard, setSelectedBoard] = useState<string>("CBSE");
-  const [isGeneratingTest, setIsGeneratingTest] = useState<boolean>(false);
+const [selectedGptModel, setSelectedGptModel] = useState<string>("ft:gpt-4.1-mini-2025-04-14:maxbrain-technologies:430-example:E4OP0nFv");
+const [selectedBoard, setSelectedBoard] = useState<string>("CBSE");
+const [isGeneratingTest, setIsGeneratingTest] = useState<boolean>(false);
   // const [chapters, setChapters] = useState<Array<{ id: number; title: string; description: string }>>([]);
     const [chapters, setChapters] = useState<Chapter[]>([])
 
-  const scrollYRef = useRef(0);
+  const stepSectionRef = useRef<HTMLDivElement | null>(null);
+
+  const resolvedProfileFullName = String(
+    studentProfile?.fullName ?? currentUser?.displayName ?? "",
+  ).trim();
+  const resolvedProfileEmail = String(
+    studentProfile?.emailAddress ?? currentUser?.email ?? "",
+  ).trim();
+
+  const studentProfileComplete = Boolean(
+    resolvedProfileFullName &&
+      resolvedProfileEmail &&
+      String(studentProfile?.classLevel ?? "").trim() &&
+      String(studentProfile?.school ?? "").trim() &&
+      String(studentProfile?.medium ?? "").trim() &&
+      String(studentProfile?.board ?? "").trim() &&
+      String(studentProfile?.country ?? "").trim() &&
+      String(studentProfile?.state ?? "").trim() &&
+      String(studentProfile?.city ?? "").trim()
+  );
+
+  useEffect(() => {
+    setStep("mode");
+    setSelectedMode("");
+    setSelectedSubjectLanguage("");
+    setSelectedMedium("english");
+    setSelectedScienceCategory("");
+    setSelectedLanguage("english");
+    setSelectedClass(0);
+    setSelectedDifficulty("");
+    setSelectedTestType("");
+    setSelectedTestLength(0);
+    setSelectedTestMode("");
+    setCustomTopic1("");
+    setCustomTopic2("");
+    setCustomTopic3("");
+    setCustomTopic4("");
+    setCustomTopic5("");
+    setCustomTopic6("");
+    setChapters([]);
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, []);
+
   // Reset to mode screen when component mounts/location changes to home
   // useEffect(() => {
     // setStep("mode");
@@ -121,7 +207,26 @@ const [selectedScienceCategory, setSelectedScienceCategory] =
   // }, [location.pathname]);
 
   // Load chapters when subject is selected
+
+  const handleStudentCustomMCQ = () => {
+    if (isStudentSession) {
+      navigate("/custom-test");
+      return;
+    }
+
+    navigate("/student-login", {
+      state: {
+        redirectTo: "/custom-test",
+      },
+    });
+  };
   const handleBack = () => {
+  if (!studentProfileComplete && step === "class") {
+    handleReset();
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    return;
+  }
+
   setStep((prev) => {
     switch (prev) {
       case "subject":
@@ -165,11 +270,133 @@ const [selectedScienceCategory, setSelectedScienceCategory] =
 //   // const { toast } = useToast();
 
   useEffect(() => {
-    const savedScores = localStorage.getItem("langbuddy_scores");
-    if (savedScores) {
-      setLeaderboard(JSON.parse(savedScores));
-    }
+    const unsubscribe = onAuthStateChanged(getAuth(), (user) => {
+      setCurrentUser(user);
+    });
+
+    return () => unsubscribe();
   }, []);
+
+  const effectiveClassLevel = Number(studentProfile?.classLevel ?? selectedClass ?? 6) || 6;
+
+  const availableLanguageSubjects = useMemo<string[]>(() => {
+    if (effectiveClassLevel < 6) {
+      return [];
+    }
+
+    return availableLanguageSubjectKeys;
+  }, [effectiveClassLevel]);
+
+  const availableScienceCategories = useMemo<string[]>(() => {
+    if (effectiveClassLevel >= 9) {
+      return scienceSubjectKeysByClass.secondary;
+    }
+
+    if (effectiveClassLevel >= 6) {
+      return scienceSubjectKeysByClass.primary;
+    }
+
+    return [];
+  }, [effectiveClassLevel]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setStudentProfile(null);
+      setProfileLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const loadProfile = async () => {
+      setProfileLoading(true);
+      try {
+        const res = await fetch(
+          `/api/student-profile?userId=${encodeURIComponent(currentUser.uid)}`,
+          { credentials: "include" },
+        );
+
+        if (!res.ok) {
+          if (res.status === 404) {
+            if (cancelled) return;
+            setStudentProfile(null);
+            setSelectedClass(6);
+            setSelectedBoard("CBSE");
+            return;
+          }
+          throw new Error(`Failed to load profile: ${res.status}`);
+        }
+
+        const profile = await res.json();
+        if (cancelled) return;
+        setStudentProfile(profile);
+        setSelectedClass(Number(profile?.classLevel) || 6);
+        setSelectedBoard(String(profile?.board || "CBSE"));
+      } catch (error) {
+        console.error("Failed to load student profile:", error);
+        if (!cancelled) {
+          setStudentProfile(null);
+          setSelectedClass(6);
+          setSelectedBoard("CBSE");
+        }
+      } finally {
+        if (!cancelled) {
+          setProfileLoading(false);
+        }
+      }
+    };
+
+    void loadProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser, navigate, location.key]);
+
+  useEffect(() => {
+    if (!studentProfile) return;
+
+    if (
+      selectedMode === "language" &&
+      selectedSubjectLanguage &&
+      !availableLanguageSubjects.includes(selectedSubjectLanguage)
+    ) {
+      setSelectedSubjectLanguage("");
+    }
+
+    if (
+      selectedMode === "science" &&
+      selectedScienceCategory &&
+      !availableScienceCategories.includes(selectedScienceCategory)
+    ) {
+      setSelectedScienceCategory("");
+    }
+  }, [studentProfile, selectedMode, selectedSubjectLanguage, selectedScienceCategory, availableLanguageSubjects, availableScienceCategories]);
+
+  const scienceSubjectLabelKey =
+    selectedScienceCategory === "general"
+      ? "subject_general_science"
+      : `subject_${selectedScienceCategory.replace(/^school_/, "")}`;
+
+  useEffect(() => {
+    const loadHistory = async () => {
+      const localHistory = loadScoreHistory();
+
+      if (!currentUser) {
+        setLeaderboard(localHistory);
+        return;
+      }
+
+      try {
+        const remoteHistory = await loadRemoteScoreHistory(currentUser.uid);
+        setLeaderboard(mergeScoreHistoryEntries(remoteHistory, localHistory));
+      } catch (error) {
+        console.warn("Failed to load remote score history", error);
+        setLeaderboard(localHistory);
+      }
+    };
+
+    void loadHistory();
+  }, [currentUser]);
 
 //  useEffect(() => {
 //   const fetchChapters = async () => {
@@ -235,15 +462,26 @@ useEffect(() => {
   if (step !== "chapter") return;
 
   const subject =
-  selectedMode === "science"
-    ? selectedScienceCategory
-    : selectedSubjectLanguage;
+    selectedMode === "science"
+      ? selectedScienceCategory
+      : selectedSubjectLanguage;
 
   if (!subject) return;
 
   const fetchChapters = async () => {
     try {
-      const res = await fetch(`/api/chapters/${subject}`);
+      const params = new URLSearchParams();
+      const chapterClassLevel = selectedClass || effectiveClassLevel;
+      if (chapterClassLevel) {
+        params.set("classLevel", String(chapterClassLevel));
+      }
+      if (selectedBoard) {
+        params.set("board", selectedBoard);
+      }
+
+      const query = params.toString();
+      const endpoint = `/api/chapters/${encodeURIComponent(subject)}${query ? `?${query}` : ""}`;
+      const res = await fetch(endpoint);
       const data = await res.json();
 
       if (!Array.isArray(data)) {
@@ -253,8 +491,8 @@ useEffect(() => {
 
       const mappedChapters = data.map((ch: any) => ({
         id: ch.id,
-        title: ch.title,          // NO WRAPPING
-        description: ch.description
+        title: ch.title,
+        description: ch.description,
       }));
 
       setChapters(mappedChapters);
@@ -264,23 +502,37 @@ useEffect(() => {
   };
 
   fetchChapters();
-}, [step, selectedSubjectLanguage, selectedScienceCategory, selectedMode]);
+}, [step, selectedSubjectLanguage, selectedScienceCategory, selectedMode, selectedClass, selectedBoard]);
 
   // 🔒 Save scroll position BEFORE step change
-useLayoutEffect(() => {
-  const currentScroll = window.scrollY;
+  useEffect(() => {
+    if (!stepSectionRef.current) return;
 
-  requestAnimationFrame(() => {
-    window.scrollTo({ top: currentScroll });
-  });
-}, [step]);
+    if (!hasInitialized.current) {
+      hasInitialized.current = true;
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      stepSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+        inline: "nearest",
+      });
+    });
+  }, [step]);
 
   const handleResetScores = () => {
-    localStorage.removeItem("langbuddy_scores");
+    resetScoreHistory();
     setLeaderboard([]);
+    if (currentUser) {
+      void resetRemoteScoreHistory(currentUser.uid).catch((error) => {
+        console.warn("Failed to reset remote score history", error);
+      });
+    }
     toast({
-      title: "Scores Reset",
-      description: "All your test scores have been cleared successfully!",
+      title: t("scores_reset_title"),
+      description: t("scores_reset_desc"),
     });
   };
 
@@ -292,15 +544,41 @@ useLayoutEffect(() => {
   //   }, 50);
   // };
 
+  // const handleModeSelect = (mode: string) => {
+  //   setSelectedMode(mode);
+  //   if (mode === "custom") {
+  //     setStep("custom");
+  //   } else {
+  //     setStep("subject");
+  //   }
+  //   // ScrollRestoration();  
+  // };
+
   const handleModeSelect = (mode: string) => {
-    setSelectedMode(mode);
-    if (mode === "custom") {
-      setStep("custom");
-    } else {
-      setStep("subject");
+  const auth = getAuth();
+  const user = auth.currentUser;
+
+  // 🔒 Login required only for these
+  if (mode === "language" || mode === "science") {
+    if (!user) {
+      navigate("/login");
+      return;
     }
-    // ScrollRestoration();  
-  };
+  }
+
+  setSelectedMode(mode);
+
+  if ((mode === "science" || mode === "language") && !studentProfileComplete) {
+    setStep("class");
+    return;
+  }
+
+  if (mode === "custom") {
+    setStep("custom");
+  } else {
+    setStep("subject");
+  }
+};
 
   const handleMediumSelect = (medium: "english" | "hindi") => {
   setSelectedMedium(medium);
@@ -381,15 +659,17 @@ useLayoutEffect(() => {
       !customTopic3.trim()
     ) {
       toast({
-        title: "Required Topics Missing",
-        description: "Please fill Topic 1, Topic 2 and Topic 3 (all are mandatory).",
+        title: t("required_topics_missing_title"),
+        description: t("required_topics_missing_desc"),
         variant: "destructive",
       });
       return;
     }
 
-    // ✅ Collect all 6 topics (ignore empty optional ones)
-    const topics = [
+    const subject =
+      selectedMode === "science" ? selectedScienceCategory : selectedSubjectLanguage;
+
+    const topicList = [
       customTopic1,
       customTopic2,
       customTopic3,
@@ -397,27 +677,46 @@ useLayoutEffect(() => {
       customTopic5,
       customTopic6,
     ]
-      .filter((t) => t && t.trim().length > 0)
-      .join(", ");
+      .map((topic) => topic.trim())
+      .filter((topic) => topic.length > 0);
+
+    const topicValidationMessage = await getTopicValidationMessage({
+      classLevel: selectedClass,
+      subject,
+      topics: topicList,
+    });
+
+    if (topicValidationMessage) {
+      toast({
+        title: t("invalid_topics_title"),
+        description: topicValidationMessage,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const topics = topicList.join(", ");
 
 
     try {
       setIsGeneratingTest(true);
       // Generate test via API
-      const subject = selectedMode === "science" ? selectedScienceCategory : selectedSubjectLanguage;
       const response = await apiRequest("POST", "/api/student/generate-custom-test", {
         subject,
-        classLevel: selectedClass,
+        classLevel: effectiveClassLevel,
         difficulty: selectedDifficulty,
         syllabus: topics,
         numQuestions: selectedTestLength,
         subjectLanguage: selectedSubjectLanguage,
         scienceCategory: selectedScienceCategory,
         medium: selectedMedium,
+        testLanguage: selectedMedium,
         testType: selectedTestType === "mcq-only" ? "mcq" : "mixed",
         gptModel: selectedGptModel,
         board: selectedBoard,
         mode: selectedMode,
+        userId: currentUser?.uid,
+        studentId: currentUser?.uid,
       });
 
       const data = await response.json();
@@ -427,9 +726,11 @@ useLayoutEffect(() => {
         state: {
           config: {
             mode: "custom-student",
-            language: selectedMode === "science" ? selectedMedium : selectedSubjectLanguage,
+            language: selectedMedium,
+            testLanguage: selectedMedium,
+            subjectLanguage: selectedMode === "science" ? undefined : selectedSubjectLanguage,
             scienceCategory: selectedMode === "science" ? selectedScienceCategory : undefined,
-            class: selectedClass,
+            class: effectiveClassLevel,
             difficulty: selectedDifficulty,
             testType: selectedTestType,
             testLength: selectedTestLength,
@@ -441,13 +742,15 @@ useLayoutEffect(() => {
       });
 
       toast({
-        title: "Test Generated!",
-        description: `Successfully generated ${data.questionsGenerated} unique questions. Good luck!`,
+        title: t("test_generated_title"),
+        description: t("test_generated_desc", {
+          count: data.questionsGenerated,
+        }),
       });
     } catch (error: any) {
       toast({
-        title: "Generation Failed",
-        description: error.message || "Failed to generate custom test. Please try again.",
+        title: t("generation_failed_title"),
+        description: error.message || t("generation_failed_desc"),
         variant: "destructive",
       });
     } finally {
@@ -460,9 +763,11 @@ useLayoutEffect(() => {
       state: {
         config: {
           mode: selectedMode,
-          language: selectedMode === "science" ? selectedMedium : selectedSubjectLanguage,
+          language: preDefinedChapterMedium,
+          testLanguage: preDefinedChapterMedium,
+          subjectLanguage: selectedMode === "science" ? undefined : selectedSubjectLanguage,
           scienceCategory: selectedMode === "science" ? selectedScienceCategory : undefined,
-          class: selectedClass,
+          class: effectiveClassLevel,
           difficulty: selectedDifficulty,
           testType: selectedTestType,
           testLength: selectedTestLength,
@@ -476,9 +781,23 @@ useLayoutEffect(() => {
     setStep("mode");
     setSelectedMode("");
     setSelectedLanguage("");
-    setSelectedScienceCategory("english");
+    setSelectedScienceCategory("");
     setSelectedClass(0);
     setSelectedDifficulty("");
+    setSelectedTestType("");
+    setSelectedTestLength(0);
+    setSelectedTestMode("");
+    setCustomTopic1("");
+    setCustomTopic2("");
+    setCustomTopic3("");
+    setCustomTopic4("");
+    setCustomTopic5("");
+    setCustomTopic6("");
+    setChapters([]);
+    setSelectedMedium("english");
+    setSelectedGptModel("gpt-4o-mini");
+    setSelectedBoard("CBSE");
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     // ScrollRestoration();
   };
 
@@ -489,6 +808,74 @@ useLayoutEffect(() => {
     },
   });
   const isHindi = i18n.language.startsWith("hi");
+  const preDefinedChapterMedium =
+    selectedMode === "science" && selectedScienceCategory === "school_hindi"
+      ? "hindi"
+      : selectedMode === "science" && selectedScienceCategory === "school_english"
+        ? "english"
+        : selectedMedium;
+  const configuredSubjectLabel = selectedMode === "science"
+    ? t(scienceSubjectLabelKey)
+    : selectedMode === "language"
+      ? t(`subject_${selectedSubjectLanguage}`)
+      : "";
+
+  const scienceCategoryOptions =
+    effectiveClassLevel >= 9
+      ? {
+          physics: {
+            icon: Atom,
+            color: "bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400",
+            label: t("subject_physics"),
+          },
+          chemistry: {
+            icon: Beaker,
+            color: "bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400",
+            label: t("subject_chemistry"),
+          },
+          biology: {
+            icon: Dna,
+            color: "bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400",
+            label: t("subject_biology"),
+          },
+          general: {
+            icon: Zap,
+            color: "bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400",
+            label: t("subject_general_science"),
+          },
+        }
+      : {
+          school_english: {
+            icon: BookOpen,
+            color: "bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400",
+            label: t("subject_english"),
+          },
+          school_hindi: {
+            icon: Book,
+            color: "bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400",
+            label: t("subject_hindi"),
+          },
+          school_mathematics: {
+            icon: Library,
+            color: "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400",
+            label: t("subject_mathematics"),
+          },
+          school_science: {
+            icon: Atom,
+            color: "bg-cyan-50 dark:bg-cyan-950/20 text-cyan-600 dark:text-cyan-400",
+            label: t("subject_science"),
+          },
+          school_social_science: {
+            icon: ScrollText,
+            color: "bg-violet-50 dark:bg-violet-950/20 text-violet-600 dark:text-violet-400",
+            label: t("subject_social_science"),
+          },
+          school_computer: {
+            icon: Settings2,
+            color: "bg-slate-50 dark:bg-slate-950/20 text-slate-600 dark:text-slate-400",
+            label: t("subject_computer"),
+          },
+        };
 
   return (
 
@@ -631,7 +1018,11 @@ useLayoutEffect(() => {
 
 
       {/* <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-6xl" data-section="mode-selection"> */}
-      <div className="relative z-20 container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-6xl" data-section="mode-selection">
+      <div
+        ref={stepSectionRef}
+        className="relative z-20 container mx-auto px-4 py-6 max-w-6xl sm:px-6 sm:py-8"
+        data-section="mode-selection"
+      >
         {step === "mode" && (
           <div className="space-y-6 sm:space-y-8">
             {/* Mode Selection */}
@@ -672,7 +1063,14 @@ useLayoutEffect(() => {
                     dark:hover:shadow-[0_0_45px_rgba(55,97,186,0.8)]
                   "
 
-                  onClick={() => handleModeSelect("language")}
+                  onClick={() => {
+                    const auth = getAuth();
+                    if (!auth.currentUser) {
+                      navigate("/login");
+                    } else {
+                      handleModeSelect("language");
+                    }
+                  }}
                   data-testid="card-mode-language"
                 >
                   <div className="inline-flex p-4 bg-primary/10 rounded-full mb-4">
@@ -728,7 +1126,14 @@ useLayoutEffect(() => {
                   "
 
 
-                  onClick={() => handleModeSelect("science")}
+                  onClick={() => {
+                    const auth = getAuth();
+                    if (!auth.currentUser) {
+                      navigate("/login");
+                    } else {
+                      handleModeSelect("science");
+                    }
+                  }}
                   data-testid="card-mode-science"
                 >
                   <div className="inline-flex p-4 bg-accent/10 rounded-full mb-4">
@@ -831,7 +1236,14 @@ useLayoutEffect(() => {
                     duration-300
                   "
 
-                  onClick={() => navigate('/answer-evaluator')}
+                  onClick={() => {
+                    const auth = getAuth();
+                    if (!auth.currentUser) {
+                      navigate("/login");
+                    } else {
+                      navigate("/answer-evaluator");
+                    }
+                  }}
                   data-testid="card-answer-evaluator"
                 >
                   <div className="inline-flex p-4 bg-green-500/10 rounded-full mb-4">
@@ -843,7 +1255,7 @@ useLayoutEffect(() => {
                   </p>
                   <Badge variant="secondary" className="mt-4 text-base">Upload & Evaluate</Badge>
                 </Card> */}
-                  <h3 className="text-xl font-bold mb-2">
+                  <h3 className="text-xl font-bold mb-2" >
                     {t("answer_sheet")}
                   </h3>
 
@@ -865,7 +1277,7 @@ useLayoutEffect(() => {
                   <div className="flex items-center gap-2">
                     <Trophy className="w-5 h-5 text-primary" />
                     <h2 className="text-lg sm:text-xl font-bold">
-                      {t("best_scores")}
+                      {t("score_history")}
                     </h2>
                   </div>
                   <Button
@@ -879,7 +1291,7 @@ useLayoutEffect(() => {
 
                   </Button>
                 </div>
-                <LeaderboardCard entries={leaderboard} />
+                <LeaderboardCard entries={leaderboard} onResetScores={handleResetScores} />
               </div>
             )}
           </div>
@@ -912,41 +1324,75 @@ useLayoutEffect(() => {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
-              <Card 
-                className="p-8 text-center hover-elevate cursor-pointer border-2 hover:border-primary transition-all"
-                onClick={() => navigate('/teacher-auth')}
-                data-testid="card-role-teacher"
-              >
-                <div className="inline-flex p-4 bg-primary/10 rounded-full mb-4">
-                  <GraduationCap className="w-12 h-12 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">
-                  {t("teacher_role")}
-                </h3>
+            {isTeacherSession ? (
+              <div className="mx-auto max-w-xl">
+                <Card
+                  className="cursor-pointer border-2 border-primary p-8 text-center transition-all hover-elevate"
+                  onClick={() => navigate("/teacher-dashboard")}
+                  data-testid="card-role-teacher"
+                >
+                  <div className="mb-4 inline-flex rounded-full bg-primary/10 p-4">
+                    <GraduationCap className="h-12 w-12 text-primary" />
+                  </div>
+                  <h3 className="mb-2 text-xl font-bold">{t("teacher_dashboard")}</h3>
+                  <p className="text-base text-muted-foreground">
+                    {t("teacher_dashboard_signed_in")}
+                  </p>
+                </Card>
+              </div>
+            ) : isStudentSession ? (
+              <div className="mx-auto max-w-xl">
+                <Card
+                  className="cursor-pointer border-2 border-accent p-8 text-center transition-all hover:border-accent hover-elevate"
+                  onClick={() => navigate("/custom-test")}
+                  data-testid="card-role-student"
+                >
+                  <div className="mb-4 inline-flex rounded-full bg-accent/10 p-4">
+                    <BookOpen className="h-12 w-12 text-accent" />
+                  </div>
+                  <h3 className="mb-2 text-xl font-bold">
+                    {t("student_role")}
+                  </h3>
+                  <p className="text-base text-muted-foreground">
+                    {t("student_role_desc")}
+                  </p>
+                </Card>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-6 mx-auto max-w-3xl sm:grid-cols-2">
+                <Card
+                  className="cursor-pointer border-2 border-primary p-8 text-center transition-all hover:border-primary hover-elevate"
+                  onClick={() => navigate("/teacher-auth")}
+                  data-testid="card-role-teacher"
+                >
+                  <div className="mb-4 inline-flex rounded-full bg-primary/10 p-4">
+                    <GraduationCap className="h-12 w-12 text-primary" />
+                  </div>
+                  <h3 className="mb-2 text-xl font-bold">
+                    {t("teacher_role")}
+                  </h3>
+                  <p className="text-base text-muted-foreground">
+                    {t("teacher_role_desc")}
+                  </p>
+                </Card>
 
-                <p className="text-base text-muted-foreground">
-                  {t("teacher_role_desc")}
-                </p>
-              </Card>
-
-              <Card 
-                className="p-8 text-center hover-elevate cursor-pointer border-2 hover:border-accent transition-all"
-                onClick={() => navigate('/custom-test')}
-                data-testid="card-role-student"
-              >
-                <div className="inline-flex p-4 bg-accent/10 rounded-full mb-4">
-                  <BookOpen className="w-12 h-12 text-accent" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">
-                  {t("student_role")}
-                </h3>
-
-                <p className="text-base text-muted-foreground">
-                  {t("student_role_desc")}
-                </p>
-              </Card>
-            </div>
+                <Card
+                  className="cursor-pointer border-2 border-accent p-8 text-center transition-all hover:border-accent hover-elevate"
+                  onClick={handleStudentCustomMCQ}
+                  data-testid="card-role-student"
+                >
+                  <div className="mb-4 inline-flex rounded-full bg-accent/10 p-4">
+                    <BookOpen className="h-12 w-12 text-accent" />
+                  </div>
+                  <h3 className="mb-2 text-xl font-bold">
+                    {t("student_role")}
+                  </h3>
+                  <p className="text-base text-muted-foreground">
+                    {t("student_role_desc")}
+                  </p>
+                </Card>
+              </div>
+            )}
           </div>
         )}
 
@@ -973,8 +1419,8 @@ useLayoutEffect(() => {
                 <div className="inline-flex p-2 sm:p-3 bg-blue-500/10 rounded-lg mb-2">
                   <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
                 </div>
-                <h3 className="font-semibold text-base">Aligned</h3>
-                <p className="text-base text-muted-foreground mt-1">Official curriculum coverage</p>
+                <h3 className="font-semibold text-base">{t("aligned")}</h3>
+                <p className="text-base text-muted-foreground mt-1">{t("aligned_desc")}</p>
               </Card>
 
 
@@ -982,16 +1428,16 @@ useLayoutEffect(() => {
                 <div className="inline-flex p-2 sm:p-3 bg-green-500/10 rounded-lg mb-2">
                   <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
                 </div>
-                <h3 className="font-semibold text-base">AI Powered</h3>
-                <p className="text-base text-muted-foreground mt-1">Adaptive question generation</p>
+                <h3 className="font-semibold text-base">{t("ai_powered")}</h3>
+                <p className="text-base text-muted-foreground mt-1">{t("ai_powered_desc")}</p>
               </Card>
 
               <Card className="p-4 sm:p-5 text-center hover-elevate">
                 <div className="inline-flex p-2 sm:p-3 bg-purple-500/10 rounded-lg mb-2">
                   <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
                 </div>
-                <h3 className="font-semibold text-base">Track Progress</h3>
-                <p className="text-base text-muted-foreground mt-1">Monitor your improvement</p>
+                <h3 className="font-semibold text-base">{t("track_progress")}</h3>
+                <p className="text-base text-muted-foreground mt-1">{t("track_progress_desc")}</p>
               </Card>
 
 
@@ -1067,43 +1513,63 @@ useLayoutEffect(() => {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                <LanguageCard
-                  language={t("subject_french")}
-                  icon={BookOpen}
-                  color="bg-pink-50 dark:bg-pink-950/20 text-pink-600 dark:text-pink-400"
-                  onClick={() => handleSubjectLanguageSelect("french")}
-                />
-                <LanguageCard
-                  language={t("subject_german")}
-                  icon={Languages}
-                  color="bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400"
-                  onClick={() => handleSubjectLanguageSelect("german")}
-                />
-                <LanguageCard
-                  language={t("subject_spanish")}
-                  icon={Sparkles}
-                  color="bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400"
-                  onClick={() => handleSubjectLanguageSelect("spanish")}
-                />
-                <LanguageCard
-                  language={t("subject_hindi")}
-                  icon={Book}
-                  color="bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400"
-                  onClick={() => handleSubjectLanguageSelect("hindi")}
-                />
-                <LanguageCard
-                  language={t("subject_marathi")}
-                  icon={Library}
-                  color="bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400"
-                  onClick={() => handleSubjectLanguageSelect("marathi")}
-                />
-                <LanguageCard
-                  language={t("subject_kannada")}
-                  icon={ScrollText}
-                  color="bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400"
-                  onClick={() => handleSubjectLanguageSelect("kannada")}
-                />
-              </div>
+              {availableLanguageSubjects.map((subjectKey: string) => {
+                const subjectOptions: Record<
+                  string,
+                  {
+                    icon: typeof BookOpen;
+                    color: string;
+                    label: string;
+                  }
+                > = {
+                  french: {
+                    icon: BookOpen,
+                    color: "bg-pink-50 dark:bg-pink-950/20 text-pink-600 dark:text-pink-400",
+                    label: t("subject_french"),
+                  },
+                  german: {
+                    icon: Languages,
+                    color: "bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400",
+                    label: t("subject_german"),
+                  },
+                  spanish: {
+                    icon: Sparkles,
+                    color: "bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400",
+                    label: t("subject_spanish"),
+                  },
+                  hindi: {
+                    icon: Book,
+                    color: "bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400",
+                    label: t("subject_hindi"),
+                  },
+                  marathi: {
+                    icon: Library,
+                    color: "bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400",
+                    label: t("subject_marathi"),
+                  },
+                  kannada: {
+                    icon: ScrollText,
+                    color: "bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400",
+                    label: t("subject_kannada"),
+                  },
+                };
+
+                const option = subjectOptions[subjectKey];
+                if (!option) return null;
+
+                const Icon = option.icon;
+
+                return (
+                  <LanguageCard
+                    key={subjectKey}
+                    language={option.label}
+                    icon={Icon}
+                    color={option.color}
+                    onClick={() => handleSubjectLanguageSelect(subjectKey)}
+                  />
+                );
+              })}
+            </div>
             </div>
           </div>
         )}
@@ -1149,30 +1615,21 @@ useLayoutEffect(() => {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <LanguageCard
-                  language={t("subject_physics")}
-                  icon={Atom}
-                  color="bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400"
-                  onClick={() => handleScienceCategorySelect("physics")}
-                />
-                <LanguageCard
-                  language={t("subject_chemistry")}
-                  icon={Beaker}
-                  color="bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400"
-                  onClick={() => handleScienceCategorySelect("chemistry")}
-                />
-                <LanguageCard
-                  language={t("subject_biology")}
-                  icon={Dna}
-                  color="bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400"
-                  onClick={() => handleScienceCategorySelect("biology")}
-                />
-                <LanguageCard
-                  language={t("subject_general_science")}
-                  icon={Zap}
-                  color="bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400"
-                  onClick={() => handleScienceCategorySelect("general")}
-                />
+                {availableScienceCategories.map((categoryKey: string) => {
+                  const option = scienceCategoryOptions[categoryKey as keyof typeof scienceCategoryOptions];
+                  if (!option) return null;
+                  const Icon = option.icon;
+
+                  return (
+                    <LanguageCard
+                      key={categoryKey}
+                      language={option.label}
+                      icon={Icon}
+                      color={option.color}
+                      onClick={() => handleScienceCategorySelect(categoryKey)}
+                    />
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -1186,7 +1643,7 @@ useLayoutEffect(() => {
               </Button>
               <div>
                 <h2 className="text-xl sm:text-2xl font-bold capitalize">
-                  {selectedMode === "science" ? selectedScienceCategory : selectedLanguage}
+                  {selectedMode === "science" ? configuredSubjectLabel : selectedLanguage}
                 </h2>
                 <p className="text-sm text-muted-foreground">Step 1 of 4</p>
               </div>
@@ -1209,8 +1666,8 @@ useLayoutEffect(() => {
  */}
         {step === "class" && (
           <div className="space-y-6 max-w-3xl mx-auto">
-            <div className="flex items-center gap-3 sm:gap-4 mb-6">
-              <Button variant="outline"type="button" onClick={handleBack} className="
+              <div className="flex items-center gap-3 sm:gap-4 mb-6">
+                <Button variant="outline" type="button" onClick={handleBack} className="
                         group flex items-center gap-2
                         rounded-full px-4 py-2
                         bg-white dark:bg-gray-900
@@ -1227,36 +1684,107 @@ useLayoutEffect(() => {
               </Button>
               <div>
                 <h2 className="text-xl sm:text-2xl font-bold capitalize">
-                  {t(selectedMode === "science" ? `subject_${selectedScienceCategory}` : `subject_${selectedSubjectLanguage}`)}
+                  {studentProfileComplete
+                    ? (selectedMode === "science"
+                        ? configuredSubjectLabel
+                        : t(`subject_${selectedSubjectLanguage}`))
+                    : t("edit_profile")}
                 </h2>
-                <p className="text-sm text-muted-foreground">{t("step_1_4")}</p>
+                <p className="text-sm text-muted-foreground">
+                  {studentProfileComplete ? t("step_1_4") : t("complete_profile_to_continue")}
+                </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {[
-            { label: t("class_6"), value: 6, light: "from-green-400 to-green-200", dark: "from-green-700 to-green-500" },
-            { label: t("class_7"), value: 7, light: "from-blue-400 to-blue-200", dark: "from-blue-700 to-blue-500" },
-            { label: t("class_8"), value: 8, light: "from-purple-400 to-purple-200", dark: "from-purple-700 to-purple-500" },
-            { label: t("class_9"), value: 9, light: "from-pink-400 to-pink-200", dark: "from-pink-700 to-pink-500" },
-            { label: t("class_10"), value: 10, light: "from-yellow-400 to-yellow-200", dark: "from-yellow-700 to-yellow-500" },
-              ].map((item) => (
-                <div
-                  key={item.value}
-                  onClick={() => handleClassSelect(item.value)}
-                  className={`
-                    cursor-pointer p-6 rounded-2xl text-center font-semibold
-                    bg-gradient-to-br ${item.light} dark:${item.dark}
-                    text-white
-                    transition-all transform
-                    hover:shadow-xl hover:scale-105
-                    ${selectedClass === item.value ? "ring-4 ring-offset-2 ring-indigo-400 dark:ring-indigo-300" : ""}
-                  `}
-                >
-                  {item.label}
+            {profileLoading ? (
+              <div className="rounded-2xl border bg-card p-6 shadow-sm text-center">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-200">
+                  <Loader2 className="h-6 w-6 animate-spin" />
                 </div>
-              ))}
-            </div>
+                <p className="mt-4 text-base font-medium text-slate-900 dark:text-slate-100">
+                  {t("loading_profile")}
+                </p>
+              </div>
+            ) : studentProfileComplete ? (
+              <div className="space-y-6">
+                <div className="rounded-2xl border bg-card p-6 shadow-sm">
+                  <p className="text-sm text-muted-foreground">
+                    {t("class_board_locked_profile")}
+                  </p>
+                  <div className="mt-4 flex flex-col gap-4 sm:flex-row">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-950 flex-1">
+                      <p className="text-sm text-muted-foreground">{t("class")}</p>
+                      <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-indigo-100 px-3 py-2 text-2xl font-semibold text-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-200">
+                        {t("class")} {selectedClass}
+                        <span className="rounded-full bg-indigo-500 px-2 py-1 text-xs font-semibold text-white">
+                          {t("from_profile")}
+                        </span>
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-950 flex-1">
+                      <p className="text-sm text-muted-foreground">{t("education_board")}</p>
+                      <p className="mt-2 text-2xl font-semibold">{selectedBoard}</p>
+                    </div>
+                  </div>
+                </div>
+                <Button onClick={() => setStep("difficulty")} className="w-full" size="lg">
+                  {t("continue")}
+                </Button>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                  <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+                    {t("update_profile_to_change_class_board")}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => navigate("/profile")}
+                    className="w-full shrink-0 px-6 sm:w-auto sm:px-7"
+                  >
+                    {t("edit_profile")}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-gradient-to-br from-white via-slate-50 to-blue-50 p-5 shadow-[0_18px_50px_rgba(15,23,42,.08)] dark:border-slate-800 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 sm:p-6">
+                <div className="relative overflow-hidden rounded-[24px] border border-slate-200/70 bg-white/85 p-5 text-center shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-900/75 sm:p-8">
+                  <div className="absolute -top-8 right-[-24px] h-24 w-24 rounded-full bg-blue-500/10 blur-3xl" />
+                  <div className="absolute -bottom-10 left-[-20px] h-28 w-28 rounded-full bg-violet-500/10 blur-3xl" />
+
+                  <div className="relative mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/25">
+                    <Settings2 className="h-8 w-8 text-white" />
+                  </div>
+
+                  <h3 className="relative mt-4 text-2xl font-black tracking-tight text-slate-900 dark:text-slate-50">
+                    {t("edit_profile")}
+                  </h3>
+
+                  <p className="relative mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300 sm:text-base">
+                    {t("complete_profile_to_continue")}
+                  </p>
+
+                  <div className="relative mt-5 flex flex-wrap justify-center gap-2">
+                    <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-950/70 dark:text-blue-200">
+                      Profile
+                    </span>
+                    <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-950/60 dark:text-amber-200">
+                      Class
+                    </span>
+                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200">
+                      Board
+                    </span>
+                  </div>
+
+                  <Button
+                    type="button"
+                    onClick={() => navigate("/profile")}
+                    className="relative mt-6 h-12 w-full rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 font-semibold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-500/30 active:scale-[0.99]"
+                  >
+                    {t("edit_profile")}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1269,7 +1797,7 @@ useLayoutEffect(() => {
               </Button>
               <div>
                 <h2 className="text-lg sm:text-2xl font-bold capitalize">
-                  {selectedMode === "science" ? selectedScienceCategory : selectedLanguage} - Class {selectedClass}
+                  {selectedMode === "science" ? configuredSubjectLabel : selectedLanguage} - Class {selectedClass}
                 </h2>
                 <p className="text-sm text-muted-foreground">Step 2 of 5</p>
               </div>
@@ -1308,10 +1836,7 @@ useLayoutEffect(() => {
               </Button>
               <div>
                 <h2 className="text-lg sm:text-2xl font-bold capitalize">
-                  {t(selectedMode === "science"
-                      ? `subject_${selectedScienceCategory}`
-                      : `subject_${selectedSubjectLanguage}`
-                    )} - {t("class")} {selectedClass}
+                  {configuredSubjectLabel} - {t("class")} {selectedClass}
                 </h2>
                 <p className="text-sm text-muted-foreground">{t("step_2_5")}</p>
               </div>
@@ -1461,7 +1986,7 @@ useLayoutEffect(() => {
               </Button>
               <div>
                 <h2 className="text-xl sm:text-2xl font-bold capitalize">
-                  {t(selectedMode === "science" ? `subject_${selectedScienceCategory}` : `subject_${selectedSubjectLanguage}`)}
+                  {configuredSubjectLabel}
                 </h2>
                 <p className="text-sm text-muted-foreground">{t("step_3_5")}</p>
               </div>
@@ -1552,7 +2077,7 @@ useLayoutEffect(() => {
               </Button>
               <div>
                 <h2 className="text-lg sm:text-xl md:text-2xl font-bold capitalize">
-                  {selectedMode === "science" ? selectedScienceCategory : selectedLanguage} - Class {selectedClass} - {selectedDifficulty} - {selectedTestType === "mcq-only" ? "MCQ Only" : "Mixed"}
+                  {selectedMode === "science" ? configuredSubjectLabel : selectedLanguage} - Class {selectedClass} - {selectedDifficulty} - {selectedTestType === "mcq-only" ? "MCQ Only" : "Mixed"}
                 </h2>
                 <p className="text-sm text-muted-foreground">Step 4 of 5</p>
               </div>
@@ -1627,10 +2152,7 @@ useLayoutEffect(() => {
               </Button>
               <div>
                 <h2 className="text-lg sm:text-xl md:text-2xl font-bold capitalize">
-                  {t(selectedMode === "science"
-                      ? `subject_${selectedScienceCategory}`
-                      : `subject_${selectedSubjectLanguage}`
-                    )} - {t("class")} {selectedClass} - {t(`difficulty_${selectedDifficulty}`)} - {selectedTestType === "mcq-only" ? t("test_type_mcq_short") : t("test_type_mixed_short")}
+                  {configuredSubjectLabel} - {t("class")} {selectedClass} - {t(`difficulty_${selectedDifficulty}`)} - {selectedTestType === "mcq-only" ? t("test_type_mcq_short") : t("test_type_mixed_short")}
                 </h2>
                 <p className="text-sm text-muted-foreground">{t("step_4_5")}</p>
               </div>
@@ -1829,74 +2351,39 @@ useLayoutEffect(() => {
                 <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">
                   {t("select_test_creation")}
                 </h2>
-
-
-              {/* <div className="flex gap-2">
-                <button
-                  onClick={() => setSelectedLanguage("english")}
-                  className={`px-4 py-1 rounded ${
-                    selectedLanguage === "english"
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-200"
-                  }`}
-                >
-                  English
-                </button>
-
-                <button
-                  onClick={() => setSelectedLanguage("hindi")}
-                  className={`px-4 py-1 rounded ${
-                    selectedLanguage === "hindi"
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-200"
-                  }`}
-                >
-                  हिंदी
-                </button>
-              </div> */}
-              <div className="flex gap-2">
-
-                {/* <button
-                  onClick={() => form.setValue("language", "english")}
-                  className={
-                    form.watch("language") === "english"
-                      ? "bg-blue-600 text-white px-4 py-1 rounded"
-                      : "bg-gray-200 px-4 py-1 rounded"
-                  }
-                >
-                  English
-                </button>
-
-                <button
-                  onClick={() => form.setValue("language", "hindi")}
-                  className={
-                    form.watch("language") === "hindi"
-                      ? "bg-blue-600 text-white px-4 py-1 rounded"
-                      : "bg-gray-200 px-4 py-1 rounded"
-                  }
-                >
-                  हिंदी
-                </button> */}
-                <button
-                  onClick={() => handleMediumSelect("english")}
-                  className={selectedMedium === "english"
-                    ? "bg-blue-600 text-white px-4 py-1 rounded"
-                    : "bg-gray-200 px-4 py-1 rounded"}
-                >
-                  English
-                </button>
-
-                <button
-                  onClick={() => handleMediumSelect("hindi")}
-                  className={selectedMedium === "hindi"
-                    ? "bg-blue-600 text-white px-4 py-1 rounded"
-                    : "bg-gray-200 px-4 py-1 rounded"}
-                >
-                  हिंदी
-                </button>
-                
-              </div>
             </div>
+
+              <div className="mb-5 rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-slate-700 dark:bg-slate-950/40">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {t("test_language")}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("choose_test_language")}
+                    </p>
+                  </div>
+                  <div className="inline-flex rounded-full border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-900">
+                    {(["english", "hindi"] as const).map((language) => (
+                      <button
+                        key={language}
+                        type="button"
+                        onClick={() => handleMediumSelect(language)}
+                        className={`min-w-24 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                          selectedMedium === language
+                            ? "bg-slate-900 text-white shadow-md dark:bg-white dark:text-slate-900"
+                            : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+                        }`}
+                        data-testid={`button-test-language-${language}`}
+                      >
+                        {language === "english"
+                          ? t("language_english")
+                          : t("language_hindi")}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
@@ -2147,24 +2634,13 @@ useLayoutEffect(() => {
                   </div>
 
                   <div>
-                    <Label htmlFor="board">{t("education_board")}</Label>
-
-                    <Select value={selectedBoard} onValueChange={setSelectedBoard} disabled={isGeneratingTest}>
-                      <SelectTrigger className="mt-1" data-testid="select-board">
-                        <SelectValue placeholder={t("select_board")} />
-                      </SelectTrigger>
-
-                      <SelectContent>
-                        <SelectItem value="CBSE">{t("board_cbse")}</SelectItem>
-                        <SelectItem value="ICSE">{t("board_icse")}</SelectItem>
-                        <SelectItem value="IB">{t("board_ib")}</SelectItem>
-                        <SelectItem value="RBSE">{t("board_rbse")}</SelectItem>
-                        <SelectItem value="State Board">{t("board_state")}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {t("board_desc")}
-                    </p>
+                    <Label>{t("education_board")}</Label>
+                  <div className="mt-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-900 shadow-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-50">
+                    {selectedBoard}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t("board_desc")}
+                  </p>
                 </div>
               </div>
 
@@ -2175,10 +2651,16 @@ useLayoutEffect(() => {
                       {t("test_config_summary")}
                     </h4>
                     <div className="text-sm space-y-1 text-muted-foreground">
+                      {configuredSubjectLabel ? (
+                        <p>
+                          <strong>{t("subject")}: </strong>
+                          {configuredSubjectLabel}
+                        </p>
+                      ) : null}
 
                       <p>
-                        <strong>{t("difficulty_label")}:</strong> 
-                        {t(`difficulty_${selectedDifficulty}`)} | <strong>{t("class")}:</strong> {selectedClass} 
+                        <strong>{t("difficulty_label")}: </strong> 
+                        {t(`difficulty_${selectedDifficulty}`)} | <strong>{t("class")}: </strong> {selectedClass} 
                       </p>
 
                       {/* <p>
@@ -2188,14 +2670,14 @@ useLayoutEffect(() => {
                       </p> */}
 
                       <p>
-                        <strong>{t("type")}:</strong> 
+                        <strong>{t("type")}: </strong>
                         {selectedTestType === "mcq-only" ? t("test_type_mcq") : t("test_type_mixed")} | 
                         <strong> {t("questions")}:</strong> {selectedTestLength}
                       </p>
 
                       <p>
-                        <strong>{t("topics")}:</strong> 
-                        {[customTopic1, customTopic2, customTopic3, customTopic4].filter(t => t.trim()).length} {t("topics_count")}
+                        <strong>{t("topics")}: </strong> 
+                        {[customTopic1, customTopic2, customTopic3, customTopic4, customTopic5, customTopic6].filter(t => t.trim()).length} {t("topics_count")}
                       </p>
 
                     </div>
@@ -2250,7 +2732,7 @@ useLayoutEffect(() => {
                 </h2> */}
 
               <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold capitalize">
-                  {selectedMedium === "hindi"
+                  {preDefinedChapterMedium === "hindi"
                     ? `हिंदी - कक्षा ${selectedClass} - माध्यम - ${
                         selectedTestType === "mcq-only" ? "एमसीक्यू" : "मिक्स्ड"
                       } - ${selectedTestLength} प्रश्न`
@@ -2258,14 +2740,14 @@ useLayoutEffect(() => {
                         selectedTestType === "mcq-only" ? "MCQ" : "Mixed"
                       } - ${selectedTestLength}Q`}
               </h2>
-                <p className="text-sm text-muted-foreground">{t("step6_6")}</p>
+                <p className="text-sm text-muted-foreground">{t("step_6_6")}</p>
               </div>
             </div>
 
             <ChapterList
               chapters={chapters}
               onSelect={handleChapterSelect}
-              selectedMedium={selectedMedium}
+              selectedMedium={preDefinedChapterMedium}
             />
           </div>
         )}
