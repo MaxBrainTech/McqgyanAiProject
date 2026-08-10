@@ -1,20 +1,5 @@
 import pool from "../db";
 
-
-
-// export async function saveMCQ(
-//   question: string,
-//   options: string[],
-//   correctAnswer: string,
-//   testId: number
-// ) {
-//   await pool.query(
-//     `INSERT INTO mcqs (test_id, question, options, correct_answer)
-//      VALUES ($1, $2, $3, $4)`,
-//     [testId, question, options, correctAnswer]  
-//   );
-// }
-
 export async function saveMCQ(
   question: string,
   options: string[],
