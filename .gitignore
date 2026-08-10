@@ -1,7 +1,27 @@
-node_modules
-dist
-.DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz
+# Environment
 .env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Replit / local files
+.local/
+
+# Build / cache
+*.tsbuildinfo
+dist/
+build/
+
+# OS
+.DS_Store
+
+# Server generated files
+server/public/
+
+# Vite generated files
+vite.config.ts.*
+
+# Archives
+*.tar.gz
