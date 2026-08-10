@@ -1,6 +1,16 @@
+/* stylelint-disable at-rule-no-unknown */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* stylelint-enable at-rule-no-unknown */
+
+@font-face {
+  font-family: "Noto Sans Devanagari";
+  src: url("./fonts/NotoSansDevanagari-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 
 /* LIGHT MODE */
 :root {
@@ -191,6 +201,11 @@
       hsl(170, 80%, 96%) 100%);
     background-attachment: fixed; 
     min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  html, #root {
+    min-height: 100%;
   }
 
   .dark body {
@@ -201,6 +216,69 @@
       hsl(250, 25%, 16%) 75%,
       hsl(260, 30%, 14%) 100%);
     background-attachment: fixed;
+  }
+
+  /* Hindi typography fixes: prevent clipping/overlap on tight line heights */
+  .lang-hi {
+    font-family: "Noto Sans Devanagari", var(--font-sans), sans-serif;
+    line-height: 1.45;
+  }
+
+  .lang-hi .leading-none,
+  .lang-hi .leading-tight {
+    line-height: 1.45;
+  }
+
+  .lang-hi .text-xs,
+  .lang-hi .text-sm,
+  .lang-hi .text-base,
+  .lang-hi .text-lg,
+  .lang-hi .text-xl,
+  .lang-hi .text-2xl,
+  .lang-hi .text-3xl,
+  .lang-hi .text-4xl,
+  .lang-hi .text-5xl,
+  .lang-hi .text-6xl,
+  .lang-hi .text-7xl {
+    line-height: 1.45;
+  }
+
+  .lang-hi .tracking-tight {
+    letter-spacing: 0;
+  }
+
+  /* Prevent descenders/marks from clipping on gradient text headings */
+  .bg-clip-text.text-transparent {
+    display: inline-block;
+    padding-top: 0.06em;
+    padding-bottom: 0.12em;
+  }
+
+  .score-history-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+
+  .score-history-scrollbar::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  .score-history-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .score-history-scrollbar::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, hsl(var(--border)) 72%, transparent);
+    border-radius: 9999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+
+  .score-history-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, hsl(var(--foreground)) 32%, transparent);
+    border: 3px solid transparent;
+    background-clip: content-box;
   }
 
 
@@ -241,9 +319,7 @@
   /* .no-default-hover-elevate/no-default-active-elevate is an escape hatch so consumers of
    * buttons/badges can remove the automatic brightness adjustment on interactions
    * and program their own. */
-  .no-default-hover-elevate {}
 
-  .no-default-active-elevate {}
 
 
   /**
