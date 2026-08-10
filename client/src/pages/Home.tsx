@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef, useLayoutEffect } from "react";
+import AnimatedBackground from "@/components/AnimatedBackground";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Languages, BookOpen, Sparkles, Trophy, RotateCcw, GraduationCap, Book, Library, ScrollText, Atom, Beaker, Dna, Zap, Settings2, Loader2 } from "lucide-react";
+import { Languages, BookOpen, Sparkles, Trophy, RotateCcw, GraduationCap, Book, Library, ScrollText, Atom, Beaker, Dna, Zap, Settings2, Loader2, ArrowRight } from "lucide-react";
 import LanguageCard from "@/components/LanguageCard";
 import SelectionGrid from "@/components/SelectionGrid";
 import ChapterList from "@/components/ChapterList";
@@ -13,6 +14,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import LeaderboardCard from "@/components/LeaderboardCard";
 import { toast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { getTopicValidationMessage } from "@/lib/topicValidation";
+import { getStoredAuthRole, getStoredTeacherId } from "@/lib/authSession";
+import {
+  loadRemoteScoreHistory,
+  loadScoreHistory,
+  mergeScoreHistoryEntries,
+  resetRemoteScoreHistory,
+  resetScoreHistory,
+  type ScoreHistoryEntry,
+} from "@/lib/scoreHistory";
+
+import { getAuth, onAuthStateChanged, type User } from "firebase/auth";
+
+import { useTranslation } from "react-i18next";
+
+import { useForm } from "react-hook-form";
 // import { toast } from "@/components/ui/use-toast";
 
 // import React{ userEffect, useState} from "react";
@@ -45,10 +62,24 @@ export interface Chapter {
   description: LocalizedText;
 }
 
+interface StudentProfileData {
+  fullName?: string | null;
+  emailAddress?: string | null;
+  classLevel?: number | string | null;
+  school?: string | null;
+  medium?: string | null;
+  board?: string | null;
+  country?: string | null;
+  state?: string | null;
+  city?: string | null;
+}
+
 // const [chapters, setChapters] = useState<Chapter[]>([]);
 
 export default function Home() {
-  const hasInitialized = { current: false };  
+
+
+  const hasInitialized = useRef(false);  
   const navigate = useNavigate();
   const location = useLocation();
   const [step, setStep] = useState<"mode" | "subject" | "class" | "difficulty" | "testType" | "testLength" | "testMode" | "chapter" | "customTopics" | "custom">("mode");
@@ -63,14 +94,34 @@ const [selectedSubjectLanguage, setSelectedSubjectLanguage] =
 const [selectedMedium, setSelectedMedium] =
   useState<"english" | "hindi">("english");
 
-const [leaderboard, setLeaderboard] = useState([]);
+  const [leaderboard, setLeaderboard] = useState<ScoreHistoryEntry[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [studentProfile, setStudentProfile] = useState<StudentProfileData | null>(null);
+  const [profileLoading, setProfileLoading] = useState<boolean>(false);
+  const storedAuthRole = getStoredAuthRole();
+  const storedTeacherId = getStoredTeacherId();
+  const isTeacherSession = storedAuthRole === "teacher" || Boolean(storedTeacherId);
+  const isStudentSession = storedAuthRole === "student" || Boolean(currentUser);
+
+const availableLanguageSubjectKeys: string[] = ["french", "german", "spanish", "hindi", "marathi", "kannada"];
+const scienceSubjectKeysByClass: Record<"primary" | "secondary", string[]> = {
+  primary: [
+    "school_english",
+    "school_hindi",
+    "school_mathematics",
+    "school_science",
+    "school_social_science",
+    "school_computer",
+  ],
+  secondary: ["physics", "chemistry", "biology", "general"],
+};
 
 // Science category
 const [selectedScienceCategory, setSelectedScienceCategory] =
   useState<string>("");
   // const [selectedScienceCategory, setSelectedScienceCategory] = useState<"english" | "hindi">("english");
-  const [selectedLanguage, setSelectedLanguage] = useState<string>("english");
-  const [selectedClass, setSelectedClass] = useState<number>(0);
+const [selectedLanguage, setSelectedLanguage] = useState<string>("english");
+  const [selectedClass, setSelectedClass] = useState<number>(6);
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("");
   const [selectedTestType, setSelectedTestType] = useState<string>("");
   const [selectedTestLength, setSelectedTestLength] = useState<number>(0);
@@ -83,13 +134,55 @@ const [selectedScienceCategory, setSelectedScienceCategory] =
   const [customTopic6, setCustomTopic6] = useState<string>("");
 
   // const [selectedGptModel, setSelectedGptModel] = useState<string>("gpt-5.2");
-  const [selectedGptModel, setSelectedGptModel] = useState<string>("gpt-4o-mini");
-  const [selectedBoard, setSelectedBoard] = useState<string>("CBSE");
-  const [isGeneratingTest, setIsGeneratingTest] = useState<boolean>(false);
+const [selectedGptModel, setSelectedGptModel] = useState<string>("ft:gpt-4.1-mini-2025-04-14:maxbrain-technologies:430-example:E4OP0nFv");
+const [selectedBoard, setSelectedBoard] = useState<string>("CBSE");
+const [isGeneratingTest, setIsGeneratingTest] = useState<boolean>(false);
   // const [chapters, setChapters] = useState<Array<{ id: number; title: string; description: string }>>([]);
     const [chapters, setChapters] = useState<Chapter[]>([])
 
-  const scrollYRef = useRef(0);
+  const stepSectionRef = useRef<HTMLDivElement | null>(null);
+
+  const resolvedProfileFullName = String(
+    studentProfile?.fullName ?? currentUser?.displayName ?? "",
+  ).trim();
+  const resolvedProfileEmail = String(
+    studentProfile?.emailAddress ?? currentUser?.email ?? "",
+  ).trim();
+
+  const studentProfileComplete = Boolean(
+    resolvedProfileFullName &&
+      resolvedProfileEmail &&
+      String(studentProfile?.classLevel ?? "").trim() &&
+      String(studentProfile?.school ?? "").trim() &&
+      String(studentProfile?.medium ?? "").trim() &&
+      String(studentProfile?.board ?? "").trim() &&
+      String(studentProfile?.country ?? "").trim() &&
+      String(studentProfile?.state ?? "").trim() &&
+      String(studentProfile?.city ?? "").trim()
+  );
+
+  useEffect(() => {
+    setStep("mode");
+    setSelectedMode("");
+    setSelectedSubjectLanguage("");
+    setSelectedMedium("english");
+    setSelectedScienceCategory("");
+    setSelectedLanguage("english");
+    setSelectedClass(0);
+    setSelectedDifficulty("");
+    setSelectedTestType("");
+    setSelectedTestLength(0);
+    setSelectedTestMode("");
+    setCustomTopic1("");
+    setCustomTopic2("");
+    setCustomTopic3("");
+    setCustomTopic4("");
+    setCustomTopic5("");
+    setCustomTopic6("");
+    setChapters([]);
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, []);
+
   // Reset to mode screen when component mounts/location changes to home
   // useEffect(() => {
     // setStep("mode");
@@ -101,7 +194,7 @@ const [selectedScienceCategory, setSelectedScienceCategory] =
     // setSelectedTestType("");
     // setSelectedTestLength(0);
     // setSelectedTestMode("");
-    
+
     // // Scroll to the mode selection section after state updates
     // setTimeout(() => {
     //   const modeSection = document.querySelector('[data-section="mode-selection"]');
@@ -114,7 +207,26 @@ const [selectedScienceCategory, setSelectedScienceCategory] =
   // }, [location.pathname]);
 
   // Load chapters when subject is selected
+
+  const handleStudentCustomMCQ = () => {
+    if (isStudentSession) {
+      navigate("/custom-test");
+      return;
+    }
+
+    navigate("/student-login", {
+      state: {
+        redirectTo: "/custom-test",
+      },
+    });
+  };
   const handleBack = () => {
+  if (!studentProfileComplete && step === "class") {
+    handleReset();
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    return;
+  }
+
   setStep((prev) => {
     switch (prev) {
       case "subject":
@@ -156,13 +268,135 @@ const [selectedScienceCategory, setSelectedScienceCategory] =
 //   // Load leaderboard from local storage
 //   // const [leaderboard, setLeaderboard] = useState<Array<any>>([]);
 //   // const { toast } = useToast();
-  
-//   useEffect(() => {
-//     const savedScores = localStorage.getItem("langbuddy_scores");
-//     if (savedScores) {
-//       setLeaderboard(JSON.parse(savedScores));
-//     }
-//   }, []);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(getAuth(), (user) => {
+      setCurrentUser(user);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const effectiveClassLevel = Number(studentProfile?.classLevel ?? selectedClass ?? 6) || 6;
+
+  const availableLanguageSubjects = useMemo<string[]>(() => {
+    if (effectiveClassLevel < 6) {
+      return [];
+    }
+
+    return availableLanguageSubjectKeys;
+  }, [effectiveClassLevel]);
+
+  const availableScienceCategories = useMemo<string[]>(() => {
+    if (effectiveClassLevel >= 9) {
+      return scienceSubjectKeysByClass.secondary;
+    }
+
+    if (effectiveClassLevel >= 6) {
+      return scienceSubjectKeysByClass.primary;
+    }
+
+    return [];
+  }, [effectiveClassLevel]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setStudentProfile(null);
+      setProfileLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const loadProfile = async () => {
+      setProfileLoading(true);
+      try {
+        const res = await fetch(
+          `/api/student-profile?userId=${encodeURIComponent(currentUser.uid)}`,
+          { credentials: "include" },
+        );
+
+        if (!res.ok) {
+          if (res.status === 404) {
+            if (cancelled) return;
+            setStudentProfile(null);
+            setSelectedClass(6);
+            setSelectedBoard("CBSE");
+            return;
+          }
+          throw new Error(`Failed to load profile: ${res.status}`);
+        }
+
+        const profile = await res.json();
+        if (cancelled) return;
+        setStudentProfile(profile);
+        setSelectedClass(Number(profile?.classLevel) || 6);
+        setSelectedBoard(String(profile?.board || "CBSE"));
+      } catch (error) {
+        console.error("Failed to load student profile:", error);
+        if (!cancelled) {
+          setStudentProfile(null);
+          setSelectedClass(6);
+          setSelectedBoard("CBSE");
+        }
+      } finally {
+        if (!cancelled) {
+          setProfileLoading(false);
+        }
+      }
+    };
+
+    void loadProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser, navigate, location.key]);
+
+  useEffect(() => {
+    if (!studentProfile) return;
+
+    if (
+      selectedMode === "language" &&
+      selectedSubjectLanguage &&
+      !availableLanguageSubjects.includes(selectedSubjectLanguage)
+    ) {
+      setSelectedSubjectLanguage("");
+    }
+
+    if (
+      selectedMode === "science" &&
+      selectedScienceCategory &&
+      !availableScienceCategories.includes(selectedScienceCategory)
+    ) {
+      setSelectedScienceCategory("");
+    }
+  }, [studentProfile, selectedMode, selectedSubjectLanguage, selectedScienceCategory, availableLanguageSubjects, availableScienceCategories]);
+
+  const scienceSubjectLabelKey =
+    selectedScienceCategory === "general"
+      ? "subject_general_science"
+      : `subject_${selectedScienceCategory.replace(/^school_/, "")}`;
+
+  useEffect(() => {
+    const loadHistory = async () => {
+      const localHistory = loadScoreHistory();
+
+      if (!currentUser) {
+        setLeaderboard(localHistory);
+        return;
+      }
+
+      try {
+        const remoteHistory = await loadRemoteScoreHistory(currentUser.uid);
+        setLeaderboard(mergeScoreHistoryEntries(remoteHistory, localHistory));
+      } catch (error) {
+        console.warn("Failed to load remote score history", error);
+        setLeaderboard(localHistory);
+      }
+    };
+
+    void loadHistory();
+  }, [currentUser]);
 
 //  useEffect(() => {
 //   const fetchChapters = async () => {
@@ -228,15 +462,26 @@ useEffect(() => {
   if (step !== "chapter") return;
 
   const subject =
-  selectedMode === "science"
-    ? selectedScienceCategory
-    : selectedSubjectLanguage;
+    selectedMode === "science"
+      ? selectedScienceCategory
+      : selectedSubjectLanguage;
 
   if (!subject) return;
 
   const fetchChapters = async () => {
     try {
-      const res = await fetch(`/api/chapters/${subject}`);
+      const params = new URLSearchParams();
+      const chapterClassLevel = selectedClass || effectiveClassLevel;
+      if (chapterClassLevel) {
+        params.set("classLevel", String(chapterClassLevel));
+      }
+      if (selectedBoard) {
+        params.set("board", selectedBoard);
+      }
+
+      const query = params.toString();
+      const endpoint = `/api/chapters/${encodeURIComponent(subject)}${query ? `?${query}` : ""}`;
+      const res = await fetch(endpoint);
       const data = await res.json();
 
       if (!Array.isArray(data)) {
@@ -246,8 +491,8 @@ useEffect(() => {
 
       const mappedChapters = data.map((ch: any) => ({
         id: ch.id,
-        title: ch.title,          // NO WRAPPING
-        description: ch.description
+        title: ch.title,
+        description: ch.description,
       }));
 
       setChapters(mappedChapters);
@@ -257,43 +502,83 @@ useEffect(() => {
   };
 
   fetchChapters();
-}, [step, selectedSubjectLanguage, selectedScienceCategory, selectedMode]);
+}, [step, selectedSubjectLanguage, selectedScienceCategory, selectedMode, selectedClass, selectedBoard]);
 
   // 🔒 Save scroll position BEFORE step change
-useLayoutEffect(() => {
-  const currentScroll = window.scrollY;
+  useEffect(() => {
+    if (!stepSectionRef.current) return;
 
-  requestAnimationFrame(() => {
-    window.scrollTo({ top: currentScroll });
-  });
-}, [step]);
+    if (!hasInitialized.current) {
+      hasInitialized.current = true;
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      stepSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+        inline: "nearest",
+      });
+    });
+  }, [step]);
 
   const handleResetScores = () => {
-    localStorage.removeItem("langbuddy_scores");
+    resetScoreHistory();
     setLeaderboard([]);
+    if (currentUser) {
+      void resetRemoteScoreHistory(currentUser.uid).catch((error) => {
+        console.warn("Failed to reset remote score history", error);
+      });
+    }
     toast({
-      title: "Scores Reset",
-      description: "All your test scores have been cleared successfully!",
+      title: t("scores_reset_title"),
+      description: t("scores_reset_desc"),
     });
   };
 
 
   // Helper function to scroll to top smoothly
-  const ScrollRestoration = () => {
-    setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 50);
-  };
+  // const ScrollRestoration = () => {
+  //   setTimeout(() => {
+  //     window.scrollTo({ top: 0, behavior: 'smooth' });
+  //   }, 50);
+  // };
+
+  // const handleModeSelect = (mode: string) => {
+  //   setSelectedMode(mode);
+  //   if (mode === "custom") {
+  //     setStep("custom");
+  //   } else {
+  //     setStep("subject");
+  //   }
+  //   // ScrollRestoration();  
+  // };
 
   const handleModeSelect = (mode: string) => {
-    setSelectedMode(mode);
-    if (mode === "custom") {
-      setStep("custom");
-    } else {
-      setStep("subject");
+  const auth = getAuth();
+  const user = auth.currentUser;
+
+  // 🔒 Login required only for these
+  if (mode === "language" || mode === "science") {
+    if (!user) {
+      navigate("/login");
+      return;
     }
-    ScrollRestoration();  
-  };
+  }
+
+  setSelectedMode(mode);
+
+  if ((mode === "science" || mode === "language") && !studentProfileComplete) {
+    setStep("class");
+    return;
+  }
+
+  if (mode === "custom") {
+    setStep("custom");
+  } else {
+    setStep("subject");
+  }
+};
 
   const handleMediumSelect = (medium: "english" | "hindi") => {
   setSelectedMedium(medium);
@@ -339,7 +624,7 @@ useLayoutEffect(() => {
     setStep("testMode");
     // ScrollRestoration();
   };
-  
+
   const handleTestModeSelect = (mode: string) => {
     setSelectedTestMode(mode);
     if (mode === "predefined") {
@@ -349,7 +634,7 @@ useLayoutEffect(() => {
     }
     // ScrollRestoration();
   };
-  
+
   // const handleCustomTestGenerate = async () => {
   //   // Validate that at least topic 1 is filled
   //   if (!customTopic1.trim()) {
@@ -360,7 +645,7 @@ useLayoutEffect(() => {
   //     });
   //     return;
   //   }
-    
+
   //   // Collect topics
   //   const topics = [customTopic1, customTopic2, customTopic3, customTopic4]
   //     .filter(t => t && t.trim().length > 0)
@@ -374,15 +659,17 @@ useLayoutEffect(() => {
       !customTopic3.trim()
     ) {
       toast({
-        title: "Required Topics Missing",
-        description: "Please fill Topic 1, Topic 2 and Topic 3 (all are mandatory).",
+        title: t("required_topics_missing_title"),
+        description: t("required_topics_missing_desc"),
         variant: "destructive",
       });
       return;
     }
 
-    // ✅ Collect all 6 topics (ignore empty optional ones)
-    const topics = [
+    const subject =
+      selectedMode === "science" ? selectedScienceCategory : selectedSubjectLanguage;
+
+    const topicList = [
       customTopic1,
       customTopic2,
       customTopic3,
@@ -390,39 +677,60 @@ useLayoutEffect(() => {
       customTopic5,
       customTopic6,
     ]
-      .filter((t) => t && t.trim().length > 0)
-      .join(", ");
-    
-    
+      .map((topic) => topic.trim())
+      .filter((topic) => topic.length > 0);
+
+    const topicValidationMessage = await getTopicValidationMessage({
+      classLevel: selectedClass,
+      subject,
+      topics: topicList,
+    });
+
+    if (topicValidationMessage) {
+      toast({
+        title: t("invalid_topics_title"),
+        description: topicValidationMessage,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const topics = topicList.join(", ");
+
+
     try {
       setIsGeneratingTest(true);
       // Generate test via API
-      const subject = selectedMode === "science" ? selectedScienceCategory : selectedSubjectLanguage;
       const response = await apiRequest("POST", "/api/student/generate-custom-test", {
         subject,
-        classLevel: selectedClass,
+        classLevel: effectiveClassLevel,
         difficulty: selectedDifficulty,
         syllabus: topics,
         numQuestions: selectedTestLength,
         subjectLanguage: selectedSubjectLanguage,
         scienceCategory: selectedScienceCategory,
         medium: selectedMedium,
+        testLanguage: selectedMedium,
         testType: selectedTestType === "mcq-only" ? "mcq" : "mixed",
         gptModel: selectedGptModel,
         board: selectedBoard,
         mode: selectedMode,
+        userId: currentUser?.uid,
+        studentId: currentUser?.uid,
       });
-      
+
       const data = await response.json();
-      
+
       // Navigate to test page with generated questions
       navigate('/test', {
         state: {
           config: {
             mode: "custom-student",
-            language: selectedMode === "language" ? selectedSubjectLanguage : undefined,
+            language: selectedMedium,
+            testLanguage: selectedMedium,
+            subjectLanguage: selectedMode === "science" ? undefined : selectedSubjectLanguage,
             scienceCategory: selectedMode === "science" ? selectedScienceCategory : undefined,
-            class: selectedClass,
+            class: effectiveClassLevel,
             difficulty: selectedDifficulty,
             testType: selectedTestType,
             testLength: selectedTestLength,
@@ -432,15 +740,17 @@ useLayoutEffect(() => {
           }
         }
       });
-      
+
       toast({
-        title: "Test Generated!",
-        description: `Successfully generated ${data.questionsGenerated} unique questions. Good luck!`,
+        title: t("test_generated_title"),
+        description: t("test_generated_desc", {
+          count: data.questionsGenerated,
+        }),
       });
     } catch (error: any) {
       toast({
-        title: "Generation Failed",
-        description: error.message || "Failed to generate custom test. Please try again.",
+        title: t("generation_failed_title"),
+        description: error.message || t("generation_failed_desc"),
         variant: "destructive",
       });
     } finally {
@@ -453,9 +763,11 @@ useLayoutEffect(() => {
       state: {
         config: {
           mode: selectedMode,
-          language: selectedMode === "language" ? selectedSubjectLanguage : undefined,
+          language: preDefinedChapterMedium,
+          testLanguage: preDefinedChapterMedium,
+          subjectLanguage: selectedMode === "science" ? undefined : selectedSubjectLanguage,
           scienceCategory: selectedMode === "science" ? selectedScienceCategory : undefined,
-          class: selectedClass,
+          class: effectiveClassLevel,
           difficulty: selectedDifficulty,
           testType: selectedTestType,
           testLength: selectedTestLength,
@@ -469,108 +781,267 @@ useLayoutEffect(() => {
     setStep("mode");
     setSelectedMode("");
     setSelectedLanguage("");
-    setSelectedScienceCategory("english");
+    setSelectedScienceCategory("");
     setSelectedClass(0);
     setSelectedDifficulty("");
+    setSelectedTestType("");
+    setSelectedTestLength(0);
+    setSelectedTestMode("");
+    setCustomTopic1("");
+    setCustomTopic2("");
+    setCustomTopic3("");
+    setCustomTopic4("");
+    setCustomTopic5("");
+    setCustomTopic6("");
+    setChapters([]);
+    setSelectedMedium("english");
+    setSelectedGptModel("gpt-4o-mini");
+    setSelectedBoard("CBSE");
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     // ScrollRestoration();
   };
 
+  const { t, i18n } = useTranslation();
+  const form = useForm({
+    defaultValues: {
+      language: "english",
+    },
+  });
+  const isHindi = i18n.language.startsWith("hi");
+  const preDefinedChapterMedium =
+    selectedMode === "science" && selectedScienceCategory === "school_hindi"
+      ? "hindi"
+      : selectedMode === "science" && selectedScienceCategory === "school_english"
+        ? "english"
+        : selectedMedium;
+  const configuredSubjectLabel = selectedMode === "science"
+    ? t(scienceSubjectLabelKey)
+    : selectedMode === "language"
+      ? t(`subject_${selectedSubjectLanguage}`)
+      : "";
+
+  const scienceCategoryOptions =
+    effectiveClassLevel >= 9
+      ? {
+          physics: {
+            icon: Atom,
+            color: "bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400",
+            label: t("subject_physics"),
+          },
+          chemistry: {
+            icon: Beaker,
+            color: "bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400",
+            label: t("subject_chemistry"),
+          },
+          biology: {
+            icon: Dna,
+            color: "bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400",
+            label: t("subject_biology"),
+          },
+          general: {
+            icon: Zap,
+            color: "bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400",
+            label: t("subject_general_science"),
+          },
+        }
+      : {
+          school_english: {
+            icon: BookOpen,
+            color: "bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400",
+            label: t("subject_english"),
+          },
+          school_hindi: {
+            icon: Book,
+            color: "bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400",
+            label: t("subject_hindi"),
+          },
+          school_mathematics: {
+            icon: Library,
+            color: "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400",
+            label: t("subject_mathematics"),
+          },
+          school_science: {
+            icon: Atom,
+            color: "bg-cyan-50 dark:bg-cyan-950/20 text-cyan-600 dark:text-cyan-400",
+            label: t("subject_science"),
+          },
+          school_social_science: {
+            icon: ScrollText,
+            color: "bg-violet-50 dark:bg-violet-950/20 text-violet-600 dark:text-violet-400",
+            label: t("subject_social_science"),
+          },
+          school_computer: {
+            icon: Settings2,
+            color: "bg-slate-50 dark:bg-slate-950/20 text-slate-600 dark:text-slate-400",
+            label: t("subject_computer"),
+          },
+        };
+
   return (
+
+    //<AnimatedBackground />
 
     <div className="min-h-screen relative overflow-hidden">
       {/* Decorative background shapes */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
+      {/* <div className="absolute inset-0 overflow-hidden pointer-events-none"> */}
+        {/* <div className="absolute inset-0 overflow-hidden pointer-events-none z-10"> */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2"></div>
         <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-secondary/5 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2"></div>
       </div>
 
       {/* Hero Header - Premium Design */}
-      <div className="relative bg-gradient-to-br from-blue-600 via-purple-600 to-blue-700 dark:from-gray-900 dark:via-gray-800 dark:to-black overflow-hidden">
+       <div className="relative bg-gradient-to-br from-blue-600 via-purple-600 to-blue-700 dark:from-gray-900 dark:via-gray-800 dark:to-black overflow-hidden">
+      {/* <div className="relative overflow-hidden"> */}
+       {/* <div className="relative overflow-hidden z-10 min-h-[600px]"> */}
+
+        {/* Particles Background */}
+         <div className="absolute inset-0 z-0 pointer-events-none opacity-60">
+          {/* <AnimatedBackground /> */}
+        </div>
         {/* Animated background shapes */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full blur-3xl transform translate-x-1/4 -translate-y-1/4"></div>
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-white/5 rounded-full blur-3xl transform -translate-x-1/4 translate-y-1/4"></div>
         </div>
 
-        <div className="relative container mx-auto px-4 sm:px-6 py-6 sm:py-8 lg:py-12 max-w-7xl">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div className="relative z-10 container mx-auto px-4 sm:px-6 py-6 sm:py-8 lg:py-12 max-w-7xl">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+
             {/* Left Content */}
-            <div className="text-white space-y-6 sm:space-y-8">
+            <div className={`text-white ${isHindi ? "space-y-3 sm:space-y-4" : "space-y-6 sm:space-y-8"}`}>
+
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full border border-white/30">
                 <GraduationCap className="w-5 h-5" />
-                <span className="text-sm font-semibold">AI-Powered Learning Platform</span>
+                <span className="text-sm font-semibold">{t("ai_platform")}</span>
               </div>
 
-              <div className="space-y-3 sm:space-y-4">
-                <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold leading-tight">
-                  Master Languages & Ace Science
-                </h1>
-                <p className="text-lg sm:text-xl text-white/90 max-w-xl">
-                  Free AI-powered mock tests for CBSE students. Learn 6 languages, master 4 science subjects, and achieve your academic goals.
-                </p>
-              </div>
+              {/* <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight tracking-tight"> */}
+                <h1
+                  className={`font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent
+                  ${
+                    isHindi
+                      ? "mb-1 text-3xl sm:text-4xl lg:text-5xl leading-[0.9] tracking-tight"
+                      : "mb-6 text-4xl sm:text-5xl lg:text-6xl leading-[1.1] tracking-tight"
+                  }`}
+                >
+
+                <span className="block text-white">
+                  {t("hero_smart")}
+                </span>
+
+                <span className="block bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent">
+                  {t("hero_ai_practice")}
+                </span>
+
+                <span className="block text-purple-200">
+                  {t("hero_students")}
+                </span>
+
+              </h1>
+
+              <p className="text-base sm:text-lg text-white/90 max-w-xl">
+                {t("hero_desc")}
+              </p>
 
               <div className="flex flex-wrap gap-3">
-                <Badge variant="secondary" className="text-sm font-semibold bg-white/20 text-white border-white/30 hover:bg-white/30">✓ 6 Languages</Badge>
-                <Badge variant="secondary" className="text-sm font-semibold bg-white/20 text-white border-white/30 hover:bg-white/30">✓ 4 Science Subjects</Badge>
-                <Badge variant="secondary" className="text-sm font-semibold bg-white/20 text-white border-white/30 hover:bg-white/30">✓ Free Until Dec 31</Badge>
+
+                <Badge variant="secondary" className="text-sm font-semibold bg-white/20 text-white border-white/30 hover:bg-white/30">
+                  ✓ {t("six_languages")}
+                </Badge>
+
+                <Badge variant="secondary" className="text-sm font-semibold bg-white/20 text-white border-white/30 hover:bg-white/30">
+                  ✓ {t("four_subjects")}
+                </Badge>
+
+                <Badge variant="secondary" className="text-sm font-semibold bg-white/20 text-white border-white/30 hover:bg-white/30">
+                  ✓ {t("free_until")}
+                </Badge>
+
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
+
                 <Button 
                   onClick={() => handleModeSelect("language")}
-                  className="bg-white text-blue-600 hover:bg-blue-50 font-bold py-6 px-8 text-lg rounded-lg transition-all transform hover:scale-105"
+                  className="bg-white text-blue-600 hover:bg-blue-50 font-bold py-4 px-6 text-base sm:text-lg rounded-lg transition-all transform hover:scale-105"
                 >
-                  Start Learning Now
+                  {t("start_learning")}
                 </Button>
+
                 <Button 
                   variant="outline"
                   onClick={() => navigate("/features")}
-                  className="border-white text-white hover:bg-white/10 font-bold py-6 px-8 text-lg rounded-lg"
+                  className="border-white text-white hover:bg-white/10 font-bold py-4 px-6 text-base sm:text-lg rounded-lg"
                 >
-                  Explore Features
+                  {t("explore_features")}
                 </Button>
+
               </div>
+
             </div>
+
 
             {/* Right Stats */}
             <div className="hidden lg:grid grid-cols-2 gap-6">
-              <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6 text-white text-center hover:bg-white/20 transition">
-                <Sparkles className="w-10 h-10 mx-auto mb-2 text-yellow-300" />
-                <p className="text-3xl font-bold">10,000+</p>
-                <p className="text-white/80">AI-Generated Questions</p>
+
+              <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-5 text-white text-center hover:bg-white/20 transition">
+                <Sparkles className="w-9 h-9 mx-auto mb-2 text-yellow-300" />
+                <p className="text-2xl font-semibold">10,000+</p>
+                <p className="text-white/80 text-sm sm:text-base">{t("ai_questions")}</p>
               </Card>
-              <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6 text-white text-center hover:bg-white/20 transition">
-                <Trophy className="w-10 h-10 mx-auto mb-2 text-orange-300" />
-                <p className="text-3xl font-bold">5,000+</p>
-                <p className="text-white/80">Active Students</p>
+
+              <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-5 text-white text-center hover:bg-white/20 transition">
+                <Trophy className="w-9 h-9 mx-auto mb-2 text-orange-300" />
+                <p className="text-2xl font-semibold">5,000+</p>
+                <p className="text-white/80 text-sm sm:text-base">{t("active_students")}</p>
               </Card>
-              <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6 text-white text-center hover:bg-white/20 transition">
-                <BookOpen className="w-10 h-10 mx-auto mb-2 text-green-300" />
-                <p className="text-3xl font-bold">150+</p>
-                <p className="text-white/80">Chapters & Topics</p>
+
+              <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-5 text-white text-center hover:bg-white/20 transition">
+                <BookOpen className="w-9 h-9 mx-auto mb-2 text-green-300" />
+                <p className="text-2xl font-semibold">150+</p>
+                <p className="text-white/80 text-sm sm:text-base">{t("chapters_topics")}</p>
               </Card>
-              <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-6 text-white text-center hover:bg-white/20 transition">
-                <Zap className="w-10 h-10 mx-auto mb-2 text-blue-300" />
-                <p className="text-3xl font-bold">Real-Time</p>
-                <p className="text-white/80">AI Feedback</p>
+
+              <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-5 text-white text-center hover:bg-white/20 transition">
+                <Zap className="w-9 h-9 mx-auto mb-2 text-blue-300" />
+                <p className="text-2xl font-semibold">{t("realtime")}</p>
+                <p className="text-white/80 text-sm sm:text-base">{t("ai_feedback")}</p>
               </Card>
+
             </div>
+
+          </div>
           </div>
         </div>
-      </div>
 
-      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-6xl" data-section="mode-selection">
+
+      {/* <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-6xl" data-section="mode-selection"> */}
+      <div
+        ref={stepSectionRef}
+        className="relative z-20 container mx-auto px-4 py-6 max-w-6xl sm:px-6 sm:py-8"
+        data-section="mode-selection"
+      >
         {step === "mode" && (
           <div className="space-y-6 sm:space-y-8">
             {/* Mode Selection */}
             <div className="space-y-4">
-              <div className="text-center mb-8">
+              {/* <div className="text-center mb-8">
                 <h2 className="text-2xl sm:text-3xl font-bold mb-2">Choose Your Quiz Mode</h2>
                 <p className="text-base text-muted-foreground">Select between language learning or science quizzes</p>
+              </div> */}
+
+              <div className="text-center mb-8">
+                <h2 className="text-2xl sm:text-3xl font-bold mb-2">
+                  {t("choose_quiz_mode")}
+                </h2>
+
+                <p className="text-base text-muted-foreground">
+                  {t("quiz_mode_desc")}
+                </p>
               </div>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
                 <Card 
                   className="
@@ -592,17 +1063,36 @@ useLayoutEffect(() => {
                     dark:hover:shadow-[0_0_45px_rgba(55,97,186,0.8)]
                   "
 
-                  onClick={() => handleModeSelect("language")}
+                  onClick={() => {
+                    const auth = getAuth();
+                    if (!auth.currentUser) {
+                      navigate("/login");
+                    } else {
+                      handleModeSelect("language");
+                    }
+                  }}
                   data-testid="card-mode-language"
                 >
                   <div className="inline-flex p-4 bg-primary/10 rounded-full mb-4">
                     <Languages className="w-12 h-12 text-primary" />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">Language Learning</h3>
+                  {/* <h3 className="text-xl font-bold mb-2">Language Learning</h3>
                   <p className="text-base text-muted-foreground">
                     Practice French, German, Spanish, Hindi, Marathi, and Kannada
                   </p>
-                  <Badge variant="secondary" className="mt-4 text-base">6 Languages</Badge>
+                  <Badge variant="secondary" className="mt-4 text-base">6 Languages</Badge> */}
+
+                  <h3 className="text-xl font-bold mb-2">
+                    {t("language_learning")}
+                  </h3>
+
+                  <p className="text-base text-muted-foreground">
+                    {t("language_learning_desc")}
+                  </p>
+
+                  <Badge variant="secondary" className="mt-4 text-base">
+                    {t("six_languages")}
+                  </Badge>
                 </Card>
 
 
@@ -636,20 +1126,38 @@ useLayoutEffect(() => {
                   "
 
 
-                  onClick={() => handleModeSelect("science")}
+                  onClick={() => {
+                    const auth = getAuth();
+                    if (!auth.currentUser) {
+                      navigate("/login");
+                    } else {
+                      handleModeSelect("science");
+                    }
+                  }}
                   data-testid="card-mode-science"
                 >
                   <div className="inline-flex p-4 bg-accent/10 rounded-full mb-4">
                     <BookOpen className="w-12 h-12 text-accent" />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">General Science Quiz</h3>
+                  {/* <h3 className="text-xl font-bold mb-2">General Science Quiz</h3>
                   <p className="text-base text-muted-foreground">
                     Test your knowledge in Physics, Chemistry, Biology, and more
                   </p>
-                  <Badge variant="secondary" className="mt-4 text-base">4 Categories</Badge>
+                  <Badge variant="secondary" className="mt-4 text-base">4 Categories</Badge> */}
+                  <h3 className="text-xl font-bold mb-2">
+                    {t("science_quiz")}
+                  </h3>
+
+                  <p className="text-base text-muted-foreground">
+                    {t("science_quiz_desc")}
+                  </p>
+
+                  <Badge variant="secondary" className="mt-4 text-base">
+                    {t("four_categories")}
+                  </Badge>
                 </Card>
 
-                
+
                 <Card 
                   className="
                     p-8 text-center cursor-pointer transition-all rounded-2xl
@@ -679,14 +1187,27 @@ useLayoutEffect(() => {
                   <div className="inline-flex p-4 bg-purple-500/10 rounded-full mb-4">
                     <GraduationCap className="w-12 h-12 text-purple-600" />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">Custom MCQ</h3>
+                  {/* <h3 className="text-xl font-bold mb-2">Custom MCQ</h3>
                   <p className="text-base text-muted-foreground">
                     Teachers create tests, students take them
                   </p>
-                  <Badge variant="secondary" className="mt-4 text-base">Teacher/Student</Badge>
+                  <Badge variant="secondary" className="mt-4 text-base">Teacher/Student</Badge> */}
+
+                  <h3 className="text-xl font-bold mb-2">
+                    {t("custom_mcq")}
+                  </h3>
+
+                  <p className="text-base text-muted-foreground">
+                    {t("custom_mcq_desc")}
+                  </p>
+
+                  <Badge variant="secondary" className="mt-4 text-base">
+                    {t("teacher_student")}
+                  </Badge>
+
                 </Card>
 
-                
+
                 <Card 
                   className="
                     p-8 text-center cursor-pointer transition-all rounded-2xl
@@ -715,19 +1236,37 @@ useLayoutEffect(() => {
                     duration-300
                   "
 
-                  onClick={() => navigate('/answer-evaluator')}
+                  onClick={() => {
+                    const auth = getAuth();
+                    if (!auth.currentUser) {
+                      navigate("/login");
+                    } else {
+                      navigate("/answer-evaluator");
+                    }
+                  }}
                   data-testid="card-answer-evaluator"
                 >
                   <div className="inline-flex p-4 bg-green-500/10 rounded-full mb-4">
                     <ScrollText className="w-12 h-12 text-green-600" />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">Answer Sheet Evaluator</h3>
+                  {/* <h3 className="text-xl font-bold mb-2">Answer Sheet Evaluator</h3>
                   <p className="text-base text-muted-foreground">
                     AI-powered evaluation of handwritten answer sheets
                   </p>
                   <Badge variant="secondary" className="mt-4 text-base">Upload & Evaluate</Badge>
-                </Card>
+                </Card> */}
+                  <h3 className="text-xl font-bold mb-2" >
+                    {t("answer_sheet")}
+                  </h3>
 
+                  <p className="text-base text-muted-foreground">
+                    {t("answer_sheet_desc")}
+                  </p>
+
+                  <Badge variant="secondary" className="mt-4 text-base">
+                    {t("upload_evaluate")}
+                  </Badge>
+                  </Card>
               </div>
             </div>
 
@@ -737,7 +1276,9 @@ useLayoutEffect(() => {
                 <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                   <div className="flex items-center gap-2">
                     <Trophy className="w-5 h-5 text-primary" />
-                    <h2 className="text-lg sm:text-xl font-bold">Your Best Scores</h2>
+                    <h2 className="text-lg sm:text-xl font-bold">
+                      {t("score_history")}
+                    </h2>
                   </div>
                   <Button
                     variant="outline"
@@ -746,10 +1287,11 @@ useLayoutEffect(() => {
                     className="gap-2 h-11 text-base"
                   >
                     <RotateCcw className="w-4 h-4" />
-                    <span>Reset Scores</span>
+                    <span>{t("reset_scores")}</span>
+
                   </Button>
                 </div>
-                <LeaderboardCard entries={leaderboard} />
+                <LeaderboardCard entries={leaderboard} onResetScores={handleResetScores} />
               </div>
             )}
           </div>
@@ -771,41 +1313,86 @@ useLayoutEffect(() => {
                 <span className="transition-transform duration-200 group-hover:-translate-x-1">
                   ←
                 </span>
-                <span>Back</span>
+                <span>{t("back")}</span>
               </Button>
-              <h2 className="text-2xl sm:text-3xl font-bold mb-2">Custom MCQ Platform</h2>
-              <p className="text-base text-muted-foreground">Choose your role to continue</p>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
-              <Card 
-                className="p-8 text-center hover-elevate cursor-pointer border-2 hover:border-primary transition-all"
-                onClick={() => navigate('/teacher-auth')}
-                data-testid="card-role-teacher"
-              >
-                <div className="inline-flex p-4 bg-primary/10 rounded-full mb-4">
-                  <GraduationCap className="w-12 h-12 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">I'm a Teacher</h3>
-                <p className="text-base text-muted-foreground">
-                  Create and manage custom MCQ tests for your students
-                </p>
-              </Card>
+              <h2 className="text-2xl sm:text-3xl font-bold mb-2">
+                {t("custom_mcq_platform")}
+              </h2>
 
-              <Card 
-                className="p-8 text-center hover-elevate cursor-pointer border-2 hover:border-accent transition-all"
-                onClick={() => navigate('/custom-test')}
-                data-testid="card-role-student"
-              >
-                <div className="inline-flex p-4 bg-accent/10 rounded-full mb-4">
-                  <BookOpen className="w-12 h-12 text-accent" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">I'm a Student</h3>
-                <p className="text-base text-muted-foreground">
-                  Take custom tests using a share code from your teacher
-                </p>
-              </Card>
+              <p className="text-base text-muted-foreground">
+                {t("choose_role")}
+              </p>
             </div>
+
+            {isTeacherSession ? (
+              <div className="mx-auto max-w-xl">
+                <Card
+                  className="cursor-pointer border-2 border-primary p-8 text-center transition-all hover-elevate"
+                  onClick={() => navigate("/teacher-dashboard")}
+                  data-testid="card-role-teacher"
+                >
+                  <div className="mb-4 inline-flex rounded-full bg-primary/10 p-4">
+                    <GraduationCap className="h-12 w-12 text-primary" />
+                  </div>
+                  <h3 className="mb-2 text-xl font-bold">{t("teacher_dashboard")}</h3>
+                  <p className="text-base text-muted-foreground">
+                    {t("teacher_dashboard_signed_in")}
+                  </p>
+                </Card>
+              </div>
+            ) : isStudentSession ? (
+              <div className="mx-auto max-w-xl">
+                <Card
+                  className="cursor-pointer border-2 border-accent p-8 text-center transition-all hover:border-accent hover-elevate"
+                  onClick={() => navigate("/custom-test")}
+                  data-testid="card-role-student"
+                >
+                  <div className="mb-4 inline-flex rounded-full bg-accent/10 p-4">
+                    <BookOpen className="h-12 w-12 text-accent" />
+                  </div>
+                  <h3 className="mb-2 text-xl font-bold">
+                    {t("student_role")}
+                  </h3>
+                  <p className="text-base text-muted-foreground">
+                    {t("student_role_desc")}
+                  </p>
+                </Card>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-6 mx-auto max-w-3xl sm:grid-cols-2">
+                <Card
+                  className="cursor-pointer border-2 border-primary p-8 text-center transition-all hover:border-primary hover-elevate"
+                  onClick={() => navigate("/teacher-auth")}
+                  data-testid="card-role-teacher"
+                >
+                  <div className="mb-4 inline-flex rounded-full bg-primary/10 p-4">
+                    <GraduationCap className="h-12 w-12 text-primary" />
+                  </div>
+                  <h3 className="mb-2 text-xl font-bold">
+                    {t("teacher_role")}
+                  </h3>
+                  <p className="text-base text-muted-foreground">
+                    {t("teacher_role_desc")}
+                  </p>
+                </Card>
+
+                <Card
+                  className="cursor-pointer border-2 border-accent p-8 text-center transition-all hover:border-accent hover-elevate"
+                  onClick={handleStudentCustomMCQ}
+                  data-testid="card-role-student"
+                >
+                  <div className="mb-4 inline-flex rounded-full bg-accent/10 p-4">
+                    <BookOpen className="h-12 w-12 text-accent" />
+                  </div>
+                  <h3 className="mb-2 text-xl font-bold">
+                    {t("student_role")}
+                  </h3>
+                  <p className="text-base text-muted-foreground">
+                    {t("student_role_desc")}
+                  </p>
+                </Card>
+              </div>
+            )}
           </div>
         )}
 
@@ -824,7 +1411,7 @@ useLayoutEffect(() => {
                 <span className="transition-transform duration-200 group-hover:-translate-x-1">
                   ←
                 </span>
-                <span>Back</span>
+              <span>{t("back")}</span>
               </Button>
             {/* Features Banner */}
             {/* <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
@@ -832,8 +1419,8 @@ useLayoutEffect(() => {
                 <div className="inline-flex p-2 sm:p-3 bg-blue-500/10 rounded-lg mb-2">
                   <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
                 </div>
-                <h3 className="font-semibold text-base">Aligned</h3>
-                <p className="text-base text-muted-foreground mt-1">Official curriculum coverage</p>
+                <h3 className="font-semibold text-base">{t("aligned")}</h3>
+                <p className="text-base text-muted-foreground mt-1">{t("aligned_desc")}</p>
               </Card>
 
 
@@ -841,16 +1428,16 @@ useLayoutEffect(() => {
                 <div className="inline-flex p-2 sm:p-3 bg-green-500/10 rounded-lg mb-2">
                   <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
                 </div>
-                <h3 className="font-semibold text-base">AI Powered</h3>
-                <p className="text-base text-muted-foreground mt-1">Adaptive question generation</p>
+                <h3 className="font-semibold text-base">{t("ai_powered")}</h3>
+                <p className="text-base text-muted-foreground mt-1">{t("ai_powered_desc")}</p>
               </Card>
 
               <Card className="p-4 sm:p-5 text-center hover-elevate">
                 <div className="inline-flex p-2 sm:p-3 bg-purple-500/10 rounded-lg mb-2">
                   <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
                 </div>
-                <h3 className="font-semibold text-base">Track Progress</h3>
-                <p className="text-base text-muted-foreground mt-1">Monitor your improvement</p>
+                <h3 className="font-semibold text-base">{t("track_progress")}</h3>
+                <p className="text-base text-muted-foreground mt-1">{t("track_progress_desc")}</p>
               </Card>
 
 
@@ -866,8 +1453,13 @@ useLayoutEffect(() => {
                 <div className="inline-flex p-2 sm:p-3 bg-blue-600/30 dark:bg-blue-500/50 rounded-lg mb-2">
                   <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <h3 className="font-semibold text-base">Aligned</h3>
-                <p className="text-base text-white/80 mt-1">Official curriculum coverage</p>
+                <h3 className="font-semibold text-base">
+                  {t("aligned")}
+                </h3>
+
+                <p className="text-base text-white/80 mt-1">
+                  {t("aligned_desc")}
+                </p>
               </Card>
 
               {/* Green Card */}
@@ -879,8 +1471,13 @@ useLayoutEffect(() => {
                 <div className="inline-flex p-2 sm:p-3 bg-green-600/30 dark:bg-green-500/50 rounded-lg mb-2">
                   <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <h3 className="font-semibold text-base">AI Powered</h3>
-                <p className="text-base text-white/80 mt-1">Adaptive question generation</p>
+                <h3 className="font-semibold text-base">
+                  {t("ai_powered")}
+                </h3>
+
+                <p className="text-base text-white/80 mt-1">
+                  {t("ai_powered_desc")}
+                </p>
               </Card>
 
               {/* Purple Card */}
@@ -892,8 +1489,13 @@ useLayoutEffect(() => {
                 <div className="inline-flex p-2 sm:p-3 bg-purple-600/30 dark:bg-purple-500/50 rounded-lg mb-2">
                   <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <h3 className="font-semibold text-base">Track Progress</h3>
-                <p className="text-base text-white/80 mt-1">Monitor your improvement</p>
+                <h3 className="font-semibold text-base">
+                  {t("track_progress")}
+                </h3>
+
+                <p className="text-base text-white/80 mt-1">
+                  {t("track_progress_desc")}
+                </p>
               </Card>
             </div>
 
@@ -901,50 +1503,73 @@ useLayoutEffect(() => {
             {/* Language Selection */}
             <div className="space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <h2 className="text-xl sm:text-2xl font-bold">Choose Your Language</h2>
+                <h2 className="text-xl sm:text-2xl font-bold">
+                  {t("choose_language")}
+                </h2>
+
                 <Badge variant="secondary" className="text-base">
-                  6 Languages Available
+                  {t("six_languages_available")}
                 </Badge>
               </div>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                <LanguageCard
-                  language="French"
-                  icon={BookOpen}
-                  color="bg-pink-50 dark:bg-pink-950/20 text-pink-600 dark:text-pink-400"
-                  onClick={() => handleSubjectLanguageSelect("french")}
-                />
-                <LanguageCard
-                  language="German"
-                  icon={Languages}
-                  color="bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400"
-                  onClick={() => handleSubjectLanguageSelect("german")}
-                />
-                <LanguageCard
-                  language="Spanish"
-                  icon={Sparkles}
-                  color="bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400"
-                  onClick={() => handleSubjectLanguageSelect("spanish")}
-                />
-                <LanguageCard
-                  language="Hindi"
-                  icon={Book}
-                  color="bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400"
-                  onClick={() => handleSubjectLanguageSelect("hindi")}
-                />
-                <LanguageCard
-                  language="Marathi"
-                  icon={Library}
-                  color="bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400"
-                  onClick={() => handleSubjectLanguageSelect("marathi")}
-                />
-                <LanguageCard
-                  language="Kannada"
-                  icon={ScrollText}
-                  color="bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400"
-                  onClick={() => handleSubjectLanguageSelect("kannada")}
-                />
-              </div>
+              {availableLanguageSubjects.map((subjectKey: string) => {
+                const subjectOptions: Record<
+                  string,
+                  {
+                    icon: typeof BookOpen;
+                    color: string;
+                    label: string;
+                  }
+                > = {
+                  french: {
+                    icon: BookOpen,
+                    color: "bg-pink-50 dark:bg-pink-950/20 text-pink-600 dark:text-pink-400",
+                    label: t("subject_french"),
+                  },
+                  german: {
+                    icon: Languages,
+                    color: "bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400",
+                    label: t("subject_german"),
+                  },
+                  spanish: {
+                    icon: Sparkles,
+                    color: "bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400",
+                    label: t("subject_spanish"),
+                  },
+                  hindi: {
+                    icon: Book,
+                    color: "bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400",
+                    label: t("subject_hindi"),
+                  },
+                  marathi: {
+                    icon: Library,
+                    color: "bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400",
+                    label: t("subject_marathi"),
+                  },
+                  kannada: {
+                    icon: ScrollText,
+                    color: "bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400",
+                    label: t("subject_kannada"),
+                  },
+                };
+
+                const option = subjectOptions[subjectKey];
+                if (!option) return null;
+
+                const Icon = option.icon;
+
+                return (
+                  <LanguageCard
+                    key={subjectKey}
+                    language={option.label}
+                    icon={Icon}
+                    color={option.color}
+                    onClick={() => handleSubjectLanguageSelect(subjectKey)}
+                  />
+                );
+              })}
+            </div>
             </div>
           </div>
         )}
@@ -965,47 +1590,46 @@ useLayoutEffect(() => {
                 <span className="transition-transform duration-200 group-hover:-translate-x-1">
                   ←
                 </span>
-                <span>Back</span>
+                <span>{t("back")}</span>
               </Button>
               <div>
-                <h2 className="text-xl sm:text-2xl font-bold">General Science Quiz</h2>
-                <p className="text-sm text-muted-foreground">Choose a category</p>
+                <h2 className="text-xl sm:text-2xl font-bold">
+                  {t("science_quiz")}
+                </h2>
+
+                <p className="text-sm text-muted-foreground">
+                  {t("choose_category")}
+                </p>
               </div>
             </div>
 
             <div className="space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <h2 className="text-xl sm:text-2xl font-bold">Select Science Category</h2>
+                <h2 className="text-xl sm:text-2xl font-bold">
+                  {t("select_science_category")}
+                </h2>
+
                 <Badge variant="secondary" className="text-base">
-                  4 Categories • 25 Chapters
+                  {t("science_categories")}
                 </Badge>
               </div>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <LanguageCard
-                  language="Physics"
-                  icon={Atom}
-                  color="bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400"
-                  onClick={() => handleScienceCategorySelect("physics")}
-                />
-                <LanguageCard
-                  language="Chemistry"
-                  icon={Beaker}
-                  color="bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400"
-                  onClick={() => handleScienceCategorySelect("chemistry")}
-                />
-                <LanguageCard
-                  language="Biology"
-                  icon={Dna}
-                  color="bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400"
-                  onClick={() => handleScienceCategorySelect("biology")}
-                />
-                <LanguageCard
-                  language="General Science"
-                  icon={Zap}
-                  color="bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400"
-                  onClick={() => handleScienceCategorySelect("general")}
-                />
+                {availableScienceCategories.map((categoryKey: string) => {
+                  const option = scienceCategoryOptions[categoryKey as keyof typeof scienceCategoryOptions];
+                  if (!option) return null;
+                  const Icon = option.icon;
+
+                  return (
+                    <LanguageCard
+                      key={categoryKey}
+                      language={option.label}
+                      icon={Icon}
+                      color={option.color}
+                      onClick={() => handleScienceCategorySelect(categoryKey)}
+                    />
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -1019,7 +1643,7 @@ useLayoutEffect(() => {
               </Button>
               <div>
                 <h2 className="text-xl sm:text-2xl font-bold capitalize">
-                  {selectedMode === "science" ? selectedScienceCategory : selectedLanguage}
+                  {selectedMode === "science" ? configuredSubjectLabel : selectedLanguage}
                 </h2>
                 <p className="text-sm text-muted-foreground">Step 1 of 4</p>
               </div>
@@ -1042,8 +1666,8 @@ useLayoutEffect(() => {
  */}
         {step === "class" && (
           <div className="space-y-6 max-w-3xl mx-auto">
-            <div className="flex items-center gap-3 sm:gap-4 mb-6">
-              <Button variant="outline"type="button" onClick={handleBack} className="
+              <div className="flex items-center gap-3 sm:gap-4 mb-6">
+                <Button variant="outline" type="button" onClick={handleBack} className="
                         group flex items-center gap-2
                         rounded-full px-4 py-2
                         bg-white dark:bg-gray-900
@@ -1056,40 +1680,111 @@ useLayoutEffect(() => {
                 <span className="transition-transform duration-200 group-hover:-translate-x-1">
                   ←
                 </span>
-                <span>Back</span>
+                <span>{t("back")}</span>
               </Button>
               <div>
                 <h2 className="text-xl sm:text-2xl font-bold capitalize">
-                  {selectedMode === "science" ? selectedScienceCategory : selectedSubjectLanguage}
+                  {studentProfileComplete
+                    ? (selectedMode === "science"
+                        ? configuredSubjectLabel
+                        : t(`subject_${selectedSubjectLanguage}`))
+                    : t("edit_profile")}
                 </h2>
-                <p className="text-sm text-muted-foreground">Step 1 of 4</p>
+                <p className="text-sm text-muted-foreground">
+                  {studentProfileComplete ? t("step_1_4") : t("complete_profile_to_continue")}
+                </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {[
-                { label: "Class 6", value: 6, light: "from-green-400 to-green-200", dark: "from-green-700 to-green-500" },
-                { label: "Class 7", value: 7, light: "from-blue-400 to-blue-200", dark: "from-blue-700 to-blue-500" },
-                { label: "Class 8", value: 8, light: "from-purple-400 to-purple-200", dark: "from-purple-700 to-purple-500" },
-                { label: "Class 9", value: 9, light: "from-pink-400 to-pink-200", dark: "from-pink-700 to-pink-500" },
-                { label: "Class 10", value: 10, light: "from-yellow-400 to-yellow-200", dark: "from-yellow-700 to-yellow-500" },
-              ].map((item) => (
-                <div
-                  key={item.value}
-                  onClick={() => handleClassSelect(item.value)}
-                  className={`
-                    cursor-pointer p-6 rounded-2xl text-center font-semibold
-                    bg-gradient-to-br ${item.light} dark:${item.dark}
-                    text-white
-                    transition-all transform
-                    hover:shadow-xl hover:scale-105
-                    ${selectedClass === item.value ? "ring-4 ring-offset-2 ring-indigo-400 dark:ring-indigo-300" : ""}
-                  `}
-                >
-                  {item.label}
+            {profileLoading ? (
+              <div className="rounded-2xl border bg-card p-6 shadow-sm text-center">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-200">
+                  <Loader2 className="h-6 w-6 animate-spin" />
                 </div>
-              ))}
-            </div>
+                <p className="mt-4 text-base font-medium text-slate-900 dark:text-slate-100">
+                  {t("loading_profile")}
+                </p>
+              </div>
+            ) : studentProfileComplete ? (
+              <div className="space-y-6">
+                <div className="rounded-2xl border bg-card p-6 shadow-sm">
+                  <p className="text-sm text-muted-foreground">
+                    {t("class_board_locked_profile")}
+                  </p>
+                  <div className="mt-4 flex flex-col gap-4 sm:flex-row">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-950 flex-1">
+                      <p className="text-sm text-muted-foreground">{t("class")}</p>
+                      <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-indigo-100 px-3 py-2 text-2xl font-semibold text-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-200">
+                        {t("class")} {selectedClass}
+                        <span className="rounded-full bg-indigo-500 px-2 py-1 text-xs font-semibold text-white">
+                          {t("from_profile")}
+                        </span>
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-950 flex-1">
+                      <p className="text-sm text-muted-foreground">{t("education_board")}</p>
+                      <p className="mt-2 text-2xl font-semibold">{selectedBoard}</p>
+                    </div>
+                  </div>
+                </div>
+                <Button onClick={() => setStep("difficulty")} className="w-full" size="lg">
+                  {t("continue")}
+                </Button>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                  <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+                    {t("update_profile_to_change_class_board")}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => navigate("/profile")}
+                    className="w-full shrink-0 px-6 sm:w-auto sm:px-7"
+                  >
+                    {t("edit_profile")}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-gradient-to-br from-white via-slate-50 to-blue-50 p-5 shadow-[0_18px_50px_rgba(15,23,42,.08)] dark:border-slate-800 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 sm:p-6">
+                <div className="relative overflow-hidden rounded-[24px] border border-slate-200/70 bg-white/85 p-5 text-center shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-900/75 sm:p-8">
+                  <div className="absolute -top-8 right-[-24px] h-24 w-24 rounded-full bg-blue-500/10 blur-3xl" />
+                  <div className="absolute -bottom-10 left-[-20px] h-28 w-28 rounded-full bg-violet-500/10 blur-3xl" />
+
+                  <div className="relative mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/25">
+                    <Settings2 className="h-8 w-8 text-white" />
+                  </div>
+
+                  <h3 className="relative mt-4 text-2xl font-black tracking-tight text-slate-900 dark:text-slate-50">
+                    {t("edit_profile")}
+                  </h3>
+
+                  <p className="relative mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300 sm:text-base">
+                    {t("complete_profile_to_continue")}
+                  </p>
+
+                  <div className="relative mt-5 flex flex-wrap justify-center gap-2">
+                    <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-950/70 dark:text-blue-200">
+                      Profile
+                    </span>
+                    <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-950/60 dark:text-amber-200">
+                      Class
+                    </span>
+                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200">
+                      Board
+                    </span>
+                  </div>
+
+                  <Button
+                    type="button"
+                    onClick={() => navigate("/profile")}
+                    className="relative mt-6 h-12 w-full rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 font-semibold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-500/30 active:scale-[0.99]"
+                  >
+                    {t("edit_profile")}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1102,7 +1797,7 @@ useLayoutEffect(() => {
               </Button>
               <div>
                 <h2 className="text-lg sm:text-2xl font-bold capitalize">
-                  {selectedMode === "science" ? selectedScienceCategory : selectedLanguage} - Class {selectedClass}
+                  {selectedMode === "science" ? configuredSubjectLabel : selectedLanguage} - Class {selectedClass}
                 </h2>
                 <p className="text-sm text-muted-foreground">Step 2 of 5</p>
               </div>
@@ -1137,23 +1832,21 @@ useLayoutEffect(() => {
                 <span className="transition-transform duration-200 group-hover:-translate-x-1">
                   ←
                 </span>
-                <span>Back</span>
+                <span>{t("back")}</span>
               </Button>
               <div>
                 <h2 className="text-lg sm:text-2xl font-bold capitalize">
-                  {selectedMode === "science"
-                    ? selectedScienceCategory
-                    : selectedSubjectLanguage} - Class {selectedClass}
+                  {configuredSubjectLabel} - {t("class")} {selectedClass}
                 </h2>
-                <p className="text-sm text-muted-foreground">Step 2 of 5</p>
+                <p className="text-sm text-muted-foreground">{t("step_2_5")}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
-                { label: "Easy", value: "easy", light: "from-green-400 to-green-200", dark: "from-green-700 to-green-500" },
-                { label: "Medium", value: "medium", light: "from-yellow-400 to-yellow-200", dark: "from-yellow-700 to-yellow-500" },
-                { label: "Hard", value: "hard", light: "from-red-400 to-red-200", dark: "from-red-700 to-red-500" },
+            { label: t("difficulty_easy"), value: "easy", light: "from-green-400 to-green-200", dark: "from-green-700 to-green-500" },
+            { label: t("difficulty_medium"), value: "medium", light: "from-yellow-400 to-yellow-200", dark: "from-yellow-700 to-yellow-500" },
+            { label: t("difficulty_hard"), value: "hard", light: "from-red-400 to-red-200", dark: "from-red-700 to-red-500" },
               ].map((item) => (
                 <div
                   key={item.value}
@@ -1289,13 +1982,13 @@ useLayoutEffect(() => {
                 <span className="transition-transform duration-200 group-hover:-translate-x-1">
                   ←
                 </span>
-                <span>Back</span>
+                <span>{t("back")}</span>
               </Button>
               <div>
-                <h2 className="text-lg sm:text-2xl font-bold capitalize">
-                  {selectedSubjectLanguage} - Class {selectedClass} - {selectedDifficulty}
+                <h2 className="text-xl sm:text-2xl font-bold capitalize">
+                  {configuredSubjectLabel}
                 </h2>
-                <p className="text-sm text-muted-foreground">Step 3 of 5</p>
+                <p className="text-sm text-muted-foreground">{t("step_3_5")}</p>
               </div>
             </div>
 
@@ -1306,26 +1999,26 @@ useLayoutEffect(() => {
                 transition-colors
               ">
               <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">
-                Select Test Type
+                {t("select_test_type")}
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
-                  {
-                    id: "mixed",
-                    title: "Mixed Test",
-                    description: "MCQ + Open-ended Questions",
-                    extra: "50% multiple choice, 50% written answers for comprehensive practice",
-                    bgColor: "bg-[rgb(241,234,164)] dark:bg-[rgb(126,43,17)]",
-                    icon: <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600 dark:text-yellow-400" />,
-                  },
-                  {
-                    id: "mcq-only",
-                    title: "MCQ Only Test",
-                    description: "Multiple Choice Questions Only",
-                    extra: "Fast-paced test with instant feedback on all questions",
-                    bgColor: "bg-[rgb(247,207,207)] dark:bg-[rgb(160,88,65)]",
-                    icon: <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 dark:text-red-400" />,
-                  },
+            {
+              id: "mixed",
+              title: t("test_type_mixed_title"),
+              description: t("test_type_mixed_desc"),
+              extra: t("test_type_mixed_extra"),
+              bgColor: "bg-[rgb(241,234,164)] dark:bg-[rgb(126,43,17)]",
+              icon: <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600 dark:text-yellow-400" />,
+            },
+            {
+              id: "mcq-only",
+              title: t("test_type_mcq_title"),
+              description: t("test_type_mcq_desc"),
+              extra: t("test_type_mcq_extra"),
+              bgColor: "bg-[rgb(247,207,207)] dark:bg-[rgb(160,88,65)]",
+              icon: <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 dark:text-red-400" />,
+            },
                 ].map((test) => (
                   <Card
                     key={test.id}
@@ -1357,9 +2050,9 @@ useLayoutEffect(() => {
                         )}
                       </div>
                       <div>
-                        <h3 className="font-semibold text-lg mb-1">{test.title}</h3>
-                        <p className="text-base text-muted-foreground">{test.description}</p>
-                        <p className="text-sm text-muted-foreground mt-2">{test.extra}</p>
+                        <h3 className="font-semibold text-lg mb-1">{t(test.title)}</h3>
+                        <p className="text-base text-muted-foreground">{t(test.description)}</p>
+                        <p className="text-sm text-muted-foreground mt-2">{t(test.extra)}</p>
                       </div>
                     </div>
                   </Card>
@@ -1370,7 +2063,7 @@ useLayoutEffect(() => {
         )}
 
 
-        
+
         {/* {step === "testLength" && (
           <div className="space-y-6 max-w-4xl mx-auto">
             <div className="flex items-center gap-3 sm:gap-4 mb-6">
@@ -1384,7 +2077,7 @@ useLayoutEffect(() => {
               </Button>
               <div>
                 <h2 className="text-lg sm:text-xl md:text-2xl font-bold capitalize">
-                  {selectedMode === "science" ? selectedScienceCategory : selectedLanguage} - Class {selectedClass} - {selectedDifficulty} - {selectedTestType === "mcq-only" ? "MCQ Only" : "Mixed"}
+                  {selectedMode === "science" ? configuredSubjectLabel : selectedLanguage} - Class {selectedClass} - {selectedDifficulty} - {selectedTestType === "mcq-only" ? "MCQ Only" : "Mixed"}
                 </h2>
                 <p className="text-sm text-muted-foreground">Step 4 of 5</p>
               </div>
@@ -1455,26 +2148,50 @@ useLayoutEffect(() => {
                 <span className="transition-transform duration-200 group-hover:-translate-x-1">
                   ←
                 </span>
-                <span>Back</span>
+                <span>{t("back")}</span>
               </Button>
               <div>
                 <h2 className="text-lg sm:text-xl md:text-2xl font-bold capitalize">
-                  {selectedMode === "science" ? selectedScienceCategory : selectedSubjectLanguage} - Class {selectedClass} - {selectedDifficulty} - {selectedTestType === "mcq-only" ? "MCQ Only" : "Mixed"}
+                  {configuredSubjectLabel} - {t("class")} {selectedClass} - {t(`difficulty_${selectedDifficulty}`)} - {selectedTestType === "mcq-only" ? t("test_type_mcq_short") : t("test_type_mixed_short")}
                 </h2>
-                <p className="text-sm text-muted-foreground">Step 4 of 5</p>
+                <p className="text-sm text-muted-foreground">{t("step_4_5")}</p>
               </div>
             </div>
 
               <Card className="p-4 sm:p-6 bg-[hsl(200.49deg_56.52%_80.08%)] dark:bg-[hsl(200.49deg_56.52%_20%)]">
                 <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">
-                  Select Test Length
+                  {t("select_test_length")}
                 </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {[
-                  { label: "Quick Test", sublabel: "10 Questions", value: 10, time: "~10 mins", bg: "bg-[rgb(241,234,164)] dark:bg-[rgb(126,43,17)]" },
-                  { label: "Standard Test", sublabel: "20 Questions", value: 20, time: "~20 mins", bg: "bg-[rgb(247,207,207)] dark:bg-[rgb(160,88,65)]" },
-                  { label: "Extended Test", sublabel: "30 Questions", value: 30, time: "~30 mins", bg: "bg-[rgb(200,230,255)] dark:bg-[rgb(20,50,80)]" },
-                  { label: "Full Test", sublabel: "50 Questions", value: 50, time: "~50 mins", bg: "bg-[rgb(220,250,220)] dark:bg-[rgb(30,60,40)]" },
+            {
+              label: t("test_quick"),
+              sublabel: t("test_quick_questions"),
+              value: 10,
+              time: t("test_quick_time"),
+              bg: "bg-[rgb(241,234,164)] dark:bg-[rgb(126,43,17)]"
+            },
+            {
+              label: t("test_standard"),
+              sublabel: t("test_standard_questions"),
+              value: 20,
+              time: t("test_standard_time"),
+              bg: "bg-[rgb(247,207,207)] dark:bg-[rgb(160,88,65)]"
+            },
+            {
+              label: t("test_extended"),
+              sublabel: t("test_extended_questions"),
+              value: 30,
+              time: t("test_extended_time"),
+              bg: "bg-[rgb(200,230,255)] dark:bg-[rgb(20,50,80)]"
+            },
+            {
+              label: t("test_full"),
+              sublabel: t("test_full_questions"),
+              value: 50,
+              time: t("test_full_time"),
+              bg: "bg-[rgb(220,250,220)] dark:bg-[rgb(30,60,40)]"
+            },
                 ].map((item) => (
                   <Card
                     key={item.value}
@@ -1488,9 +2205,9 @@ useLayoutEffect(() => {
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="font-semibold text-lg">{item.label}</h3>
-                        <p className="text-muted-foreground">{item.sublabel}</p>
-                        <p className="text-sm text-muted-foreground mt-1">{item.time}</p>
+                        <h3 className="font-semibold text-lg">{t(item.label)}</h3>
+                        <p className="text-muted-foreground">{t(item.sublabel)}</p>
+                        <p className="text-sm text-muted-foreground mt-1">{t(item.time)}</p>
                       </div>
                       {selectedTestLength === item.value && (
                         <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
@@ -1562,7 +2279,7 @@ useLayoutEffect(() => {
                     </div>
                   </div>
                 </Card>
-                
+
                 <Card
                   className={`p-6 cursor-pointer hover-elevate active-elevate-2 ${
                     selectedTestMode === "custom"
@@ -1596,7 +2313,7 @@ useLayoutEffect(() => {
             </Card>
           </div>
         )} */}
-        
+
 
 
         {step === "testMode" && (
@@ -1615,13 +2332,14 @@ useLayoutEffect(() => {
                 <span className="transition-transform duration-200 group-hover:-translate-x-1">
                   ←
                 </span>
-                <span>Back</span>
+                <span>{t("back")}</span>
               </Button>
               <div>
+
                 <h2 className="text-lg sm:text-xl md:text-2xl font-bold capitalize">
-                  Choose Test Mode
+                  {t("choose_test_mode")}
                 </h2>
-                <p className="text-sm text-muted-foreground">Step 5 of 6</p>
+                <p className="text-sm text-muted-foreground">{t("step_5_6")}</p>
               </div>
             </div>
 
@@ -1630,75 +2348,63 @@ useLayoutEffect(() => {
                 Select How You Want to Create Your Test
               </h2> */}
               <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">
-                Select How You Want to Create Your Test
-              </h2>
-              
-
-              {/* <div className="flex gap-2">
-                <button
-                  onClick={() => setSelectedLanguage("english")}
-                  className={`px-4 py-1 rounded ${
-                    selectedLanguage === "english"
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-200"
-                  }`}
-                >
-                  English
-                </button>
-
-                <button
-                  onClick={() => setSelectedLanguage("hindi")}
-                  className={`px-4 py-1 rounded ${
-                    selectedLanguage === "hindi"
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-200"
-                  }`}
-                >
-                  हिंदी
-                </button>
-              </div> */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleMediumSelect("english")}
-                  className={selectedMedium === "english"
-                    ? "bg-blue-600 text-white px-4 py-1 rounded"
-                    : "bg-gray-200 px-4 py-1 rounded"}
-                >
-                  English
-                </button>
-
-                <button
-                  onClick={() => handleMediumSelect("hindi")}
-                  className={selectedMedium === "hindi"
-                    ? "bg-blue-600 text-white px-4 py-1 rounded"
-                    : "bg-gray-200 px-4 py-1 rounded"}
-                >
-                  हिंदी
-                </button>
-              </div>
+                <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">
+                  {t("select_test_creation")}
+                </h2>
             </div>
+
+              <div className="mb-5 rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-slate-700 dark:bg-slate-950/40">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {t("test_language")}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("choose_test_language")}
+                    </p>
+                  </div>
+                  <div className="inline-flex rounded-full border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-900">
+                    {(["english", "hindi"] as const).map((language) => (
+                      <button
+                        key={language}
+                        type="button"
+                        onClick={() => handleMediumSelect(language)}
+                        className={`min-w-24 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                          selectedMedium === language
+                            ? "bg-slate-900 text-white shadow-md dark:bg-white dark:text-slate-900"
+                            : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+                        }`}
+                        data-testid={`button-test-language-${language}`}
+                      >
+                        {language === "english"
+                          ? t("language_english")
+                          : t("language_hindi")}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
-                  {
-                    label: "Pre-defined Chapters",
-                    description: "Choose from curated curriculum chapters",
-                    details: "25 chapters covering the complete syllabus",
-                    value: "predefined",
-                    iconBg: "bg-blue-500/10",
-                    iconColor: "text-blue-500",
-                    pastel: "bg-[rgb(74_153_255)] dark:bg-[rgb(74_153_255)]",
-                  },
-                  {
-                    label: "Custom Topics",
-                    description: "Create test with your own topics",
-                    details: "Enter your own topics and customize settings",
-                    value: "custom",
-                    iconBg: "bg-purple-500/10",
-                    iconColor: "text-purple-500",
-                    pastel: "bg-[rgb(177_118_236)] dark:bg-[rgb(177_118_236)]",
-                  },
+            {
+              label: t("chapter_predefined"),
+              description: t("chapter_predefined_desc"),
+              details: t("chapter_predefined_details"),
+              value: "predefined",
+              iconBg: "bg-blue-500/10",
+              iconColor: "text-blue-500",
+              pastel: "bg-[rgb(74_153_255)] dark:bg-[rgb(74_153_255)]",
+            },
+            {
+              label: t("chapter_custom"),
+              description: t("chapter_custom_desc"),
+              details: t("chapter_custom_details"),
+              value: "custom",
+              iconBg: "bg-purple-500/10",
+              iconColor: "text-purple-500",
+              pastel: "bg-[rgb(177_118_236)] dark:bg-[rgb(177_118_236)]",
+            },
                 ].map((item) => (
                   <Card
                     key={item.value}
@@ -1725,9 +2431,9 @@ useLayoutEffect(() => {
                           )}
                         </div>
 
-                        <h3 className="font-semibold text-xl mt-3">{item.label}</h3>
-                        <p className="text-gray-600 dark:text-gray-300">{item.description}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{item.details}</p>
+                        <h3 className="font-semibold text-xl mt-3">{t(item.label)}</h3>
+                        <p className="text-gray-600 dark:text-gray-300">{t(item.description)}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t(item.details)}</p>
                       </div>
 
                       {selectedTestMode === item.value && (
@@ -1769,189 +2475,211 @@ useLayoutEffect(() => {
                 <span className="transition-transform duration-200 group-hover:-translate-x-1">
                   ←
                 </span>
-                <span>Back</span>
+                <span>{t("back")}</span>
               </Button>
               <div>
                 <h2 className="text-lg sm:text-xl md:text-2xl font-bold capitalize">
-                  Create Your Custom Test
+                  {t("create_custom_test")}
                 </h2>
-                <p className="text-sm text-muted-foreground">Step 6 of 6 - Enter your topics and settings</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("step_6_settings")}
+                </p>
               </div>
             </div>
 
             <Card className="p-6">
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <h3>
                     <Settings2 className="w-5 h-5" />
-                    Test Topics
+                    {t("test_topics")}
                   </h3>
-                  <p className="text-sm text-muted-foreground mb-4">Enter topics you want to focus on (Topic 1 is mandatory, others are optional)</p>
-                  
-                  <div className="space-y-4">
-                    {/* Topic 1 */}
-                    <div>
-                      <Label htmlFor="topic1" className="text-base"> Topic 1 (Required) *</Label>
-                      <Input
-                        id="topic1"
-                        placeholder="e.g., Basic Greetings, Verb Conjugation, Cell Structure"
-                        value={customTopic1}
-                        onChange={(e) => setCustomTopic1(e.target.value)}
-                        className="mt-1"
-                        data-testid="input-topic1"
-                        disabled={isGeneratingTest}
-                      />
-                    </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {t("topics_desc")}
+                  </p>
 
-                    {/* Topic 2 */}
-                    <div>
-                      <Label htmlFor="topic2" className="text-base"> Topic 2 (Required) *</Label>
-                      <Input
-                        id="topic2"
-                        placeholder="e.g., Numbers and Counting, Past Tense"
-                        value={customTopic2}
-                        onChange={(e) => setCustomTopic2(e.target.value)}
-                        className="mt-1"
-                        data-testid="input-topic2"
-                        disabled={isGeneratingTest}
-                      />
-                    </div>
+                  {/* Topic 1 */}
+                  <div>
+                    <Label htmlFor="topic1">{t("topic1_required")}</Label>
+                    <Input
+                      id="topic1"
+                      placeholder={t("topic_placeholder1")}
+                      value={customTopic1}
+                      onChange={(e) => setCustomTopic1(e.target.value)}
+                      className="mt-1"
+                      data-testid="input-topic1"
+                      disabled={isGeneratingTest}
+                    />
+                  </div>
 
-                    {/* Topic 3 */}
-                    <div>
-                      <Label htmlFor="topic3" className="text-base">Topic 3 (Required) *</Label>
-                      <Input
-                        id="topic3"
-                        placeholder="e.g., Family Members, Photosynthesis"
-                        value={customTopic3}
-                        onChange={(e) => setCustomTopic3(e.target.value)}
-                        className="mt-1"
-                        data-testid="input-topic3"
-                        disabled={isGeneratingTest}
-                      />
-                    </div>
+                  {/* Topic 2 */}
+                  <div>
+                    <Label htmlFor="topic2">{t("topic2_required")}</Label>
+                    <Input
+                      id="topic2"
+                      placeholder={t("topic_placeholder2")}
+                      value={customTopic2}
+                      onChange={(e) => setCustomTopic2(e.target.value)}
+                      className="mt-1"
+                      data-testid="input-topic2"
+                      disabled={isGeneratingTest}
+                    />
+                  </div>
 
-                    {/* Topic 4 */}
-                    <div>
-                      <Label htmlFor="topic4" className="text-base">Topic 4 (Optional)</Label>
-                      <Input
-                        id="topic4"
-                        placeholder="e.g., Food and Drinks, Chemical Reactions"
-                        value={customTopic4}
-                        onChange={(e) => setCustomTopic4(e.target.value)}
-                        className="mt-1"
-                        data-testid="input-topic4"
-                        disabled={isGeneratingTest}
-                      />
-                    </div>
+                  {/* Topic 3 */}
+                  <div>
+                    <Label htmlFor="topic3">{t("topic3_required")}</Label>
+                    <Input
+                      id="topic3"
+                      placeholder={t("topic_placeholder3")}
+                      value={customTopic3}
+                      onChange={(e) => setCustomTopic3(e.target.value)}
+                      className="mt-1"
+                      data-testid="input-topic3"
+                      disabled={isGeneratingTest}
+                    />
+                  </div>
 
-                    {/* Topic 5 */}
-                    <div>
-                      <Label htmlFor="topic5" className="text-base">Topic 5 (Optional)</Label>
-                      <Input
-                        id="topic5"
-                        placeholder="e.g., Tenses Practice, Algebra Basics"
-                        value={customTopic5}
-                        onChange={(e) => setCustomTopic5(e.target.value)}
-                        className="mt-1"
-                        data-testid="input-topic5"
-                        disabled={isGeneratingTest}
-                      />
-                    </div>
+                  {/* Topic 4 */}
+                  <div>
+                    <Label htmlFor="topic4">{t("topic4_optional")}</Label>
+                    <Input
+                      id="topic4"
+                      placeholder={t("topic_placeholder4")}
+                      value={customTopic4}
+                      onChange={(e) => setCustomTopic4(e.target.value)}
+                      className="mt-1"
+                      data-testid="input-topic4"
+                      disabled={isGeneratingTest}
+                    />
+                  </div>
 
-                    {/* Topic 6 */}
-                    <div>
-                      <Label htmlFor="topic6" className="text-base"> Topic 6 (Optional)</Label>
-                      <Input
-                        id="topic6"
-                        placeholder="e.g., Geometry, Human Digestive System"
-                        value={customTopic6}
-                        onChange={(e) => setCustomTopic6(e.target.value)}
-                        className="mt-1"
-                        data-testid="input-topic6"
-                        disabled={isGeneratingTest}
-                      />
-                    </div>
+                  {/* Topic 5 */}
+                  <div>
+                    <Label htmlFor="topic5">{t("topic5_optional")}</Label>
+                    <Input
+                      id="topic5"
+                      placeholder={t("topic_placeholder5")}
+                      value={customTopic5}
+                      onChange={(e) => setCustomTopic5(e.target.value)}
+                      className="mt-1"
+                      data-testid="input-topic5"
+                      disabled={isGeneratingTest}
+                    />
+                  </div>
+
+                  {/* Topic 6 */}
+                  <div>
+                    <Label htmlFor="topic6">{t("topic6_optional")}</Label>
+                    <Input
+                      id="topic6"
+                      placeholder={t("topic_placeholder6")}
+                      value={customTopic6}
+                      onChange={(e) => setCustomTopic6(e.target.value)}
+                      className="mt-1"
+                      data-testid="input-topic6"
+                      disabled={isGeneratingTest}
+                    />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
                   <div>
-                    <Label htmlFor="gptModel" className="text-base">AI Model Quality</Label>
+                    <Label htmlFor="gptModel">{t("ai_model_quality")}</Label>
+
                     <Select
                       value={selectedGptModel}
-                      onValueChange={setSelectedGptModel}>
+                      onValueChange={setSelectedGptModel}
+                    >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select AI Model" />
+                        <SelectValue placeholder={t("select_ai_model")} />
                       </SelectTrigger>
 
                       <SelectContent>
 
-                        {/* 🤗 HuggingFace Model */}
                         <SelectItem value="hf-mcqgyaan">
-                          MCQGyaan HF Model 🤗
+                          {t("model_hf")}
                         </SelectItem>
 
-                        {/* 🔥 Fine-Tuned Model */}
-                      <SelectItem value="ft:gpt-4.1-nano-2025-04-14:maxbrain-technologies:pricer:DD6LfCqA">
-                        FT Pricer 4.1 Nano (Custom Trained) 🧠🔥
-                      </SelectItem>
-                        {/* 🔥 GPT-5 Series */}
+                        <SelectItem value="ft:gpt-4.1-nano-2025-04-14:maxbrain-technologies:pricer:DD6LfCqA">
+                          {t("model_ft_pricer")}
+                        </SelectItem>
+
                         <SelectItem value="gpt-5.2">
-                          GPT-5.2 (Latest • Highest Intelligence) 🧠🔥
+                          {t("model_gpt52")}
                         </SelectItem>
 
                         <SelectItem value="gpt-5.1">
-                          GPT-5.1 (Fast • Near GPT-5.2 Quality) ⚡
+                          {t("model_gpt51")}
                         </SelectItem>
 
-                        {/* GPT-4 Series */}
                         <SelectItem value="gpt-4o">
-                          GPT-4o (Best Quality) ⭐
+                          {t("model_gpt4o")}
                         </SelectItem>
 
                         <SelectItem value="gpt-4o-mini">
-                          GPT-4o Mini (Fast & Affordable - Recommended) ⚡
+                          {t("model_gpt4o_mini")}
                         </SelectItem>
 
-                        {/* Legacy */}
                         <SelectItem value="gpt-3.5-turbo">
-                          GPT-3.5 Turbo (Cheapest) 💰
+                          {t("model_gpt35")}
                         </SelectItem>
+
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-muted-foreground mt-1">Higher quality models generate better questions but take longer</p>
+
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {t("ai_model_desc")}
+                    </p>
                   </div>
-                  
+
                   <div>
-                    <Label htmlFor="board" className="text-base">Education Board</Label>
-                    <Select value={selectedBoard} onValueChange={setSelectedBoard} disabled={isGeneratingTest}>
-                      <SelectTrigger className="mt-1" data-testid="select-board">
-                        <SelectValue placeholder="Select Board" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="CBSE">CBSE (Central Board)</SelectItem>
-                        <SelectItem value="ICSE">ICSE (Council for Indian School)</SelectItem>
-                        <SelectItem value="IB">IB (International Baccalaureate)</SelectItem>
-                        <SelectItem value="RBSE">RBSE (Rajasthan Board)</SelectItem>
-                        <SelectItem value="State Board">State Board</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground mt-1">Questions will align with your board's curriculum</p>
+                    <Label>{t("education_board")}</Label>
+                  <div className="mt-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-900 shadow-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-50">
+                    {selectedBoard}
                   </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t("board_desc")}
+                  </p>
                 </div>
+              </div>
 
                 <div className="pt-4 border-t">
                   <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg mb-4">
-                    <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                    <h4>
                       <Sparkles className="w-4 h-4 text-blue-600" />
-                      Test Configuration Summary
+                      {t("test_config_summary")}
                     </h4>
                     <div className="text-sm space-y-1 text-muted-foreground">
-                      <p><strong>Subject:</strong> {selectedMode === "science" ? selectedScienceCategory : selectedSubjectLanguage}</p>
-                      <p><strong>Class:</strong> {selectedClass} | <strong>Difficulty:</strong> {selectedDifficulty}</p>
-                      <p><strong>Type:</strong> {selectedTestType === "mcq-only" ? "MCQ Only" : "Mixed"} | <strong>Questions:</strong> {selectedTestLength}</p>
-                      <p><strong>Topics:</strong> {[customTopic1, customTopic2, customTopic3, customTopic4].filter(t => t.trim()).length} topic(s)</p>
+                      {configuredSubjectLabel ? (
+                        <p>
+                          <strong>{t("subject")}: </strong>
+                          {configuredSubjectLabel}
+                        </p>
+                      ) : null}
+
+                      <p>
+                        <strong>{t("difficulty_label")}: </strong> 
+                        {t(`difficulty_${selectedDifficulty}`)} | <strong>{t("class")}: </strong> {selectedClass} 
+                      </p>
+
+                      {/* <p>
+                        <strong>{t("class")}:</strong> {selectedClass} | 
+                        <strong>{t("difficulty.label")}:</strong> 
+                        {t(`difficulty.${selectedDifficulty}`)}
+                      </p> */}
+
+                      <p>
+                        <strong>{t("type")}: </strong>
+                        {selectedTestType === "mcq-only" ? t("test_type_mcq") : t("test_type_mixed")} | 
+                        <strong> {t("questions")}:</strong> {selectedTestLength}
+                      </p>
+
+                      <p>
+                        <strong>{t("topics")}: </strong> 
+                        {[customTopic1, customTopic2, customTopic3, customTopic4, customTopic5, customTopic6].filter(t => t.trim()).length} {t("topics_count")}
+                      </p>
+
                     </div>
                   </div>
 
@@ -1965,12 +2693,12 @@ useLayoutEffect(() => {
                     {isGeneratingTest ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Generating Your Test...
+                        {t("generating_test")}
                       </>
                     ) : (
                       <>
                         <Sparkles className="w-4 h-4 mr-2" />
-                        Generate Custom Test
+                        {t("generate_custom_test")}
                       </>
                     )}
                   </Button>
@@ -1996,7 +2724,7 @@ useLayoutEffect(() => {
                 <span className="transition-transform duration-200 group-hover:-translate-x-1">
                   ←
                 </span>
-                <span>Back</span>
+                <span>{t("back")}</span>
               </Button>
               <div>
                 {/* <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold capitalize">
@@ -2004,7 +2732,7 @@ useLayoutEffect(() => {
                 </h2> */}
 
               <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold capitalize">
-                  {selectedMedium === "hindi"
+                  {preDefinedChapterMedium === "hindi"
                     ? `हिंदी - कक्षा ${selectedClass} - माध्यम - ${
                         selectedTestType === "mcq-only" ? "एमसीक्यू" : "मिक्स्ड"
                       } - ${selectedTestLength} प्रश्न`
@@ -2012,14 +2740,14 @@ useLayoutEffect(() => {
                         selectedTestType === "mcq-only" ? "MCQ" : "Mixed"
                       } - ${selectedTestLength}Q`}
               </h2>
-                <p className="text-sm text-muted-foreground">Step 6 of 6</p>
+                <p className="text-sm text-muted-foreground">{t("step_6_6")}</p>
               </div>
             </div>
 
             <ChapterList
               chapters={chapters}
               onSelect={handleChapterSelect}
-              selectedMedium={selectedMedium}
+              selectedMedium={preDefinedChapterMedium}
             />
           </div>
         )}
