@@ -1,12 +1,24 @@
+<<<<<<< HEAD
 import OpenAI from "openai";
 import PDFDocument from "pdfkit";
 import { Request, Response } from "express";
 import { getServerAppUrl } from "./lib/appUrl";
+=======
+import { Pool } from "pg";
+import dotenv from "dotenv";
+>>>>>>> fb6ac06a10fc66af0329ecd63713bd2c4019a9ed
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+dotenv.config();
+
+const pool = new Pool({
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: Number(process.env.DB_PORT),
 });
 
+<<<<<<< HEAD
 interface EvaluationParams {
   images: string[];
   studentName: string;
@@ -433,3 +445,6 @@ export function generateEvaluationPDF(req: Request, res: Response) {
 
   doc.end();
 }
+=======
+export default pool;
+>>>>>>> fb6ac06a10fc66af0329ecd63713bd2c4019a9ed

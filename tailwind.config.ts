@@ -157,4 +157,8 @@ export default {
   tailwindcssAnimate,
   typography,
 ],
+<<<<<<< HEAD
 } satisfies Config;
+=======
+} satisfies Config;
+>>>>>>> fb6ac06a10fc66af0329ecd63713bd2c4019a9ed
