@@ -1,24 +1,25 @@
-import OpenAI from "openai";
+import { useEffect, useLayoutEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { Upload, X, Loader2, CheckCircle, AlertCircle, BookOpen } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
-interface EvaluationParams {
-  images: string[]; // Base64 encoded images
-  studentName: string;
-  classLevel?: number;
-  subject?: string;
-  gptModel?: string;
-}
 
 interface AnswerEvaluation {
   questionNumber: number;
   extractedAnswer: string;
-  qualityScore: number; // 0-10
+  qualityScore: number;
   strengths: string[];
   improvements: string[];
-  correctAnswer?: string; // If answer was wrong
+  correctAnswer?: string;
   detailedFeedback: string;
 }
 
@@ -29,287 +30,593 @@ interface EvaluationResult {
   answerEvaluations: AnswerEvaluation[];
 }
 
-export async function evaluateAnswerSheet(params: EvaluationParams): Promise<EvaluationResult> {
-  const { images, studentName, classLevel, subject, gptModel = "gpt-4o" } = params;
-  
-  console.log(`[EVAL] Starting evaluation of ${images.length} images using ${gptModel}`);
-  
-  // Prepare messages with all images
-  const imageMessages: any[] = images.map((imageData) => ({
-    type: "image_url",
-    image_url: {
-      url: imageData.startsWith('data:') ? imageData : `data:image/jpeg;base64,${imageData}`,
-      detail: "high" // High detail for better text recognition
+export default function AnswerSheetEvaluator() {
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const [studentName, setStudentName] = useState<string>("");
+  const [classLevel, setClassLevel] = useState<string>("");
+  const [subject, setSubject] = useState<string>("");   
+  const [gptModel, setGptModel] = useState<string>("gpt-4o");
+  const [images, setImages] = useState<string[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [isEvaluating, setIsEvaluating] = useState<boolean>(false);
+  const [evaluationResult, setEvaluationResult] = useState<EvaluationResult | null>(null);
+
+  const [questionImages, setQuestionImages] = useState<string[]>([]);
+  const [questionPreviews, setQuestionPreviews] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    window.history.scrollRestoration = "manual";
+
+    return () => {
+      window.history.scrollRestoration = "auto";
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!evaluationResult) return;
+
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [evaluationResult]);
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    const fileArray = Array.from(files);
+
+    if (images.length + fileArray.length > 20) {
+      toast({
+        title: "Too Many Images",
+        description: "You can upload maximum 20 images at once",
+        variant: "destructive",
+      });
+      return;
     }
-  }));
-  
-  const prompt = `You are an expert teacher evaluating a student's answer sheet. 
-  
-Student Name: ${studentName}
-${classLevel ? `Class Level: ${classLevel}` : ''}
-${subject ? `Subject: ${subject}` : ''}
 
-I'm providing you with ${images.length} image(s) of the student's answer sheet. Your task is to:
+    const newImages: string[] = [];
+    const newPreviews: string[] = [];
 
-1. **Extract all answers** from the images (OCR the text carefully)
-2. **Evaluate each answer** on these criteria:
-   - Accuracy and correctness
-   - Completeness of the answer
-   - Clarity and presentation
-   - Depth of understanding shown
-3. **Provide constructive feedback** for each answer:
-   - What was done well (strengths)
-   - How to improve (specific, actionable suggestions)
-   - If the answer is incorrect or incomplete, provide the CORRECT/COMPLETE answer
-4. **Give an overall assessment** of the student's performance
+    for (const file of fileArray) {
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid File",
+          description: `${file.name} is not an image file`,
+          variant: "destructive",
+        });
+        continue;
+      }
 
-Return your evaluation in this EXACT JSON format (replace ALL placeholders with actual values):
-{
-  "totalAnswers": NUMBER_OF_ANSWERS_FOUND,
-  "averageScore": AVERAGE_QUALITY_SCORE_0_TO_10,
-  "overallFeedback": "OVERALL_ASSESSMENT_OF_STUDENT_PERFORMANCE",
-  "answerEvaluations": [
-    {
-      "questionNumber": QUESTION_NUMBER_OR_IDENTIFIER,
-      "extractedAnswer": "THE_STUDENTS_WRITTEN_ANSWER_TRANSCRIBED_EXACTLY",
-      "qualityScore": SCORE_0_TO_10,
-      "strengths": ["WHAT_WAS_GOOD", "ANOTHER_STRENGTH"],
-      "improvements": ["SPECIFIC_IMPROVEMENT", "ANOTHER_IMPROVEMENT"],
-      "correctAnswer": "PROVIDE_IF_STUDENT_ANSWER_WAS_WRONG_OR_INCOMPLETE",
-      "detailedFeedback": "DETAILED_ENCOURAGING_FEEDBACK_FOR_THIS_ANSWER"
+      const reader = new FileReader();
+      await new Promise((resolve) => {
+        reader.onload = (e) => {
+          const base64 = e.target?.result as string;
+          newImages.push(base64);
+          newPreviews.push(base64);
+          resolve(null);
+        };
+        reader.readAsDataURL(file);
+      });
     }
-  ]
-}
 
-EXAMPLE:
-{
-  "totalAnswers": 3,
-  "averageScore": 7.5,
-  "overallFeedback": "Good effort overall with clear understanding of basic concepts.",
-  "answerEvaluations": [
-    {
-      "questionNumber": 1,
-      "extractedAnswer": "Photosynthesis is the process by which plants make food using sunlight.",
-      "qualityScore": 8,
-      "strengths": ["Clear definition", "Mentioned key components"],
-      "improvements": ["Could include the chemical equation", "Mention chlorophyll's role"],
-      "correctAnswer": "Photosynthesis is the process by which plants convert light energy (usually from the sun) into chemical energy stored in glucose, using carbon dioxide and water, with chlorophyll as the catalyst. The equation is: 6CO2 + 6H2O + light energy → C6H12O6 + 6O2",
-      "detailedFeedback": "Excellent start! You've correctly identified the basic concept of photosynthesis. To make your answer more complete, try including the raw materials (CO2 and water), the products (glucose and oxygen), and the role of chlorophyll."
-    }
-  ]
-}
+    setImages([...images, ...newImages]);
+    setImagePreviews([...imagePreviews, ...newPreviews]);
 
-IMPORTANT GUIDELINES:
-- Be encouraging and constructive - this is for learning
-- If an answer is partially correct, acknowledge what's right before suggesting improvements
-- Provide specific, actionable improvement suggestions (not just "study more")
-- If you can't read some text clearly, note that in the feedback
-- For subjective answers, evaluate based on logic, presentation, and understanding
-- Consider the student's class level when evaluating (age ${classLevel ? classLevel + 10 : 'unknown'})`;
-
-  try {
-    const response = await openai.chat.completions.create({
-      model: gptModel,
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: prompt },
-            ...imageMessages
-          ]
-        }
-      ],
-      max_tokens: 4000,
-      temperature: 0.3, // Lower temperature for more consistent evaluation
+    toast({
+      title: "Images Uploaded",
+      description: `${newImages.length} image(s) added successfully`,
     });
-    
-    const content = response.choices[0]?.message?.content?.trim();
-    
-    if (!content) {
-      throw new Error("No response from AI");
+  };
+
+    const handleQuestionUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    const fileArray = Array.from(files);
+
+    const newImages: string[] = [];
+    const newPreviews: string[] = [];
+
+    for (const file of fileArray) {
+      if (!file.type.startsWith("image/")) {
+        toast({
+          title: "Invalid File",
+          description: `${file.name} is not an image file`,
+          variant: "destructive",
+        });
+        continue;
+      }
+
+      const reader = new FileReader();
+      await new Promise((resolve) => {
+        reader.onload = (e) => {
+          const base64 = e.target?.result as string;
+          newImages.push(base64);
+          newPreviews.push(base64);
+          resolve(null);
+        };
+        reader.readAsDataURL(file);
+      });
     }
-    
-    // Extract JSON from response (might be wrapped in markdown)
-    let jsonContent = content;
-    if (content.includes('```json')) {
-      const match = content.match(/```json\s*([\s\S]*?)\s*```/);
-      if (match) jsonContent = match[1];
-    } else if (content.includes('```')) {
-      const match = content.match(/```\s*([\s\S]*?)\s*```/);
-      if (match) jsonContent = match[1];
+
+    setQuestionImages([...questionImages, ...newImages]);
+    setQuestionPreviews([...questionPreviews, ...newPreviews]);
+
+    toast({
+      title: "Question Images Uploaded",
+      description: `${newImages.length} image(s) added successfully`,
+    });
+  };
+
+  const removeImage = (index: number) => {
+    setImages(images.filter((_, i) => i !== index));
+    setImagePreviews(imagePreviews.filter((_, i) => i !== index));
+  };
+
+  const handleEvaluate = async () => {
+    if (images.length === 0) {
+      toast({
+        title: "No Images",
+        description: "Please upload at least one answer sheet image",
+        variant: "destructive",
+      });
+      return;
     }
-    
-    const result = JSON.parse(jsonContent);
-    
-    console.log(`[EVAL] ✓ Evaluated ${result.totalAnswers} answers. Average score: ${result.averageScore}/10`);
-    
-    return result;
-    
-  } catch (error: any) {
-    console.error("[EVAL ERROR]", error.message);
-    throw new Error(`Failed to evaluate answer sheet: ${error.message}`);
-  }
-}
+
+    setIsEvaluating(true);
+    setEvaluationResult(null);
+
+    try {
+        const res = await apiRequest("POST", "/api/evaluate-answer-sheet", {
+          images,
+          questionImages: questionImages.length > 0 ? questionImages : undefined,
+          studentName: studentName || "Anonymous",
+          classLevel: classLevel ? parseInt(classLevel) : undefined,
+          subject: subject || undefined,
+          gptModel,
+        });
+
+      const data = await res.json();
+      setEvaluationResult(data);
+      window.scrollTo({ top: 0, behavior: "auto" });
+
+      toast({
+        title: "Evaluation Complete!",
+        description: `Evaluated ${data.totalAnswers} answer(s) with average score ${data.averageScore.toFixed(1)}/10`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Evaluation Failed",
+        description: error.message || "Failed to evaluate answer sheets",
+        variant: "destructive",
+      });
+    } finally {
+      setIsEvaluating(false);
+    }
+  };
+
+  const getScoreColor = (score: number) => {
+    if (score >= 8) return "text-green-600 dark:text-green-400";
+    if (score >= 6) return "text-yellow-600 dark:text-yellow-400";
+    return "text-red-600 dark:text-red-400";
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-6">
+      <div className="max-w-6xl mx-auto">
+        <button
+          onClick={() => {
+            navigate("/#features-section");
+            setTimeout(() => {
+              const section = document.getElementById("features-section");
+              section?.scrollIntoView({ behavior: "smooth" });
+            }, 100);
+          }}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white shadow-sm border hover:bg-gray-50 transition"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-sm font-medium">Back</span>
+        </button>
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          {t("answerEvaluator.title")}
+          </h1>
+          <p className="text-lg text-muted-foreground">
+            {t("answerEvaluator.subtitle")}
+          </p>
+        </div>
+
+        {!evaluationResult ? (
+          <div className="space-y-6">
+            {/* Student Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("answerEvaluator.studentInfo")}</CardTitle>
+                <CardDescription>{t("answerEvaluator.studentDesc")}</CardDescription>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="studentName">{t("answerEvaluator.studentName")}</Label>
+                  <Input
+                    id="studentName"
+                    placeholder={t("answerEvaluator.studentPlaceholder")}
+                    value={studentName}
+                    onChange={(e) => setStudentName(e.target.value)}
+                    data-testid="input-student-name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="classLevel">{t("answerEvaluator.classLevel")}</Label>
+                  <Select value={classLevel} onValueChange={setClassLevel}>
+                    <SelectTrigger data-testid="select-class-level">
+                      <SelectValue placeholder={t("answerEvaluator.selectClass")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[6, 7, 8, 9, 10, 11, 12].map((level) => (
+                        <SelectItem key={level} value={level.toString()}>
+                          {t("answerEvaluator.class")} {level}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="subject">{t("answerEvaluator.subject")}</Label>
+                  <Input
+                    id="subject"
+                    placeholder={t("answerEvaluator.subjectPlaceholder")}
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    data-testid="input-subject"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Upload Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("answerEvaluator.uploadAnswers")}</CardTitle>
+                <CardDescription>{t("answerEvaluator.uploadDesc")}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <Label
+                      htmlFor="image-upload"
+                      className="flex-1 cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-8 text-center hover:border-blue-500 dark:hover:border-blue-400 transition-colors"
+                    >
+                      <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                      <p className="text-sm font-medium mb-1">{t("answerEvaluator.clickUpload")}</p>
+                      <p className="text-xs text-muted-foreground">
+                      {images.length}/20 {t("answerEvaluator.imagesUploaded")}
+                      </p>
+                      <Input
+                        id="image-upload"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={handleImageUpload}
+                        data-testid="input-image-upload"
+                      />
+                    </Label>
+                  </div>
+
+                  {imagePreviews.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {imagePreviews.map((preview, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={preview}
+                            alt={`Answer sheet ${index + 1}`}
+                            className="w-full h-40 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
+                          />
+                          <Button
+                            size="icon"
+                            variant="destructive"
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => removeImage(index)}
+                            data-testid={`button-remove-image-${index}`}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+             {/* Question Upload (Optional) */}
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("answerEvaluator.uploadQuestions")}</CardTitle>
+                <CardDescription>
+                  {t("answerEvaluator.questionDesc")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <Label
+                      htmlFor="question-upload"
+                      className="flex-1 cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-8 text-center hover:border-blue-500 dark:hover:border-blue-400 transition-colors"
+                    >
+                      <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                      <p className="text-sm font-medium mb-1">
+                      {t("answerEvaluator.clickUploadQuestions")}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                      {questionImages.length} {t("answerEvaluator.questionImagesUploaded")}
+                      </p>
+                      <Input
+                        id="question-upload"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={handleQuestionUpload}
+                      />
+                    </Label>
+                  </div>
+
+                  {questionPreviews.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {questionPreviews.map((preview, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={preview}
+                            alt={`Question ${index + 1}`}
+                            className="w-full h-40 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
 
 
-import PDFDocument from "pdfkit";
-import { Request, Response } from "express";
+            {/* AI Model Selection */}
+          { /* <Card>
+              <CardHeader>
+                <CardTitle>AI Model Quality</CardTitle>
+                <CardDescription>Select the AI model for evaluation</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Select value={gptModel} onValueChange={setGptModel}>
+                  <SelectTrigger data-testid="select-gpt-model">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gpt-4o">GPT-4o (Best Quality - Recommended) ⭐</SelectItem>
+                    <SelectItem value="gpt-4o-mini">GPT-4o Mini (Fast & Affordable) ⚡</SelectItem>
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card> */}
 
-export function generateEvaluationPDF(req: Request, res: Response) {
+            {/* Evaluate Button */}
+            <Button
+              size="lg"
+              className="w-full"
+              onClick={handleEvaluate}
+              disabled={isEvaluating || images.length === 0}
+              data-testid="button-evaluate"
+            >
+              {isEvaluating ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  {t("answerEvaluator.evaluating")}
+                </>
+              ) : (
+                <>
+                  <BookOpen className="w-5 h-5 mr-2" />
+                  {t("answerEvaluator.evaluate")}
+                </>
+              )}
+            </Button>
+          </div>
+        ) : (
+          /* Evaluation Results */
+          <div className="space-y-6">
+            {/* Overall Summary */}
+            <Card className="overflow-hidden border-2 border-blue-500 shadow-sm">
+              <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-white">
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                  {t("answerEvaluator.complete")}
+                </CardTitle>
+                <CardDescription>
+                {t("answerEvaluator.analyzed")} {evaluationResult.totalAnswers} {t("answerEvaluator.answers")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-semibold">{t("answerEvaluator.averageScore")}:</span>
+                      <span
+                        className={`text-2xl font-bold tabular-nums ${getScoreColor(evaluationResult.averageScore)}`}
+                      >
+                        Marks: {evaluationResult.averageScore.toFixed(1)}/10
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                      <div
+                        className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all"
+                        style={{ width: `${(evaluationResult.averageScore / 10) * 100}%` }}
+                      />
+                    </div>
+                  </div>
 
-  const {
-    studentName,
-    classLevel,
-    subject,
-    totalAnswers,
-    averageScore,
-    overallFeedback,
-    answerEvaluations
-  } = req.body;
+                  <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
+                    <h4 className="font-semibold mb-2">{t("answerEvaluator.overallFeedback")}</h4>
+                    <p className="text-sm">{t("answerEvaluator.overallFeedback")}: {evaluationResult.overallFeedback}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-  const doc = new PDFDocument({
-    size: "A4",
-    margin: 40
-  });
+            {/* Individual Answer Evaluations */}
+            {evaluationResult.answerEvaluations.map((evaluation, index) => (
+              <Card key={index} className="overflow-hidden shadow-sm">
+                <CardHeader className="border-b bg-slate-50/80">
+                  <CardTitle className="flex items-center justify-between">
 
-  res.setHeader("Content-Type", "application/pdf");
-  res.setHeader(
-    "Content-Disposition",
-    "attachment; filename=evaluation-report.pdf"
+                    {/* LEFT */}
+                    <div className="flex items-center gap-3">
+                      <span className="text-slate-800 text-xxxl font-bold tracking-wide">
+                        Answer
+                      </span>
+
+                      <span className="flex items-center justify-center h-8 w-8 rounded-full bg-indigo-100 text-indigo-600 font-bold text-xl shadow-sm">
+                        {evaluation.questionNumber}
+                      </span>
+                    </div>
+
+                    {/* RIGHT (MARKS) */}
+                    <span
+                      className={`inline-flex items-center rounded-full px-7 py-2 text-lg font-bold tabular-nums ${getScoreColor(evaluation.qualityScore)} bg-white border border-slate-200 shadow-sm`}
+                    >
+                      Marks: {evaluation.qualityScore}/10
+                    </span>
+
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-5 py-5">
+                  <div>
+                    <h4 className="font-semibold mb-2">{t("answerEvaluator.studentAnswer")}:</h4>
+                    <p className="text-sm bg-gray-50 dark:bg-gray-900 p-3 rounded border italic">
+                      {evaluation.extractedAnswer}
+                    </p>
+                  </div>
+
+                  {evaluation.strengths.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold mb-2 flex items-center gap-2 text-green-600 dark:text-green-400">
+                        <CheckCircle className="w-4 h-4" />
+                        {t("answerEvaluator.strengths")}:
+                      </h4>
+                      <ul className="list-disc list-inside space-y-1 text-sm">
+                        {evaluation.strengths.map((strength, i) => (
+                          <li key={i}>{strength}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {evaluation.improvements.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold mb-2 flex items-center gap-2 text-yellow-600 dark:text-yellow-400">
+                        <AlertCircle className="w-4 h-4" />
+                        {t("answerEvaluator.improvements")}:
+                      </h4>
+                      <ul className="list-disc list-inside space-y-1 text-sm">
+                        {evaluation.improvements.map((improvement, i) => (
+                          <li key={i}>{improvement}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {evaluation.correctAnswer && (
+                    <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                      <h4 className="font-semibold mb-2 text-green-700 dark:text-green-300">
+                        {t("answerEvaluator.correctAnswer")}:
+                      </h4>
+                      <p className="text-sm">{t("answerEvaluator.correctAnswer")}: {evaluation.correctAnswer}</p>
+                    </div>
+                  )}
+
+                  <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
+                    <h4 className="font-semibold mb-2">{t("answerEvaluator.detailedFeedback")}:</h4>
+                  <p className="text-sm">{t("answerEvaluator.detailedFeedback")}: {evaluation.detailedFeedback}</p>                  </div>
+                </CardContent>
+              </Card>
+            ))}
+
+           {/* <Button
+            size="lg"
+            className="w-full mb-4"
+            onClick={async () => {
+              const res = await fetch("/api/download-evaluation-pdf", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(evaluationResult),
+              });
+
+              const blob = await res.blob();
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "evaluation-report.pdf";
+              a.click();
+            }}
+          >
+            Download PDF Report
+          </Button> */}
+
+            <Button
+              size="lg"
+              className="w-full mb-4"
+              onClick={async () => {
+                try {
+                  const res = await apiRequest("POST", "/api/download-evaluation-pdf", {
+                    ...evaluationResult,
+                    studentName,
+                    classLevel,
+                    subject,
+                  });
+
+                  const blob = await res.blob();
+                  const url = window.URL.createObjectURL(blob);
+
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = "evaluation-report.pdf";
+                  document.body.appendChild(a);
+                  a.click();
+
+                  a.remove();
+                  window.URL.revokeObjectURL(url);
+
+                } catch (error) {
+                  console.error("PDF download error:", error);
+                  alert("Failed to download PDF");
+                }
+              }}
+            >
+              {t("answerEvaluator.downloadPDF")}
+            </Button>
+            {/* Reset Button */}
+            <Button
+              size="lg"
+              className="w-full"
+              onClick={() => {
+                setEvaluationResult(null);
+                setImages([]);
+                setImagePreviews([]);
+                setQuestionImages([]);
+                setQuestionPreviews([]);
+                setStudentName("");
+                setClassLevel("");
+                setSubject("");
+              }}
+              data-testid="button-evaluate-another"
+            >
+              {t("answerEvaluator.evaluateAnother")}
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
   );
-
-  doc.pipe(res);
-
-  /* ================= HEADER ================= */
-
-  doc
-    .rect(0, 0, 612, 80)
-    .fill("#3c4b63");
-
-  doc
-    .fillColor("white")
-    .fontSize(20)
-    .text("Answer Sheet Evaluation Report", 40, 30);
-
-  doc
-    .fontSize(14)
-    .text("MCQGyaan AI", 450, 35);
-
-  doc.fillColor("black");
-
-  doc.moveDown(3);
-
-  /* ================= STUDENT INFO ================= */
-
-  doc
-  .fontSize(12)
-  .text(`Student Name: ${studentName || "N/A"}`, 40, 110)
-  .text(`Class: ${classLevel || "N/A"}`)
-  .text(`Subject: ${subject || "N/A"}`);
-
-  doc.moveDown(2);
-
-  /* cursor reset */
-
-  doc.y = 190;
-  doc.x = 40;
-
-  /* ================= SUMMARY ================= */
-
-  doc
-    .fontSize(14)
-    .text(`Total Answers: ${totalAnswers}`);
-
-  doc
-    .text(`Average Score: ${averageScore}/10`);
-
-  doc.moveDown();
-
-  doc
-    .fontSize(14)
-    .text("Overall Feedback:", { underline: true });
-
-  doc
-    .fontSize(12)
-    .text(overallFeedback);
-
-  doc.moveDown(2);
-
-  /* ================= ANSWER DETAILS ================= */
-
-  answerEvaluations.forEach((ans: any) => {
-
-    doc
-      .fontSize(16)
-      .fillColor("#333333")
-      .text(`Answer ${ans.questionNumber}   (${ans.qualityScore}/10)`);
-
-    doc.moveDown();
-
-    doc
-      .fontSize(12)
-      .fillColor("black")
-      .text("Student Answer:");
-
-    doc
-      .text(ans.extractedAnswer);
-
-    doc.moveDown();
-
-    if (ans.strengths?.length) {
-
-      doc
-        .fontSize(12)
-        .fillColor("#2e7d32")
-        .text("Strengths:");
-
-      ans.strengths.forEach((s: string) =>
-        doc.text(`• ${s}`)
-      );
-
-      doc.moveDown();
-
-    }
-
-    if (ans.improvements?.length) {
-
-      doc
-        .fillColor("#f9a825")
-        .text("Areas for Improvement:");
-
-      ans.improvements.forEach((i: string) =>
-        doc.text(`• ${i}`)
-      );
-
-      doc.moveDown();
-
-    }
-
-    if (ans.correctAnswer) {
-
-      doc
-        .fillColor("#1565c0")
-        .text("Correct Answer:");
-
-      doc
-        .fillColor("black")
-        .text(ans.correctAnswer);
-
-      doc.moveDown();
-
-    }
-
-    doc
-      .fillColor("#333333")
-      .text("Detailed Feedback:");
-
-    doc
-      .fillColor("black")
-      .text(ans.detailedFeedback);
-
-    doc.moveDown(2);
-
-  });
-
-  doc.end();
 }
