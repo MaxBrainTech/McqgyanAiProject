@@ -1,49 +1,4 @@
-// export async function generateFromHF(prompt: string): Promise<string | undefined> {
-//   try {
-//     const response = await fetch(
-//       `https://router.huggingface.co/v1/models/${process.env.HF_MODEL}`,
-//       {
-//         method: "POST",
-//         headers: {
-//           Authorization: `Bearer ${process.env.HF_TOKEN}`,
-//           "Content-Type": "application/json"
-//         },
-//         body: JSON.stringify({
-//           inputs: [
-//             {
-//               role: "user",
-//               content: prompt
-//             }
-//           ]
-//         })
-//       }
-//     );
 
-//     const text = await response.text();
-//     console.log("HF RAW RESPONSE:", text);
-
-//     let result;
-//     try {
-//       result = JSON.parse(text);
-//     } catch {
-//       return undefined;
-//     }
-
-//     if (Array.isArray(result)) {
-//       return result[0]?.generated_text;
-//     }
-
-//     if (result?.generated_text) {
-//       return result.generated_text;
-//     }
-
-//     return undefined;
-
-//   } catch (err) {
-//     console.error("HF API Error:", err);
-//     return undefined;
-//   }
-// }
 
 export async function generateFromHF(prompt: string): Promise<string | undefined> {
   try {
