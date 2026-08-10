@@ -1,29 +1,81 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { getAuth } from "firebase/auth";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { GraduationCap, LogOut, Plus, Share2, Eye, Loader2, Download, Edit, Sparkles } from "lucide-react";
+import { clearAuthSession, setTeacherSession, getStoredTeacherId } from "@/lib/authSession";
+import { getTopicValidationMessage } from "@/lib/topicValidation";
+import { getClientAppUrl } from "@/lib/appUrl";
+import {
+  GraduationCap,
+  LogOut,
+  Plus,
+  Share2,
+  Eye,
+  Loader2,
+  Download,
+  Edit,
+  Sparkles,
+  Clock3,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import { generateQuizPdf } from "@/lib/pdfGenerator";
+import { getLocalizedText, getSubjectLabel } from "@/lib/quizText";
 
+import { useTranslation } from "react-i18next";
+
+
+
+const loadHindiFont = async (): Promise<string> => "";
+
+const user = getAuth().currentUser;
 
 const testSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
   subject: z.string().min(1, "Subject is required"),
+  language: z.enum(["english", "hindi"]),
   classLevel: z.number().min(6).max(12),
   difficulty: z.enum(["easy", "medium", "hard"]),
+  durationMinutes: z.coerce.number().refine((value) => [10, 15, 30, 60].includes(value), {
+    message: "Select a valid duration",
+  }),
   topic1: z.string().min(3, "Topic 1 is required (minimum 3 characters)"),
   topic2: z.string().optional(),
   topic3: z.string().optional(),
@@ -53,33 +105,201 @@ const SUBJECTS = [
   { value: "Social Studies", label: "Social Studies" },
 ];
 
+const normalizeTeacherTest = (test: any = {}) => ({
+  ...test,
+  title: test.title || test.testTitle || "",
+  subject: test.subject || "",
+  classLevel:
+    test.classLevel ?? test.class ?? test.class_level ?? test.classlevel ?? null,
+  difficulty: test.difficulty || "",
+  durationMinutes:
+    test.durationMinutes ?? test.duration_minutes ?? test.duration ?? 0,
+  numQuestions:
+    test.numQuestions ??
+    (Array.isArray(test.questions) ? test.questions.length : undefined) ??
+    test.questions ??
+    test.totalQuestions ??
+    test.total_questions ??
+    test.test_length ??
+    0,
+  syllabus: test.syllabus || test.topics || test.topic || "",
+  shareCode: test.shareCode || test.share_code || test.sharecode || "",
+});
+
+const getQuestionCount = (test: any = {}, questions?: any[]) => {
+  const candidates = [
+    Array.isArray(questions) ? questions.length : undefined,
+    test?.numQuestions,
+    test?.totalQuestions,
+    test?.total_questions,
+    test?.test_length,
+    Array.isArray(test?.questions) ? test.questions.length : undefined,
+  ];
+
+  const count = candidates.find((value) => Number(value) > 0);
+  return Number(count) || 0;
+};
+
+const normalizeTeacherProfile = (teacher: any = {}) => ({
+  ...teacher,
+  fullName:
+    teacher.fullName ||
+    teacher.full_name ||
+    teacher.name ||
+    // teacher.username ||
+    "",
+  approved:
+    teacher.approved ??
+    teacher.isApproved ??
+    teacher.is_approved ??
+    false,
+  verified:
+    teacher.verified ??
+    teacher.isVerified ??
+    teacher.is_verified ??
+    false,
+});
+
 export default function TeacherDashboard() {
+  const formatTime = (seconds: number) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, "0")} min`;
+};
+  // 🔥 ADD THIS AT TOP OF COMPONENT
+const [openResultsId, setOpenResultsId] = useState<string | null>(null);
+  const { t, i18n } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const teacherData = location.state?.teacherData;
-  
-  // Redirect to teacher auth if no teacher data
+  const [teacherData, setTeacherData] = useState<any | null>(
+    location.state?.teacherData ? normalizeTeacherProfile(location.state.teacherData) : null,
+  );
+  const [isTeacherLoading, setIsTeacherLoading] = useState(!location.state?.teacherData);
+  const preferredLanguage =
+    i18n.language && i18n.language.toLowerCase().startsWith("hi")
+      ? "hindi"
+      : "english";
+  const resolvedTeacherId =
+    teacherData?.id ||
+    getStoredTeacherId() ||
+    location.state?.teacherData?.id ||
+    "";
+
+  const showBootstrapLoading = isTeacherLoading || !resolvedTeacherId;
+
   useEffect(() => {
-    if (!teacherData) {
-      navigate('/teacher-auth');
+    const stateTeacher = location.state?.teacherData;
+    if (stateTeacher) {
+      const normalized = normalizeTeacherProfile(stateTeacher);
+      setTeacherData(normalized);
+      setIsTeacherLoading(false);
+      if (normalized.id) {
+        setTeacherSession(normalized.id);
+      }
+
+      if (!normalized.verified) {
+        navigate("/teacher-verification-pending", {
+          state: { teacher: normalized },
+          replace: true,
+        });
+        return;
+      }
+
+      if (!normalized.approved) {
+        navigate("/teacher-approval-pending", {
+          state: { teacher: normalized },
+          replace: true,
+        });
+        return;
+      }
+
+      return;
     }
-  }, [teacherData, navigate]);
-  
-  // Return loading state while redirecting if no teacher data
-  if (!teacherData) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-base sm:text-lg font-semibold text-primary">Redirecting to login...</p>
-        </div>
-      </div>
-    );
-  }
-  
+
+    const storedTeacherId = getStoredTeacherId();
+    if (!storedTeacherId) {
+      setIsTeacherLoading(false);
+      navigate("/teacher-auth");
+      return;
+    }
+
+    let cancelled = false;
+    setIsTeacherLoading(true);
+
+    (async () => {
+      try {
+        const res = await fetch(`/api/teacher/${storedTeacherId}`);
+        if (!res.ok) {
+          throw new Error("Failed to load teacher profile");
+        }
+
+        const data = normalizeTeacherProfile(await res.json());
+        if (cancelled) return;
+
+        if (!data.verified) {
+          navigate("/teacher-verification-pending", {
+            state: { teacher: data },
+            replace: true,
+          });
+          return;
+        }
+
+        if (!data.approved) {
+          navigate("/teacher-approval-pending", {
+            state: { teacher: data },
+            replace: true,
+          });
+          return;
+        }
+
+        setTeacherData(data);
+        if (data.id) {
+          setTeacherSession(data.id);
+        }
+      } catch {
+        if (!cancelled) {
+          navigate("/teacher-auth");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsTeacherLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [location.state, navigate]);
+
   const handleLogout = () => {
-    navigate('/');
+    clearAuthSession();
+    navigate("/");
   };
+
+  // Robust clipboard helper with fallback for browsers blocking navigator.clipboard
+  const copyToClipboard = async (text: string) => {
+    if (!text) throw new Error("No code available to copy");
+
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+    } catch (err: any) {
+      throw new Error(err?.message || "Clipboard copy failed");
+    }
+  };
+
   const [showForm, setShowForm] = useState(false);
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
   const [showQuestionsDialog, setShowQuestionsDialog] = useState(false);
@@ -94,8 +314,10 @@ export default function TeacherDashboard() {
     defaultValues: {
       title: "",
       subject: "",
+      language: preferredLanguage,
       classLevel: 9,
       difficulty: "medium",
+      durationMinutes: 30,
       topic1: "",
       topic2: "",
       topic3: "",
@@ -107,35 +329,178 @@ export default function TeacherDashboard() {
     },
   });
 
-  const { data: tests = [], isLoading } = useQuery<any[]>({
-    queryKey: [`/api/teacher/${teacherData.id}/tests`],
+  const formPreview = useWatch({
+    control: form.control,
   });
 
-  const { data: testDetails } = useQuery<any>({
-    queryKey: [`/api/teacher/${teacherData.id}/tests/${selectedTestId}`],
-    enabled: !!selectedTestId,
+  const previewTitle = formPreview?.title?.trim() || t("teacherDashboard.testTitle");
+  const previewSubject = formPreview?.subject
+    ? t(`subjects.${formPreview.subject.toLowerCase()}`, formPreview.subject)
+    : t("teacherDashboard.subject");
+  const previewClassLevel = formPreview?.classLevel ?? 9;
+  const previewDifficulty = formPreview?.difficulty
+    ? t(`difficulty.${formPreview.difficulty}`)
+    : t("teacherDashboard.difficulty");
+  const previewDuration = formPreview?.durationMinutes ?? 30;
+  const previewQuestions = formPreview?.numQuestions ?? 10;
+  const previewTopics = [formPreview?.topic1, formPreview?.topic2, formPreview?.topic3, formPreview?.topic4]
+    .map((topic) => topic?.trim())
+    .filter((topic): topic is string => Boolean(topic));
+
+  // Keep form language in sync with UI locale so Hindi UI creates Hindi tests by default
+  useEffect(() => {
+    const uiLang =
+      i18n.language && i18n.language.toLowerCase().startsWith("hi")
+        ? "hindi"
+        : "english";
+    form.setValue("language", uiLang);
+  }, [i18n.language, form]);
+
+  // When the create-test form is opened, reset defaults aligned to the current UI language
+  useEffect(() => {
+    if (showForm) {
+      const uiLang =
+        i18n.language && i18n.language.toLowerCase().startsWith("hi")
+          ? "hindi"
+          : "english";
+      form.reset({
+        title: "",
+        subject: "",
+        language: uiLang,
+        classLevel: 9,
+        difficulty: "medium",
+        durationMinutes: 30,
+        topic1: "",
+        topic2: "",
+        topic3: "",
+        topic4: "",
+        numQuestions: 10,
+        testType: "mcq",
+        gptModel: "gpt-4o-mini",
+        instructions: "",
+      });
+    }
+  }, [showForm, i18n.language, form]);
+
+  const { data: tests = [], isLoading } = useQuery<any[]>({
+    queryKey: [`/api/teacher/${resolvedTeacherId}/tests`],
+    enabled: Boolean(resolvedTeacherId),
+    queryFn: async () => {
+      const res = await fetch(`/api/teacher/${resolvedTeacherId}/tests`);
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch tests");
+      }
+
+      const baseTests = await res.json();
+
+      const testsWithSubmissions = await Promise.all(
+        (baseTests || []).map(async (test: any) => {
+          const detailRes = await fetch(
+            `/api/teacher/${resolvedTeacherId}/tests/${test.id}`,
+          );
+
+          if (!detailRes.ok) {
+            return {
+              ...normalizeTeacherTest(test),
+              submissions: test.submissions || [],
+            };
+          }
+
+          const detailData = await detailRes.json();
+          const mergedDetail = {
+            ...normalizeTeacherTest(test),
+            ...normalizeTeacherTest(detailData.test),
+          };
+
+          return {
+            ...mergedDetail,
+            numQuestions:
+              detailData.questions?.length ??
+              mergedDetail.numQuestions ??
+              normalizeTeacherTest(detailData.test).numQuestions,
+            submissions: detailData.submissions || detailData.test?.submissions || [],
+          };
+        }),
+      );
+
+      return testsWithSubmissions;
+    },
   });
+
+  const getCreatedTime = (test: any) => {
+    const ts = test?.createdAt || test?.created_at;
+    const dateVal = ts ? new Date(ts).getTime() : 0;
+    if (Number.isFinite(dateVal)) return dateVal;
+    // fallback: derive from numeric id chunk if present
+    return 0;
+  };
+
+  const orderedTests = [...tests].sort(
+    (a, b) => getCreatedTime(b) - getCreatedTime(a),
+  );
+
+  const { data: testDetails } = useQuery<any>({
+    queryKey: [`/api/teacher/${resolvedTeacherId}/tests/${selectedTestId}`],
+    enabled: !!selectedTestId,
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/teacher/${resolvedTeacherId}/tests/${selectedTestId}`,
+      );
+      const detailData = await res.json();
+      return {
+        ...detailData,
+        test: normalizeTeacherTest(detailData.test),
+      };
+    },
+  });
+
+  const test =
+    orderedTests.find((item: any) => item.id === selectedTestId) ||
+    testDetails?.test;
+
+  const questionCount = getQuestionCount(test, testDetails?.questions);
+
+  const classNumber =
+    test?.classLevel || test?.class || test?.title?.match(/\d+/)?.[0];
 
   const generateMutation = useMutation({
     mutationFn: async (data: TestForm) => {
-      // Combine topics into comma-separated syllabus
-      const topics = [data.topic1, data.topic2, data.topic3, data.topic4]
-        .filter(topic => topic && topic.trim().length > 0)
-        .join(', ');
-      
+      const topicList = [data.topic1, data.topic2, data.topic3, data.topic4]
+        .map((topic) => topic?.trim() || "")
+        .filter((topic) => topic.length > 0);
+
+      const topicValidationMessage = await getTopicValidationMessage({
+        classLevel: data.classLevel,
+        subject: data.subject,
+        topics: topicList,
+      });
+
+      if (topicValidationMessage) {
+        throw new Error(topicValidationMessage);
+      }
+
+      const topics = topicList.join(", ");
+
       const payload = {
         title: data.title,
         subject: data.subject,
+        language: data.language, // ✅ correct
         classLevel: data.classLevel,
         difficulty: data.difficulty,
-        syllabus: topics, // Send combined topics as syllabus
+        durationMinutes: data.durationMinutes,
+        syllabus: topics,
         numQuestions: data.numQuestions,
         testType: data.testType,
         gptModel: data.gptModel,
         instructions: data.instructions,
       };
-      
-      const res = await apiRequest("POST", `/api/teacher/${teacherData.id}/generate-test`, payload);
+
+      const res = await apiRequest(
+        "POST",
+        `/api/teacher/${resolvedTeacherId}/generate-test`,
+        payload,
+      );
       return await res.json();
     },
     onSuccess: (result: any) => {
@@ -143,12 +508,19 @@ export default function TeacherDashboard() {
         title: "Test Generated!",
         description: `Successfully created ${result.questionsGenerated} questions. Share code: ${result.test.shareCode}`,
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/teacher/${teacherData.id}/tests`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/teacher/${resolvedTeacherId}/tests`],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/teacher/${resolvedTeacherId}/tests/${result.test.id}`],
+      });
       form.reset();
       setShowForm(false);
       // Show the questions dialog
       setSelectedTestId(result.test.id);
-      setShowQuestionsDialog(true);
+      setTimeout(() => {
+        setShowQuestionsDialog(true);
+      }, 300);
     },
     onError: (error: any) => {
       toast({
@@ -161,15 +533,36 @@ export default function TeacherDashboard() {
 
   const manualEditMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await apiRequest("PATCH", `/api/teacher/${teacherData.id}/question/${data.questionId}/edit`, data);
-      return await res.json();
+      if (!data.testId) {
+        throw new Error("Missing test ID for question edit");
+      }
+
+      console.log("[QUESTION EDIT] Sending request", {
+        teacherId: resolvedTeacherId,
+        testId: data.testId,
+        questionId: data.questionId,
+      });
+
+      const res = await apiRequest(
+        "PATCH",
+        `/api/teacher/${resolvedTeacherId}/tests/${data.testId}/question/${data.questionId}/edit`,
+        data,
+      );
+      const text = await res.text();
+      try {
+        return text ? JSON.parse(text) : null;
+      } catch {
+        throw new Error(text || "Invalid response from edit API");
+      }
     },
     onSuccess: () => {
       toast({
         title: "Question Updated!",
         description: "Your changes have been saved successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/teacher/${teacherData.id}/tests/${selectedTestId}`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/teacher/${resolvedTeacherId}/tests/${selectedTestId}`],
+      });
       setShowManualEditDialog(false);
       setEditingQuestion(null);
     },
@@ -183,16 +576,38 @@ export default function TeacherDashboard() {
   });
 
   const aiEditMutation = useMutation({
-    mutationFn: async (data: { questionId: string; feedback: string }) => {
-      const res = await apiRequest("POST", `/api/teacher/${teacherData.id}/question/${data.questionId}/ai-edit`, { feedback: data.feedback });
-      return await res.json();
+    mutationFn: async (data: { questionId: string; feedback: string; testId?: string | null }) => {
+      if (!data.testId) {
+        throw new Error("Missing test ID for AI edit");
+      }
+
+      console.log("[AI QUESTION EDIT] Sending request", {
+        teacherId: resolvedTeacherId,
+        testId: data.testId,
+        questionId: data.questionId,
+      });
+
+      const res = await apiRequest(
+        "POST",
+        `/api/teacher/${resolvedTeacherId}/tests/${data.testId}/question/${data.questionId}/ai-edit`,
+        { feedback: data.feedback, testId: data.testId },
+      );
+      const text = await res.text();
+      try {
+        return text ? JSON.parse(text) : null;
+      } catch {
+        throw new Error(text || "Invalid response from AI edit API");
+      }
     },
     onSuccess: () => {
       toast({
         title: "Question Improved!",
-        description: "AI has successfully updated the question based on your feedback.",
+        description:
+          "AI has successfully updated the question based on your feedback.",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/teacher/${teacherData.id}/tests/${selectedTestId}`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/teacher/${resolvedTeacherId}/tests/${selectedTestId}`],
+      });
       setShowAIEditDialog(false);
       setEditingQuestion(null);
       setAIEditFeedback("");
@@ -211,192 +626,349 @@ export default function TeacherDashboard() {
   }
 
   function copyShareCode(shareCode: string) {
-    navigator.clipboard.writeText(shareCode);
-    toast({
-      title: "Copied!",
-      description: "Share code copied to clipboard",
-    });
+    if (!shareCode) {
+      toast({
+        variant: "destructive",
+        title: "No code found",
+        description: "Share code is missing for this test",
+      });
+      return;
+    }
+
+    copyToClipboard(shareCode)
+      .then(() =>
+        toast({
+          title: "Copied!",
+          description: "Share code copied to clipboard",
+        }),
+      )
+      .catch((error: any) =>
+        toast({
+          variant: "destructive",
+          title: "Copy failed",
+          description: error?.message || "Unable to copy code. Please copy manually.",
+        }),
+      );
   }
 
   async function downloadQuestionPaper(testId: string) {
     try {
+      const pdfResponse = await fetch(
+        `/api/teacher/${resolvedTeacherId}/tests/${testId}`,
+      );
+
+      if (!pdfResponse.ok) {
+        throw new Error("Failed to fetch test data");
+      }
+
+      const pdfData = await pdfResponse.json();
+      const pdfNormalizedTest = {
+        ...pdfData.test,
+        shareCode:
+          pdfData.test.shareCode ||
+          pdfData.test.share_code ||
+          pdfData.test.sharecode ||
+          "NA",
+        classLevel:
+          pdfData.test.classLevel ||
+          pdfData.test.class ||
+          pdfData.test.class_number ||
+          pdfData.test.class_level ||
+          "—",
+        language: (pdfData.test.language || preferredLanguage || "english").toLowerCase(),
+        title: pdfData.test.title || String(t("question_paper_title")),
+      };
+
+      const normalizeOptions = (value: any) => {
+        if (Array.isArray(value)) return value;
+        if (typeof value === "string") {
+          try {
+            const parsed = JSON.parse(value);
+            if (Array.isArray(parsed)) return parsed;
+          } catch {
+            return value
+              .split(/\r?\n|,/)
+              .map((entry) => entry.trim())
+              .filter(Boolean);
+          }
+        }
+        return [];
+      };
+
+      await generateQuizPdf({
+        title: pdfNormalizedTest.title,
+        subject: getSubjectLabel(pdfNormalizedTest.subject, t),
+        classLevel: pdfNormalizedTest.classLevel,
+        difficulty: String(t(`difficulty.${pdfNormalizedTest.difficulty}`, pdfNormalizedTest.difficulty)),
+        language: pdfNormalizedTest.language,
+        shareCode: pdfNormalizedTest.shareCode,
+        fileName: `${pdfNormalizedTest.title.replace(/[\\/:*?"<>|]+/g, "-")}.pdf`,
+        labels: {
+          appName: "MCQGyaan AI",
+          questionPaper: t("question_paper_title"),
+          answerSheet: t("download_answer_sheet"),
+          subject: t("result_subject"),
+          class: t("class"),
+          difficulty: t("difficulty_label"),
+          totalQuestions: t("total_questions"),
+          shareCode: t("share_code"),
+          questions: t("questions"),
+          question: t("question"),
+          options: t("teacherDashboard.options"),
+          correctAnswer: t("correct_answer"),
+          explanation: t("explanation"),
+          yourAnswer: t("your_answer"),
+          notAnswered: t("not_answered"),
+          page: t("page"),
+          of: t("of"),
+          generatedBy: t("generated_by"),
+          company: "Max Brain Technologies",
+          website: getClientAppUrl(),
+          correct: t("correct"),
+          incorrect: t("incorrect"),
+          score: t("score"),
+          percentage: t("percentage"),
+        },
+        questions: (pdfData.questions || []).map((question: any) => ({
+          question: question.question,
+          options: normalizeOptions(question.options),
+          correctAnswer: getLocalizedText(question.correctAnswer || question.correctOption, pdfNormalizedTest.language),
+          explanation: question.explanation,
+        })),
+      });
+
+      toast({
+        title: t("teacherDashboard.downloadPDF"),
+        description: t("pdf_download_ready"),
+      });
+      return;
+
       // Fetch test details if not already loaded
-      const response = await fetch(`/api/teacher/${teacherData.id}/tests/${testId}`);
+      // const response = await fetch(`/api/teacher/${teacherData.id}/tests/${testId}`);
+      // const data = await response.json();
+
+      const response = await fetch(
+        `/api/teacher/${resolvedTeacherId}/tests/${testId}`,
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch test data");
+      }
+
       const data = await response.json();
-      
+      const normalizedTest = {
+        ...data.test,
+        shareCode:
+          data.test.shareCode ||
+          data.test.share_code ||
+          data.test.sharecode ||
+          "NA",
+        classLevel:
+          data.test.classLevel ||
+          data.test.class ||
+          data.test.class_number ||
+          data.test.class_level ||
+          "—",
+        language: (data.test.language || "english").toLowerCase(),
+        title: data.test.title || "Test",
+      };
+
+      const hasDevanagari = (text?: string) =>
+        !!text && /[\u0900-\u097F]/.test(text);
+
+      const questionsContainHindi = (data.questions || []).some((q: any) =>
+        hasDevanagari(q.question) ||
+        hasDevanagari(q.explanation) ||
+        hasDevanagari(q.correctAnswer) ||
+        (Array.isArray(q.options) && q.options.some((opt: string) => hasDevanagari(opt)))
+      );
+
+      // Prepare PDF instance
       // Create PDF with jsPDF for professional formatting
       const pdf = new (jsPDF as any)({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
       });
-      
+
+      // Load and register Hindi font if needed
+      const needsHindiFont =
+        normalizedTest.language === "hindi" || questionsContainHindi;
+
+      const bodyFont = needsHindiFont ? "NotoSansDevanagari" : "helvetica";
+      let activeFont = bodyFont;
+
+      if (needsHindiFont) {
+        try {
+          const fontData = await loadHindiFont();
+          pdf.addFileToVFS("NotoSansDevanagari-Regular.ttf", fontData);
+          pdf.addFont(
+            "NotoSansDevanagari-Regular.ttf",
+            "NotoSansDevanagari",
+            "normal",
+          );
+          pdf.addFont(
+            "NotoSansDevanagari-Regular.ttf",
+            "NotoSansDevanagari",
+            "bold",
+          );
+          pdf.setFont(activeFont, "normal");
+          activeFont = bodyFont;
+        } catch (fontErr) {
+          console.warn("[PDF] Hindi font load failed, falling back to default", fontErr);
+          activeFont = "helvetica";
+        }
+      }
+
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const margins = { top: 15, bottom: 15, left: 15, right: 15 };
       const contentWidth = pageWidth - margins.left - margins.right;
       let yPosition = margins.top;
-      
+
       // Helper function to add text with wrapping
-      const addWrappedText = (text: string, x: number, maxWidth: number, fontSize: number, isBold: boolean = false) => {
+      const addWrappedText = (
+        text: string,
+        x: number,
+        maxWidth: number,
+        fontSize: number,
+        isBold: boolean = false,
+      ) => {
         pdf.setFontSize(fontSize);
-        if (isBold) pdf.setFont(undefined, 'bold');
-        else pdf.setFont(undefined, 'normal');
-        
+        if (isBold) pdf.setFont(activeFont, "bold");
+        else pdf.setFont(activeFont, "normal");
+
         const lines = pdf.splitTextToSize(text, maxWidth);
         pdf.text(lines, x, yPosition);
         yPosition += lines.length * (fontSize * 0.35) + 2;
         return lines.length;
       };
-      
-      // // Header with test title
-      // pdf.setFillColor(51, 65, 85);
-      // pdf.rect(0, 0, pageWidth, 30, 'F');
-      // pdf.setTextColor(255, 255, 255);
-      // // pdf.setFontSize(18);
-      // // pdf.setFont(undefined, 'bold');
-      // // pdf.text(data.test.title, margins.left, 12);
-      // pdf.setFontSize(20);
-      // pdf.setFont(undefined, 'bold');
-      // pdf.text(data.test.title, pageWidth / 2, 15, { align: "center" });
-      
-      // // Reset text color
-      // pdf.setTextColor(0, 0, 0);
-      // yPosition = 40;
+      // ===== HEADER BACKGROUND =====
+      // ======= HEADER SECTION =======
+      pdf.setFillColor(30, 41, 59); // dark navy background
+      pdf.rect(0, 0, pageWidth, 32, "F");
 
-      // ======= PROFESSIONAL HEADER =======
+      // ---- Test Title (Left side) ----
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(18);
+      pdf.setFont(activeFont, "bold");
+      pdf.text(normalizedTest.title, margins.left, 18);
 
-      // Dark header background
-     // ===== HEADER BACKGROUND =====
-// ======= HEADER SECTION =======
-pdf.setFillColor(30, 41, 59); // dark navy background
-pdf.rect(0, 0, pageWidth, 32, 'F');
+      // ===== RIGHT SIDE BRAND (NO LOGO) =====
+      pdf.setFontSize(14);
+      pdf.setFont("helvetica", "bold");
 
-// ---- Test Title (Left side) ----
-pdf.setTextColor(255, 255, 255);
-pdf.setFontSize(18);
-pdf.setFont(undefined, "bold");
-pdf.text(data.test.title, margins.left, 14);
+      // Text
+      const brandText = "MCQGyaan AI";
 
-// ---- LOGO + NAME (Right side, slightly lower) ----
-const logoSize = 8; // smaller logo
-const rightMargin = 15;
+      // Text width calculate
+      const brandTextWidth = pdf.getTextWidth(brandText);
 
-const logoX = pageWidth - rightMargin - logoSize - 40;
-const logoY = 16;
+      // Right align position
+      const brandX = pageWidth - margins.right - brandTextWidth;
 
-// Total text width calculate
-const fullText = "MCQGyaan AI";
-const textWidth = pdf.getTextWidth(fullText);
+      // White text
+      pdf.setTextColor(255, 255, 255);
 
+      // Print brand name
+      pdf.text(brandText, brandX, 18);
 
-// Total brand width (logo + small gap + text)
-const totalBrandWidth = logoSize + 2 + textWidth;
+      // Reset text color
+      pdf.setTextColor(0, 0, 0);
 
-// Start position so that it aligns right properly
-const brandStartX = pageWidth - margins.right - totalBrandWidth;
-
-
-// ===== RIGHT SIDE BRAND =====
-const brandY = 24;
-// const brandStartX = pageWidth - margins.right - 55; 
-// Logo
-pdf.addImage("/logo.png", "PNG", brandStartX, 16,logoSize, logoSize);
-
-
-// Gradient style text manually (3 parts, no extra space)
-pdf.setFontSize(12);
-pdf.setFont("helvetica", "bold");
-
-// ===== LOGO + BRAND (Right Side, Bottom Alignment) =====
-const logoWidth = 10;   // thoda aur chhota
-const logoHeight = 10;
-
-// let textX = logoX + logoWidth + 2;
-let textY = logoY + 8;
-// 2️⃣ Gradient Text (exactly logo ke saath chipka hua)
-let textX = brandStartX + logoSize + 3;
-
-// MCQ (Blue)
-pdf.setTextColor(37, 99, 235);
-pdf.text("MCQ", textX, brandY);
-textX += pdf.getTextWidth("MCQ");
-
-// Gyaan (Green)
-pdf.setTextColor(16, 185, 129);
-pdf.text("Gyaan", textX, brandY);
-textX += pdf.getTextWidth("Gyaan");
-
-// AI (Gold)
-pdf.setTextColor(234, 179, 8);
-pdf.text(" AI", textX, brandY);
-
-// Reset color
-pdf.setTextColor(0, 0, 0);
-
-yPosition = 42;
-
+      // Start content position
+      yPosition = 42;
 
       pdf.setDrawColor(200);
       pdf.line(margins.left, 30, pageWidth - margins.right, 30);
 
-      
       // Test Info Section
       pdf.setFontSize(10);
-      pdf.setFont(undefined, 'bold');
-      pdf.text('Test Information', margins.left, yPosition);
+      pdf.setFont(activeFont, "bold");
+      pdf.text(
+        normalizedTest.language === "hindi" ? "परीक्षा विवरण" : "Test Information",
+        margins.left,
+        yPosition,
+      );
       yPosition += 8;
-      
-      pdf.setFont(undefined, 'normal');
+
+      pdf.setFont(activeFont, "normal");
       pdf.setFontSize(9);
+      const labels =
+        normalizedTest.language === "hindi"
+          ? {
+              subject: "विषय",
+              class: "कक्षा",
+              difficulty: "कठिनाई",
+              total: "कुल प्रश्न",
+              code: "कोड",
+            }
+          : {
+              subject: "Subject",
+              class: "Class",
+              difficulty: "Difficulty",
+              total: "Total Questions",
+              code: "Share Code",
+            };
+
       const testInfo = [
-        `Subject: ${data.test.subject}`,
-        `Class: ${data.test.classLevel}`,
-        `Difficulty: ${data.test.difficulty}`,
-        `Total Questions: ${data.questions.length}`,
-        `Share Code: ${data.test.shareCode}`
+        `${labels.subject}: ${normalizedTest.subject}`,
+        `${labels.class}: ${normalizedTest.classLevel}`,
+        `${labels.difficulty}: ${normalizedTest.difficulty}`,
+        `${labels.total}: ${data.questions.length}`,
+        `${labels.code}: ${normalizedTest.shareCode}`,
       ];
-      
-      testInfo.forEach(info => {
+
+      testInfo.forEach((info) => {
         pdf.text(info, margins.left, yPosition);
         yPosition += 5;
       });
-      
+
       yPosition += 3;
-      
+
       // Instructions section if present
       if (data.test.instructions) {
         pdf.setFillColor(240, 240, 240);
-        pdf.rect(margins.left, yPosition - 2, contentWidth, 20, 'F');
-        pdf.setFont(undefined, 'bold');
+        pdf.rect(margins.left, yPosition - 2, contentWidth, 20, "F");
+        pdf.setFont(activeFont, "bold");
         pdf.setFontSize(10);
-        pdf.text('Instructions:', margins.left + 3, yPosition + 2);
+        pdf.text("Instructions:", margins.left + 3, yPosition + 2);
         yPosition += 6;
-        
-        pdf.setFont(undefined, 'normal');
+
+        pdf.setFont(activeFont, "normal");
         pdf.setFontSize(9);
-        const instructionLines = pdf.splitTextToSize(data.test.instructions, contentWidth - 6);
+        const instructionLines = pdf.splitTextToSize(
+          data.test.instructions,
+          contentWidth - 6,
+        );
         pdf.text(instructionLines, margins.left + 3, yPosition);
         yPosition += instructionLines.length * 4 + 3;
       }
-      
-      
 
       // Questions section
-      pdf.text('Questions', margins.left, yPosition + 5);
+      pdf.text(
+        normalizedTest.language === "hindi" ? "प्रश्न" : "Questions",
+        margins.left,
+        yPosition + 5,
+      );
       pdf.setFillColor(240, 240, 240);
-      pdf.rect(margins.left, yPosition, contentWidth, 8, 'F');
+      pdf.rect(margins.left, yPosition, contentWidth, 8, "F");
 
       pdf.setFontSize(11);
-      pdf.setFont(undefined, "bold");
-      pdf.text("Questions", pageWidth / 2, yPosition + 6, { align: "center" });
+      pdf.setFont(activeFont, "bold");
+      pdf.text(
+        normalizedTest.language === "hindi" ? "प्रश्न" : "Questions",
+        pageWidth / 2,
+        yPosition + 6,
+        { align: "center" },
+      );
 
       yPosition += 12;
       // pdf.setFont(undefined, 'bold');
       // pdf.setFontSize(10);
       // pdf.text('Questions', margins.left, yPosition + 5);
       // yPosition += 10;
-      
+
       // Add questions
       data.questions.forEach((q: any, idx: number) => {
         // Check if we need a new page
@@ -404,59 +976,174 @@ yPosition = 42;
           pdf.addPage();
           yPosition = margins.top;
         }
-        
+
+        // Normalize options (supports array, JSON string, comma/line separated, or optionA-D fields)
+        let displayOptions: string[] = [];
+        if (Array.isArray(q.options)) {
+          displayOptions = q.options as string[];
+        } else if (typeof q.options === "string") {
+          const raw = q.options.trim();
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) displayOptions = parsed;
+          } catch {
+            const splitChars = raw.includes("\n") ? "\n" : ",";
+            displayOptions = raw
+              .split(splitChars)
+              .map((s: string) => s.trim())
+              .filter(Boolean);
+          }
+        }
+        // fallback to optionA/optionB style fields if present
+        const altOpts = ["optionA", "optionB", "optionC", "optionD"].flatMap(
+          (key) => (q as any)[key] ? [(q as any)[key]] : [],
+        );
+        if (displayOptions.length === 0 && altOpts.length > 0) {
+          displayOptions = altOpts;
+        }
+
+        const labels = normalizedTest.language === "hindi"
+          ? {
+              question: "प्रश्न",
+              options: "विकल्प",
+              correct: "सही उत्तर",
+              explanation: "व्याख्या",
+            }
+          : {
+              question: "Q",
+              options: "Options",
+              correct: "Correct Answer",
+              explanation: "Explanation",
+            };
+
         // Question number and text
-        pdf.setFont(undefined, 'bold');
+        pdf.setFont(activeFont, "bold");
         pdf.setFontSize(10);
-        pdf.text(`Q${idx + 1}.`, margins.left, yPosition);
+        const qLabel =
+          normalizedTest.language === "hindi" ? `${labels.question}${idx + 1}.` : `${labels.question}${idx + 1}.`;
+        pdf.text(qLabel, margins.left, yPosition);
         yPosition += 5;
-        
-        pdf.setFont(undefined, 'normal');
+
+        pdf.setFont(activeFont, "normal");
         pdf.setFontSize(9);
         const questionLines = pdf.splitTextToSize(q.question, contentWidth - 5);
         pdf.text(questionLines, margins.left + 5, yPosition);
-        yPosition += questionLines.length * 3.5 + 2;
-        
+        const questionLineHeight = 4.2;
+        yPosition += questionLines.length * questionLineHeight + 2;
+
         // Options for MCQ
-        if (q.questionType === 'mcq' && q.options) {
+        if (displayOptions.length > 0) {
+          pdf.setFont(activeFont, "bold");
+          pdf.setFontSize(9);
+          pdf.text(labels.options, margins.left + 5, yPosition);
+          yPosition += 5;
+
           pdf.setFontSize(8.5);
-          q.options.forEach((opt: string, optIdx: number) => {
+          displayOptions.forEach((opt: string, optIdx: number) => {
             if (yPosition > pageHeight - margins.bottom - 10) {
               pdf.addPage();
+              pdf.setFont(activeFont, "normal");
               yPosition = margins.top;
             }
-            
+
             const optionLetter = String.fromCharCode(65 + optIdx);
-            const optionLines = pdf.splitTextToSize(`${optionLetter}. ${opt}`, contentWidth - 8);
+            const cleaned = opt.replace(/^[A-D][.)]?\s*/i, "").trim();
+            const displayText = `${optionLetter}. ${cleaned}`;
+            const isCorrect =
+              (!!q.correctOption &&
+                q.correctOption.toString().toUpperCase() === optionLetter) ||
+              (q.correctAnswer &&
+                q.correctAnswer.toString().toLowerCase().includes(cleaned.toLowerCase()));
+
+            const optionLines = pdf.splitTextToSize(
+              displayText,
+              contentWidth - 8,
+            );
+            pdf.setFont(activeFont, "normal");
             pdf.text(optionLines, margins.left + 8, yPosition);
-            yPosition += optionLines.length * 3.2 + 1;
+            if (isCorrect) {
+              pdf.setFont(activeFont, "bold");
+              pdf.text(
+                needsHindiFont ? "(\u0938\u0939\u0940)" : "(Correct)",
+                pageWidth - margins.right - 18,
+                yPosition,
+              );
+              pdf.setFont(activeFont, "normal");
+            }
+            const optionLineHeight = 4.2;
+            yPosition += optionLines.length * optionLineHeight + 2;
           });
         }
-        
+
+        // Correct Answer
+        if (q.correctAnswer) {
+          if (yPosition > pageHeight - margins.bottom - 10) {
+            pdf.addPage();
+            pdf.setFont(activeFont, "normal");
+            yPosition = margins.top;
+          }
+          pdf.setFont(activeFont, "bold");
+          pdf.setFontSize(9);
+          pdf.text(`${labels.correct}:`, margins.left + 5, yPosition);
+          pdf.setFont(activeFont, "normal");
+          const ansLines = pdf.splitTextToSize(
+            q.correctAnswer.toString(),
+            contentWidth - 25,
+          );
+          pdf.text(ansLines, margins.left + 22, yPosition);
+          yPosition += ansLines.length * 4.2 + 5;
+        }
+
+        // Explanation
+        if (q.explanation) {
+          if (yPosition > pageHeight - margins.bottom - 12) {
+            pdf.addPage();
+            pdf.setFont(activeFont, "normal");
+            yPosition = margins.top;
+          }
+          pdf.setFont(activeFont, "bold");
+          pdf.setFontSize(9);
+          pdf.text(`${labels.explanation}:`, margins.left + 5, yPosition);
+          pdf.setFont(activeFont, "normal");
+          const expLines = pdf.splitTextToSize(
+            q.explanation.toString(),
+            contentWidth - 25,
+          );
+          pdf.text(expLines, margins.left + 22, yPosition);
+          const explLineHeight = 4.5;
+          yPosition += expLines.length * explLineHeight + 6;
+        }
+
         // Model answer for open-ended
-        if (q.questionType === 'open-ended') {
-          pdf.setFont(undefined, 'bold');
+        if (q.questionType === "open-ended") {
+          pdf.setFont(activeFont, "bold");
           pdf.setFontSize(8);
-          pdf.text('Answer: _____________________________________', margins.left + 5, yPosition);
+          pdf.text(
+            "Answer: _____________________________________",
+            margins.left + 5,
+            yPosition,
+          );
           yPosition += 4;
         }
-        
+
         yPosition += 4;
       });
-      
+
       // Footer on each page
       const totalPages = pdf.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
         pdf.setPage(i);
         pdf.setFontSize(8);
-        pdf.setFont(undefined, 'normal');
+        pdf.setFont(activeFont, "normal");
         pdf.setTextColor(128, 128, 128);
-        pdf.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 8, { align: 'center' });
+        pdf.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 8, {
+          align: "center",
+        });
       }
-      
+
       // Save the PDF
-      pdf.save(`${data.test.title}_${data.test.shareCode}.pdf`);
-      
+      pdf.save(`${normalizedTest.title}_${normalizedTest.shareCode}.pdf`);
+
       toast({
         title: "Success!",
         description: "Question paper downloaded as PDF",
@@ -470,6 +1157,19 @@ yPosition = 42;
     }
   }
 
+  if (showBootstrapLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-base sm:text-lg font-semibold text-primary">
+            Loading teacher dashboard...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <div className="container mx-auto p-4 md:p-8">
@@ -479,52 +1179,98 @@ yPosition = 42;
               <GraduationCap className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">Teacher Dashboard</h1>
-              <p className="text-sm text-muted-foreground">Welcome, {teacherData.fullName}</p>
+              <h1 className="text-2xl font-bold">
+                {t("teacherDashboard.title")}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+  {t("teacherDashboard.welcome")},{" "}
+  {teacherData?.fullName || "Teacher"}
+</p>
             </div>
           </div>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={handleLogout}
             data-testid="button-logout"
           >
             <LogOut className="h-4 w-4 mr-2" />
-            Logout
+            {t("teacherDashboard.logout")}
           </Button>
         </div>
 
         {!showForm ? (
           <div className="mb-8">
-            <Button 
-              onClick={() => setShowForm(true)} 
+            <Button
+              onClick={() => setShowForm(true)}
               size="lg"
               data-testid="button-create-test"
             >
               <Plus className="h-5 w-5 mr-2" />
-              Create New Test
+              {t("teacherDashboard.createTest")}
             </Button>
           </div>
         ) : (
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle>Create Custom MCQ Test</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>{t("teacherDashboard.createCustomTest")}</CardTitle>
+              </div>
+
               <CardDescription>
-                Configure test parameters and AI will generate questions automatically
+                {t("teacherDashboard.testDescription")}
               </CardDescription>
+
+              <div className="mt-4 rounded-2xl border bg-muted/30 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                  Live header preview
+                </p>
+                <div className="mt-2 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                  <div className="space-y-1">
+                    <h3 className="text-xl font-bold text-foreground">
+                      {previewTitle}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {previewSubject} • {t("teacherDashboard.class")} {previewClassLevel} •{" "}
+                      {previewDifficulty} • {previewDuration} mins • {previewQuestions} {t("teacherDashboard.questions")}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {previewTopics.length > 0 ? (
+                      previewTopics.map((topic) => (
+                        <Badge key={topic} variant="secondary" className="rounded-full px-3 py-1">
+                          {topic}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-sm text-muted-foreground">
+                        {t("teacherDashboard.syllabus")}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                <form
+                  onSubmit={form.handleSubmit(handleSubmit)}
+                  className="space-y-4"
+                >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="title"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Test Title</FormLabel>
+                          <FormLabel>
+                            {t("teacherDashboard.testTitle")}
+                          </FormLabel>
                           <FormControl>
-                            <Input 
-                              placeholder="e.g., Chapter 5 Physics Test" 
+                            <Input
+                              placeholder={t(
+                                "teacherDashboard.testTitlePlaceholder",
+                              )}
                               {...field}
                               data-testid="input-title"
                             />
@@ -539,17 +1285,27 @@ yPosition = 42;
                       name="subject"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Subject</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <FormLabel>{t("teacherDashboard.subject")}</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger data-testid="select-subject">
-                                <SelectValue placeholder="Select subject" />
+                                <SelectValue
+                                  placeholder={t(
+                                    "teacherDashboard.selectSubject",
+                                  )}
+                                />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
                               {SUBJECTS.map((subject) => (
-                                <SelectItem key={subject.value} value={subject.value}>
-                                  {subject.label}
+                                <SelectItem
+                                  key={subject.value}
+                                  value={subject.value}
+                                >
+                                  {t(`subjects.${subject.value.toLowerCase()}`)}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -564,9 +1320,13 @@ yPosition = 42;
                       name="classLevel"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Class Standard</FormLabel>
-                          <Select 
-                            onValueChange={(value) => field.onChange(parseInt(value))} 
+                          <FormLabel>
+                            {t("teacherDashboard.classStandard")}
+                          </FormLabel>
+                          <Select
+                            onValueChange={(value) =>
+                              field.onChange(parseInt(value))
+                            }
                             value={field.value.toString()}
                           >
                             <FormControl>
@@ -577,7 +1337,7 @@ yPosition = 42;
                             <SelectContent>
                               {[6, 7, 8, 9, 10, 11, 12].map((cls) => (
                                 <SelectItem key={cls} value={cls.toString()}>
-                                  Class {cls}
+                                  {t("teacherDashboard.class")} {cls}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -592,17 +1352,58 @@ yPosition = 42;
                       name="difficulty"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Difficulty Level</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <FormLabel>
+                            {t("teacherDashboard.difficulty")}
+                          </FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger data-testid="select-difficulty">
                                 <SelectValue />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="easy">Easy</SelectItem>
-                              <SelectItem value="medium">Medium</SelectItem>
-                              <SelectItem value="hard">Hard</SelectItem>
+                              <SelectItem value="easy">
+                                {t("teacherDashboard.easy")}
+                              </SelectItem>
+                              <SelectItem value="medium">
+                                {t("teacherDashboard.medium")}
+                              </SelectItem>
+                              <SelectItem value="hard">
+                                {t("teacherDashboard.hard")}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="durationMinutes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Test Duration</FormLabel>
+                          <Select
+                            onValueChange={(value) =>
+                              field.onChange(parseInt(value))
+                            }
+                            value={field.value.toString()}
+                          >
+                            <FormControl>
+                              <SelectTrigger data-testid="select-duration">
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {[10, 15, 30, 60].map((minutes) => (
+                                <SelectItem key={minutes} value={minutes.toString()}>
+                                  {minutes} mins
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -615,14 +1416,18 @@ yPosition = 42;
                       name="numQuestions"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Number of Questions (5-50)</FormLabel>
+                          <FormLabel>
+                            {t("teacherDashboard.numQuestions")}
+                          </FormLabel>
                           <FormControl>
-                            <Input 
-                              type="number" 
-                              min={5} 
+                            <Input
+                              type="number"
+                              min={5}
                               max={50}
                               {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value))}
+                              onChange={(e) =>
+                                field.onChange(parseInt(e.target.value))
+                              }
                               data-testid="input-num-questions"
                             />
                           </FormControl>
@@ -636,17 +1441,28 @@ yPosition = 42;
                       name="testType"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Question Type</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <FormLabel>
+                            {t("teacherDashboard.questionType")}
+                          </FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger data-testid="select-test-type">
                                 <SelectValue />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="mcq">MCQ Only</SelectItem>
-                              <SelectItem value="open-ended">Open-Ended Only</SelectItem>
-                              <SelectItem value="mixed">Mixed</SelectItem>
+                              <SelectItem value="mcq">
+                                {t("teacherDashboard.mcqOnly")}
+                              </SelectItem>
+                              <SelectItem value="open-ended">
+                                {t("teacherDashboard.openEnded")}
+                              </SelectItem>
+                              <SelectItem value="mixed">
+                                {t("teacherDashboard.mixed")}
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -659,8 +1475,13 @@ yPosition = 42;
                       name="gptModel"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>GPT Model</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <FormLabel>
+                            {t("teacherDashboard.gptModel")}
+                          </FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
                             <FormControl>
                               <SelectTrigger data-testid="select-gpt-model">
                                 <SelectValue />
@@ -668,10 +1489,11 @@ yPosition = 42;
                             </FormControl>
                             <SelectContent>
                               <SelectItem value="gpt-4o">
-                                GPT-4o (Best Quality - Premium) ⭐
+                                {t("teacherDashboard.gpt4o")}
                               </SelectItem>
+
                               <SelectItem value="gpt-4o-mini">
-                                GPT-4o Mini (Fast & Affordable - Recommended) ⚡
+                                {t("teacherDashboard.gpt4omini")}
                               </SelectItem>
                             </SelectContent>
                           </Select>
@@ -682,21 +1504,28 @@ yPosition = 42;
                   </div>
 
                   <div className="space-y-3">
-                    <FormLabel className="text-base">Syllabus/Topics</FormLabel>
+                    <FormLabel className="text-base">
+                      {t("teacherDashboard.syllabus")}
+                    </FormLabel>
+
                     <p className="text-sm text-muted-foreground">
-                      Enter up to 4 topics. Questions will be distributed evenly across all topics you provide.
+                      {t("teacherDashboard.syllabusDesc")}
                     </p>
-                    
+
                     <div className="grid gap-3">
                       <FormField
                         control={form.control}
                         name="topic1"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Topic 1 (Required)</FormLabel>
+                            <FormLabel>
+                              {t("teacherDashboard.topic1")}
+                            </FormLabel>
                             <FormControl>
-                              <Input 
-                                placeholder="e.g., Force and Motion" 
+                              <Input
+                                placeholder={t(
+                                  "teacherDashboard.topicExample1",
+                                )}
                                 {...field}
                                 data-testid="input-topic1"
                               />
@@ -705,16 +1534,20 @@ yPosition = 42;
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="topic2"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Topic 2 (Optional)</FormLabel>
+                            <FormLabel>
+                              {t("teacherDashboard.topic2")}
+                            </FormLabel>
                             <FormControl>
-                              <Input 
-                                placeholder="e.g., Photosynthesis" 
+                              <Input
+                                placeholder={t(
+                                  "teacherDashboard.topicExample2",
+                                )}
                                 {...field}
                                 data-testid="input-topic2"
                               />
@@ -723,16 +1556,20 @@ yPosition = 42;
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="topic3"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Topic 3 (Optional)</FormLabel>
+                            <FormLabel>
+                              {t("teacherDashboard.topic3")}
+                            </FormLabel>
                             <FormControl>
-                              <Input 
-                                placeholder="e.g., French Verbs" 
+                              <Input
+                                placeholder={t(
+                                  "teacherDashboard.topicExample3",
+                                )}
                                 {...field}
                                 data-testid="input-topic3"
                               />
@@ -741,16 +1578,20 @@ yPosition = 42;
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="topic4"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Topic 4 (Optional)</FormLabel>
+                            <FormLabel>
+                              {t("teacherDashboard.topic4")}
+                            </FormLabel>
                             <FormControl>
-                              <Input 
-                                placeholder="e.g., Cell Structure" 
+                              <Input
+                                placeholder={t(
+                                  "teacherDashboard.topicExample4",
+                                )}
                                 {...field}
                                 data-testid="input-topic4"
                               />
@@ -767,10 +1608,14 @@ yPosition = 42;
                     name="instructions"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Instructions (Optional)</FormLabel>
+                        <FormLabel>
+                          {t("teacherDashboard.instructions")}
+                        </FormLabel>
                         <FormControl>
-                          <Textarea 
-                            placeholder="Add any special instructions for students..." 
+                          <Textarea
+                            placeholder={t(
+                              "teacherDashboard.instructionsPlaceholder",
+                            )}
                             {...field}
                             data-testid="textarea-instructions"
                           />
@@ -781,27 +1626,27 @@ yPosition = 42;
                   />
 
                   <div className="flex gap-2">
-                    <Button 
-                      type="submit" 
+                    <Button
+                      type="submit"
                       disabled={generateMutation.isPending}
                       data-testid="button-generate"
                     >
                       {generateMutation.isPending ? (
                         <>
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Generating...
+                          {t("teacherDashboard.generating") as string}
                         </>
                       ) : (
-                        "Generate Test"
+                        (t("teacherDashboard.generateTest") as string)
                       )}
                     </Button>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      variant="outline"
                       onClick={() => setShowForm(false)}
                       data-testid="button-cancel"
                     >
-                      Cancel
+                      {t("teacherDashboard.cancel")}
                     </Button>
                   </div>
                 </form>
@@ -811,7 +1656,9 @@ yPosition = 42;
         )}
 
         <div>
-          <h2 className="text-xl font-semibold mb-4">Your Tests</h2>
+          <h2 className="text-xl font-semibold mb-4">
+            {t("teacherDashboard.yourTests")}
+          </h2>
           {isLoading ? (
             <div className="flex justify-center p-8">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -819,69 +1666,205 @@ yPosition = 42;
           ) : tests.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center text-muted-foreground">
-                No tests created yet. Click "Create New Test" to get started!
+                {t("teacherDashboard.noTests")}
               </CardContent>
             </Card>
           ) : (
             <div className="grid gap-4">
-              {tests.map((test: any) => (
-                <Card key={test.id} data-testid={`test-card-${test.id}`}>
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle>{test.title}</CardTitle>
+              {orderedTests.map((test: any) => (
+                // Normalize share code for legacy snake_case rows
+                (() => {
+                  test.shareCode =
+                    test.shareCode || test.share_code || test.sharecode || "";
+                })(),
+                  <Card key={test.id} data-testid={`test-card-${test.id}`}>
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          {/* <CardTitle>{test.title}</CardTitle>
                         <CardDescription>
-                          {test.subject} • Class {test.classLevel} • {test.difficulty}
-                        </CardDescription>
+                          {t(`subjects.${test.subject}`)} • {t("teacherDashboard.class")} {test.classLevel} • {t(`difficulty.${test.difficulty}`)}
+                        </CardDescription> */}
+
+                          {/* <CardTitle>{test.title}</CardTitle> */}
+
+                          <CardTitle>
+                            {test.title || t("teacherDashboard.createCustomTest")}
+                          </CardTitle>
+                          <CardDescription>
+                            {t(
+                              `subjects.${test.subject.toLowerCase()}`,
+                              test.subject,
+                            )}{" "}
+                            •{t("teacherDashboard.class")} {test.classLevel} •
+                            {t(`difficulty.${test.difficulty}`)} • {test.durationMinutes} mins
+                          </CardDescription>
+                        </div>
+
+                        <Badge
+                          variant={
+                            test.status === "published"
+                              ? "default"
+                              : "secondary"
+                          }
+                        >
+                          {t(`status.${test.status}`)}
+                        </Badge>
                       </div>
-                      <Badge variant={test.status === "published" ? "default" : "secondary"}>
-                        {test.status}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
+                    </CardHeader>
+                    {/* <CardContent>
+                      <div className="space-y-2">
                       <p className="text-sm text-muted-foreground">
-                        Topic: {test.syllabus} • {test.numQuestions} questions
+                        {t("teacherDashboard.topic")}: {test.syllabus} •{" "}
+      {getQuestionCount(test)} {t("teacherDashboard.questions")} • {test.durationMinutes} mins
                       </p>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <code className="px-3 py-1 bg-muted rounded text-sm font-mono">
-                          {test.shareCode}
-                        </code>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => {
                             setSelectedTestId(test.id);
                             setShowQuestionsDialog(true);
-                          }}
-                          data-testid={`button-view-${test.id}`}
-                        >
-                          <Eye className="h-4 w-4 mr-1" />
-                          View Questions
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => downloadQuestionPaper(test.id)}
-                          data-testid={`button-download-${test.id}`}
-                        >
-                          <Download className="h-4 w-4 mr-1" />
-                          Download PDF
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => copyShareCode(test.shareCode)}
-                          data-testid={`button-copy-${test.id}`}
-                        >
-                          <Share2 className="h-4 w-4 mr-1" />
-                          Copy Code
-                        </Button>
+                            }}
+                            data-testid={`button-view-${test.id}`}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            {t("teacherDashboard.viewQuestions")}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => downloadQuestionPaper(test.id)}
+                            data-testid={`button-download-${test.id}`}
+                          >
+                            <Download className="h-4 w-4 mr-1" />
+                            {t("teacherDashboard.downloadPDF")}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => copyShareCode(test.shareCode || "")}
+                            data-testid={`button-copy-${test.id}`}
+                          >
+                            <Share2 className="h-4 w-4 mr-1" />
+                            {t("teacherDashboard.copyCode")}
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent> */}
+                    <CardContent>
+  <div className="space-y-2">
+
+    {/* 🔹 TEST INFO */}
+    <p className="text-sm text-muted-foreground">
+      {t("teacherDashboard.topic")}: {test.syllabus} •{" "}
+      {getQuestionCount(test)} {t("teacherDashboard.questions")} • {test.durationMinutes} mins
+    </p>
+
+    {/* 🔹 ACTION BUTTONS */}
+    <div className="flex items-center gap-2 flex-wrap">
+
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => {
+          setSelectedTestId(test.id);
+          setShowQuestionsDialog(true);
+        }}
+        data-testid={`button-view-${test.id}`}
+      >
+        <Eye className="h-4 w-4 mr-1" />
+        {t("teacherDashboard.viewQuestions")}
+      </Button>
+
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => downloadQuestionPaper(test.id)}
+        data-testid={`button-download-${test.id}`}
+      >
+        <Download className="h-4 w-4 mr-1" />
+        {t("teacherDashboard.downloadPDF")}
+      </Button>
+
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => copyShareCode(test.shareCode || "")}
+        data-testid={`button-copy-${test.id}`}
+      >
+        <Share2 className="h-4 w-4 mr-1" />
+        {t("teacherDashboard.copyCode")}
+      </Button>
+      <Button
+  variant="default"
+  size="sm"
+  onClick={() =>
+    setOpenResultsId(openResultsId === test.id ? null : test.id)
+  }
+>
+  {openResultsId === test.id
+    ? "Hide Results"
+    : "View Student Results"}
+</Button>
+    </div>
+
+    {/* 🔥 STUDENT RESULTS BUTTON + DROPDOWN */}
+    {test.submissions && test.submissions.length > 0 && (
+      <div className="mt-4">
+
+        {/* 🔹 SINGLE BUTTON */}
+        {/* <Button
+          variant="default"
+          size="sm"
+          onClick={() =>
+            setOpenResultsId(openResultsId === test.id ? null : test.id)
+          }
+        >
+          {openResultsId === test.id
+            ? "Hide Student Results"
+            : "View Student Results"}
+        </Button> */}
+
+        {/* 🔽 HORIZONTAL DROPDOWN */}
+     {openResultsId === test.id && (
+  <div className="mt-3 space-y-2 text-sm">
+
+    {test.submissions.map((s: any) => (
+      <div
+        key={s.id}
+        className="flex items-center justify-between border rounded-md px-3 py-2 bg-gray-50 dark:bg-gray-900"
+      >
+        <span><b>{s.student_name}</b></span>
+
+        <span className="text-muted-foreground">
+          Score: {s.score}/{s.total_questions}
+        </span>
+
+        <span className="text-muted-foreground">
+          Time: {formatTime(s.time_taken_seconds)}
+        </span>
+
+        <span
+          className={`px-2 py-1 rounded text-xs ${
+            s.submission_type === "auto"
+              ? "bg-red-100 text-red-600"
+              : "bg-green-100 text-green-600"
+          }`}
+        >
+          {s.submission_type}
+        </span>
+      </div>
+    ))}
+          </div>
+        )}
+
+      </div>
+    )}
+
+  </div>
+</CardContent>
+                  </Card>
               ))}
             </div>
           )}
@@ -889,82 +1872,231 @@ yPosition = 42;
       </div>
 
       {/* Questions Preview Dialog */}
+
       <Dialog open={showQuestionsDialog} onOpenChange={setShowQuestionsDialog}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{testDetails?.test?.title}</DialogTitle>
+            <DialogTitle>
+              {test?.title || t("teacherDashboard.createCustomTest")}
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              {getQuestionCount(test)} {t("teacherDashboard.questions")} • {test?.syllabus || t("teacherDashboard.syllabus")}
+            </p>
+
             <DialogDescription>
-              {testDetails?.test?.subject} • Class {testDetails?.test?.classLevel} • {testDetails?.test?.difficulty}
+              {t(`subjects.${test?.subject?.toLowerCase()}`, test?.subject)} •{" "}
+              {t("teacherDashboard.class")} {classNumber} •{" "}
+              {t(`difficulty.${test?.difficulty}`)} • {test?.durationMinutes} mins
             </DialogDescription>
           </DialogHeader>
+
           {testDetails?.questions ? (
             <div className="space-y-6">
-              {testDetails.questions.map((q: any, idx: number) => (
-                <Card key={q.id}>
-                  <CardHeader>
-                    <div className="flex justify-between items-center">
-                      <CardTitle className="text-base">Question {idx + 1}</CardTitle>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setEditingQuestion(q);
-                            setShowManualEditDialog(true);
-                          }}
-                          data-testid={`button-edit-${q.id}`}
-                        >
-                          <Edit className="h-4 w-4 mr-1" />
-                          Edit
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setEditingQuestion(q);
-                            setShowAIEditDialog(true);
-                          }}
-                          data-testid={`button-ai-edit-${q.id}`}
-                        >
-                          <Sparkles className="h-4 w-4 mr-1" />
-                          AI Edit
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <p className="font-medium">{q.question}</p>
-                    {q.questionType === "mcq" && q.options && (
-                      <div className="space-y-2">
-                        <p className="text-sm font-semibold">Options:</p>
-                        {q.options.map((opt: string, optIdx: number) => (
-                          <div 
-                            key={optIdx} 
-                            className={`p-2 rounded ${q.correctOption === String.fromCharCode(65 + optIdx) ? 'bg-green-100 dark:bg-green-900' : 'bg-muted'}`}
+              {testDetails.questions.map((q: any, idx: number) => {
+                // ✅ FIX: parse options
+                let options = [];
+
+                // if (Array.isArray(q.options)) {
+                //   options = q.options;
+                // } else {
+                //   try {
+                //     options = JSON.parse(q.options || "[]");
+                //   } catch (e) {
+                //     console.error("Invalid options JSON", q.options);
+                //   }
+                // }
+
+                if (Array.isArray(q.options)) {
+                  options = q.options;
+                } else {
+                  options = JSON.parse(q.options || "[]");
+                }
+
+                return (
+                  <Card key={q.id}>
+                    <CardHeader>
+                      <div className="flex justify-between items-center">
+                        <CardTitle className="text-base">
+                          {t("teacherDashboard.question")} {idx + 1}
+                        </CardTitle>
+
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setEditingQuestion(q);
+                              setShowManualEditDialog(true);
+                            }}
                           >
-                            {String.fromCharCode(65 + optIdx)}. {opt}
-                            {q.correctOption === String.fromCharCode(65 + optIdx) && (
-                              <Badge variant="default" className="ml-2">Correct</Badge>
+                            <Edit className="h-4 w-4 mr-1" />
+                            {t("teacherDashboard.edit")}
+                          </Button>
+
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setEditingQuestion(q);
+                              setShowAIEditDialog(true);
+                            }}
+                          >
+                            <Sparkles className="h-4 w-4 mr-1" />
+                            {t("teacherDashboard.aiEdit")}
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+
+                    {/* ✅ FIX: CardContent inside map */}
+                    <CardContent className="space-y-3">
+                      <p className="font-medium">{q.question}</p>
+
+                      {/* ✅ MCQ OPTIONS */}
+                      {options.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-semibold">
+                              {t("teacherDashboard.options")}
+                            </p>
+                            {q.correctOption && (
+                              <Badge variant="outline">
+                                {t("teacherDashboard.correctOption", {
+                                  defaultValue: "Correct Option",
+                                })}
+                                : {q.correctOption.toUpperCase()}
+                              </Badge>
                             )}
                           </div>
-                        ))}
-                      </div>
-                    )}
-                    {q.questionType === "open-ended" && (
-                      <div className="p-3 bg-green-100 dark:bg-green-900 rounded">
-                        <p className="text-sm font-semibold">Model Answer:</p>
-                        <p>{q.correctAnswer}</p>
-                      </div>
-                    )}
-                    {q.explanation && (
-                      <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded">
-                        <p className="text-sm font-semibold">Explanation:</p>
-                        <p className="text-sm">{q.explanation}</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+
+                          {/* {options.map((opt: string, optIdx: number) => {
+                            const optionLetter = String.fromCharCode(65 + optIdx);
+
+                            return (
+                              <div
+                                key={optIdx}
+                                className={`p-2 rounded ${
+                                  q.correctOption === optionLetter
+                                    ? "bg-green-100 dark:bg-green-900"
+                                    : "bg-muted"
+                                }`}
+                              >
+                                {optionLetter}. {opt}
+
+                                {q.correctOption === optionLetter && (
+                                  <Badge className="ml-2">Correct</Badge>
+                                )}
+                              </div>
+                            );
+                          })} */}
+
+                          {options.map((opt: string, optIdx: number) => {
+                            const optionLetter = String.fromCharCode(
+                              65 + optIdx,
+                            );
+
+                            const cleanedOption = opt
+                              .replace(/^[A-D][.)]?\s*/i, "")
+                              .trim();
+
+                            const correctOpt = (q.correctOption || "").toString().trim().toUpperCase();
+                            const correctAns = (q.correctAnswer || "").toString().trim();
+
+                            const isCorrect =
+                              (!!correctOpt && correctOpt === optionLetter) ||
+                              correctAns === optionLetter ||
+                              correctAns.toLowerCase() === cleanedOption.toLowerCase() ||
+                              correctAns.toLowerCase() === opt.toLowerCase() ||
+                              correctAns.toLowerCase().includes(cleanedOption.toLowerCase());
+
+                            return (
+                              <div
+                                key={optIdx}
+                                className={`p-2 rounded flex items-center justify-between ${
+                                  isCorrect
+                                    ? "bg-green-100 dark:bg-green-900"
+                                    : "bg-muted"
+                                }`}
+                              >
+                                <span>
+                                  {optionLetter}. {cleanedOption}
+                                </span>
+                                {isCorrect && (
+                                  <Badge className="ml-3" variant="secondary">
+                                    {t("teacherDashboard.correctOptionLabel", { defaultValue: "Correct" })}
+                                  </Badge>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* ✅ OPEN ENDED */}
+                      {q.questionType === "open-ended" && (
+                        <div className="p-3 bg-green-100 dark:bg-green-900 rounded">
+                          <p className="text-sm font-semibold">
+                            {t("teacherDashboard.modelAnswer")}
+                          </p>
+                          <p>{q.correctAnswer}</p>
+                        </div>
+                      )}
+
+                      {/* ✅ EXPLANATION */}
+                      {q.explanation && (
+                        <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded">
+                          <p className="text-sm font-semibold">
+                            {t("teacherDashboard.explanation")}
+                          </p>
+                          <p className="text-sm">{q.explanation}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+
+              {Array.isArray(testDetails?.submissions) &&
+                testDetails.submissions.length > 0 && (
+                  <Card className="border-primary/20 bg-primary/5">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <Clock3 className="h-4 w-4" />
+                        Student Submissions
+                      </CardTitle>
+                      <CardDescription>
+                        Latest completed attempts for this test
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {testDetails.submissions.map((submission: any) => (
+                        <div
+                          key={submission.id}
+                          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-background p-3"
+                        >
+                          <div>
+                            <p className="font-semibold">
+                              {submission.studentName || "Anonymous"}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              Score: {submission.score}/{test?.numQuestions || 0} • Time taken: {Math.max(0, Math.floor((submission.timeTakenSeconds || 0) / 60))} min {Math.max(0, (submission.timeTakenSeconds || 0) % 60)} sec
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline">
+                              {(submission.submissionType || "manual") === "auto"
+                                ? "Auto"
+                                : "Manual"}
+                            </Badge>
+                            <Badge>
+                              {submission.score}/{test?.numQuestions || 0}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
             </div>
           ) : (
             <div className="flex justify-center p-8">
@@ -976,19 +2108,34 @@ yPosition = 42;
 
       {/* Manual Edit Dialog */}
       {editingQuestion && (
-        <Dialog open={showManualEditDialog} onOpenChange={setShowManualEditDialog}>
+        <Dialog
+          open={showManualEditDialog}
+          onOpenChange={setShowManualEditDialog}
+        >
           <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Edit Question</DialogTitle>
+              <DialogTitle>{t("teacherDashboard.editQuestion")}</DialogTitle>
               <DialogDescription>
-                Manually edit the question, options, answer, and explanation
+                {t("teacherDashboard.manualEditDesc")}
               </DialogDescription>
             </DialogHeader>
             <ManualEditForm
               question={editingQuestion}
               onSave={(data) => {
+                const activeTestId = selectedTestId || testDetails?.test?.id;
+                if (!activeTestId) {
+                  toast({
+                    variant: "destructive",
+                    title: "Missing test ID",
+                    description:
+                      "Please reopen the test and try editing again.",
+                  });
+                  return;
+                }
+
                 manualEditMutation.mutate({
                   questionId: editingQuestion.id,
+                  testId: activeTestId,
                   ...data,
                 });
               }}
@@ -1007,19 +2154,21 @@ yPosition = 42;
         <Dialog open={showAIEditDialog} onOpenChange={setShowAIEditDialog}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>AI-Assisted Edit</DialogTitle>
+              <DialogTitle>{t("teacherDashboard.aiEdit")}</DialogTitle>
               <DialogDescription>
-                Tell AI what you want to improve about this question
+                {t("teacherDashboard.aiEditDesc")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="p-4 bg-muted rounded-lg">
-                <p className="font-semibold text-sm mb-2">Current Question:</p>
+                <p className="font-semibold text-sm mb-2">
+                  {t("teacherDashboard.currentQuestion")}
+                </p>
                 <p className="text-sm">{editingQuestion.question}</p>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">
-                  Feedback for AI (minimum 10 characters)
+                  {t("teacherDashboard.feedbackLabel")}
                 </label>
                 <Textarea
                   placeholder="e.g., 'Make it more challenging', 'Simplify the language', 'Fix the incorrect option B', 'Add more detail to the explanation'..."
@@ -1036,27 +2185,41 @@ yPosition = 42;
                       toast({
                         variant: "destructive",
                         title: "Feedback too short",
-                        description: "Please provide at least 10 characters of feedback",
+                        description:
+                          "Please provide at least 10 characters of feedback",
+                      });
+                      return;
+                    }
+                    const activeTestId = selectedTestId || testDetails?.test?.id;
+                    if (!activeTestId) {
+                      toast({
+                        variant: "destructive",
+                        title: "Missing test ID",
+                        description: "Please reopen the test and try AI edit again.",
                       });
                       return;
                     }
                     aiEditMutation.mutate({
                       questionId: editingQuestion.id,
+                      testId: activeTestId,
                       feedback: aiEditFeedback,
                     });
                   }}
-                  disabled={aiEditMutation.isPending || aiEditFeedback.trim().length < 10}
+                  disabled={
+                    aiEditMutation.isPending ||
+                    aiEditFeedback.trim().length < 10
+                  }
                   data-testid="button-ai-improve"
                 >
                   {aiEditMutation.isPending ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Improving...
+                      {t("teacherDashboard.improving")}
                     </>
                   ) : (
                     <>
                       <Sparkles className="h-4 w-4 mr-2" />
-                      Improve with AI
+                      {t("teacherDashboard.improveAI")}
                     </>
                   )}
                 </Button>
@@ -1069,7 +2232,7 @@ yPosition = 42;
                   }}
                   disabled={aiEditMutation.isPending}
                 >
-                  Cancel
+                  {t("teacherDashboard.cancel")}
                 </Button>
               </div>
             </div>
@@ -1081,15 +2244,23 @@ yPosition = 42;
 }
 
 // Manual Edit Form Component
-function ManualEditForm({ question, onSave, onCancel, isLoading }: {
+function ManualEditForm({
+  question,
+  onSave,
+  onCancel,
+  isLoading,
+}: {
   question: any;
   onSave: (data: any) => void;
   onCancel: () => void;
   isLoading: boolean;
 }) {
+  const { t } = useTranslation();
   const [questionText, setQuestionText] = useState(question.question);
   const [options, setOptions] = useState(question.options || ["", "", "", ""]);
-  const [correctOption, setCorrectOption] = useState(question.correctOption || "A");
+  const [correctOption, setCorrectOption] = useState(
+    question.correctOption || "A",
+  );
   const [correctAnswer, setCorrectAnswer] = useState(question.correctAnswer);
   const [explanation, setExplanation] = useState(question.explanation);
 
@@ -1098,7 +2269,9 @@ function ManualEditForm({ question, onSave, onCancel, isLoading }: {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <label className="text-sm font-medium">Question</label>
+        <label className="text-sm font-medium">
+          {t("teacherDashboard.question")}
+        </label>
         <Textarea
           value={questionText}
           onChange={(e) => setQuestionText(e.target.value)}
@@ -1110,10 +2283,14 @@ function ManualEditForm({ question, onSave, onCancel, isLoading }: {
       {isMCQ ? (
         <>
           <div className="space-y-3">
-            <label className="text-sm font-medium">Options</label>
+            <label className="text-sm font-medium">
+              {t("teacherDashboard.options")}
+            </label>
             {options.map((opt: string, idx: number) => (
               <div key={idx} className="flex gap-2 items-center">
-                <span className="font-semibold w-6">{String.fromCharCode(65 + idx)}.</span>
+                <span className="font-semibold w-6">
+                  {String.fromCharCode(65 + idx)}.
+                </span>
                 <Input
                   value={opt}
                   onChange={(e) => {
@@ -1129,7 +2306,9 @@ function ManualEditForm({ question, onSave, onCancel, isLoading }: {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Correct Option</label>
+            <label className="text-sm font-medium">
+              {t("teacherDashboard.correctOption")}
+            </label>
             <Select value={correctOption} onValueChange={setCorrectOption}>
               <SelectTrigger data-testid="select-correct-option">
                 <SelectValue />
@@ -1137,7 +2316,7 @@ function ManualEditForm({ question, onSave, onCancel, isLoading }: {
               <SelectContent>
                 {["A", "B", "C", "D"].map((opt) => (
                   <SelectItem key={opt} value={opt}>
-                    Option {opt}
+                    {t("teacherDashboard.option")} {opt}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -1146,7 +2325,9 @@ function ManualEditForm({ question, onSave, onCancel, isLoading }: {
         </>
       ) : (
         <div className="space-y-2">
-          <label className="text-sm font-medium">Correct Answer</label>
+          <label className="text-sm font-medium">
+            {t("teacherDashboard.correctAnswer")}
+          </label>
           <Textarea
             value={correctAnswer}
             onChange={(e) => setCorrectAnswer(e.target.value)}
@@ -1157,7 +2338,9 @@ function ManualEditForm({ question, onSave, onCancel, isLoading }: {
       )}
 
       <div className="space-y-2">
-        <label className="text-sm font-medium">Explanation</label>
+        <label className="text-sm font-medium">
+          {t("teacherDashboard.explanation")}
+        </label>
         <Textarea
           value={explanation}
           onChange={(e) => setExplanation(e.target.value)}
@@ -1173,7 +2356,9 @@ function ManualEditForm({ question, onSave, onCancel, isLoading }: {
               question: questionText,
               options: isMCQ ? options : undefined,
               correctOption: isMCQ ? correctOption : undefined,
-              correctAnswer: isMCQ ? options[correctOption.charCodeAt(0) - 65] : correctAnswer,
+              correctAnswer: isMCQ
+                ? options[correctOption.charCodeAt(0) - 65]
+                : correctAnswer,
               explanation,
             });
           }}
@@ -1183,16 +2368,17 @@ function ManualEditForm({ question, onSave, onCancel, isLoading }: {
           {isLoading ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Saving...
+              {t("teacherDashboard.saving")}
             </>
           ) : (
             "Save Changes"
           )}
         </Button>
         <Button variant="outline" onClick={onCancel} disabled={isLoading}>
-          Cancel
+          {t("teacherDashboard.cancel")}
         </Button>
       </div>
     </div>
   );
+
 }
