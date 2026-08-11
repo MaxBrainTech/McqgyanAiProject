@@ -1,12 +1,9 @@
-<<<<<<< HEAD
 import OpenAI from "openai";
 import PDFDocument from "pdfkit";
 import { Request, Response } from "express";
 import { getServerAppUrl } from "./lib/appUrl";
-=======
-import { Pool } from "pg";
 import dotenv from "dotenv";
->>>>>>> fb6ac06a10fc66af0329ecd63713bd2c4019a9ed
+import { Pool } from "pg";
 
 dotenv.config();
 
@@ -18,7 +15,6 @@ const pool = new Pool({
   port: Number(process.env.DB_PORT),
 });
 
-<<<<<<< HEAD
 interface EvaluationParams {
   images: string[];
   studentName: string;
@@ -68,6 +64,10 @@ export async function evaluateAnswerSheet(
   console.log(
     `[EVAL] Starting evaluation of ${images.length} images using ${gptModel}`,
   );
+
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
 
   const imageMessages: any[] = images.map((imageData) => ({
     type: "image_url",
@@ -445,6 +445,3 @@ export function generateEvaluationPDF(req: Request, res: Response) {
 
   doc.end();
 }
-=======
-export default pool;
->>>>>>> fb6ac06a10fc66af0329ecd63713bd2c4019a9ed

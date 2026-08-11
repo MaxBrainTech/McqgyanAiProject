@@ -235,8 +235,5 @@ export default function Signup() {
       </div>
     </AuthBackground>
   );
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> fb6ac06a10fc66af0329ecd63713bd2c4019a9ed
+
