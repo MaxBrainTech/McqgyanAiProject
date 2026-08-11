@@ -319,8 +319,34 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`${res.status}: ${text || res.statusText || "Request failed"}`);
+    let serverMessage = res.statusText || "Request failed";
+    try {
+      const text = await res.text();
+      if (text) {
+        if (text.startsWith("{")) {
+          const parsed = JSON.parse(text);
+          serverMessage = parsed.error || parsed.message || text;
+        } else if (
+          text.includes("<!DOCTYPE") ||
+          text.includes("<html") ||
+          text.includes("<pre>")
+        ) {
+          // Extract text inside <pre> tag if present (e.g. Cannot POST /api/admin/send-email)
+          const preMatch = text.match(/<pre>(.*?)<\/pre>/i);
+          if (preMatch && preMatch[1]) {
+            serverMessage = preMatch[1];
+          } else {
+            serverMessage = "HTML error page returned by server";
+          }
+        } else {
+          serverMessage = text;
+        }
+      }
+    } catch {
+      // Fallback
+    }
+
+    throw new Error(`HTTP ${res.status}: ${serverMessage}`);
   }
 
   return (await res.json()) as T;
@@ -375,3 +401,25 @@ export const deleteStudentAccount = (studentId: string) =>
   fetchJson<AdminStudentDeleteResponse>(`/api/admin/students/${studentId}`, {
     method: "DELETE",
   });
+
+export type SendAdminEmailPayload = {
+  recipientType: "teacher" | "student";
+  recipientId: string;
+  subject: string;
+  message: string;
+};
+
+export const sendAdminEmail = (payload: SendAdminEmailPayload) =>
+  fetchJson<{ success: boolean; message: string }>("/api/admin/send-email", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+export const checkAdminEmailHealth = () =>
+  fetchJson<{
+    success: boolean;
+    service: string;
+    timestamp: string;
+    smtp: { ok: boolean; message: string };
+  }>("/api/admin/email-health");
+

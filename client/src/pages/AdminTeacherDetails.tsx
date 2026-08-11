@@ -11,7 +11,11 @@ import {
   Trash2,
   Users,
   Users2,
-  UserRound,
+  UserCheck,
+  UserX,
+  FileText,
+  School,
+  Calendar,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -22,18 +26,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import DeleteAccountDialog from "@/components/admin/DeleteAccountDialog";
+import SendEmailModal from "@/components/admin/SendEmailModal";
 import { useToast } from "@/hooks/use-toast";
 import { approveTeacher, deleteTeacherAccount, getTeacherDetails, rejectTeacher } from "@/lib/adminApi";
 
 const formatValue = (
   value: string | number | null | undefined,
-  fallback = "",
+  fallback = "Not provided",
 ) => {
   if (value === null || value === undefined || value === "") return fallback;
   return String(value);
 };
 
-const formatDate = (value: string | null | undefined, fallback = "") => {
+const formatDate = (value: string | null | undefined, fallback = "N/A") => {
   if (!value) return fallback;
   return new Intl.DateTimeFormat("en-IN", {
     dateStyle: "medium",
@@ -41,17 +46,19 @@ const formatDate = (value: string | null | undefined, fallback = "") => {
   }).format(new Date(value));
 };
 
-const openMailClient = (email: string, subject: string, body: string) => {
-  const mailto = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  window.location.href = mailto;
+const getInitials = (name: string) => {
+  if (!name) return "T";
+  const parts = name.trim().split(" ");
+  if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  return name.slice(0, 2).toUpperCase();
 };
 
 function DetailItem({ label, value }: { label: string; value: string | number | null | undefined }) {
   const { t } = useTranslation();
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{label}</p>
-      <p className="mt-2 text-sm font-medium text-slate-900">{formatValue(value, t("not_available"))}</p>
+    <div className="rounded-xl border border-slate-200/90 bg-slate-50/50 p-4">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{label}</p>
+      <p className="mt-1 text-sm font-semibold text-slate-900">{formatValue(value, t("not_available"))}</p>
     </div>
   );
 }
@@ -70,23 +77,21 @@ function StatCard({
   accent: string;
 }) {
   return (
-    <Card className="overflow-hidden rounded-[1.5rem] border-slate-200/80 bg-white/95 shadow-lg shadow-slate-200/50">
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
-              {title}
-            </p>
-            <p className="mt-2 text-3xl font-black tracking-tight text-slate-900">
-              {value}
-            </p>
-            <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
-          </div>
-          <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${accent} text-white shadow-lg`}>
-            {icon}
-          </div>
+    <Card className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            {title}
+          </p>
+          <p className="mt-1.5 text-2xl font-black tracking-tight text-slate-900">
+            {value}
+          </p>
+          <p className="mt-1 text-xs text-slate-500 leading-relaxed">{description}</p>
         </div>
-      </CardContent>
+        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${accent} text-white shadow-sm`}>
+          {icon}
+        </div>
+      </div>
     </Card>
   );
 }
@@ -99,6 +104,7 @@ export default function AdminTeacherDetails() {
   const queryClient = useQueryClient();
   const notAvailable = t("not_available");
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
 
   const teacherQuery = useQuery({
     queryKey: ["admin", "teachers", teacherId],
@@ -111,7 +117,7 @@ export default function AdminTeacherDetails() {
     onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: ["admin"] });
       toast({
-        title: "Teacher activated",
+        title: "Teacher Activated",
         description: result.message,
       });
     },
@@ -129,7 +135,7 @@ export default function AdminTeacherDetails() {
     onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: ["admin"] });
       toast({
-        title: "Teacher suspended",
+        title: "Teacher Suspended",
         description: result.message,
       });
     },
@@ -147,7 +153,7 @@ export default function AdminTeacherDetails() {
     onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: ["admin"] });
       toast({
-        title: "Teacher account deleted",
+        title: "Teacher Account Deleted",
         description: result.message,
       });
       setDeleteOpen(false);
@@ -191,363 +197,289 @@ export default function AdminTeacherDetails() {
       return;
     }
 
-    openMailClient(
-      teacher.email,
-      `Message for ${teacher.fullName || teacher.username}`,
-      `Hello ${teacher.fullName || teacher.username},\n\n`,
-    );
+    setEmailModalOpen(true);
   };
 
-  if (!teacherId) {
+  if (!teacherId || teacherQuery.isLoading) {
     return (
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(37,99,235,0.12),transparent_35%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_55%,#ffffff_100%)] px-4 py-10 sm:px-6 lg:px-8">
-        <div className="mx-auto w-full max-w-3xl rounded-[1.75rem] border border-slate-200 bg-white p-8 shadow-xl">
-          <p className="text-lg font-semibold text-slate-900">{t("teacher_not_found")}</p>
-          <p className="mt-2 text-sm text-slate-600">{t("teacher_not_available")}</p>
-          <Button className="mt-6" onClick={() => navigate("/admin-dashboard")}>
+      <div className="min-h-screen bg-slate-50/60 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-slate-300 border-t-blue-600" />
+          <p className="mt-3 text-sm font-semibold text-slate-600">Loading teacher profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!teacher) {
+    return (
+      <div className="min-h-screen bg-slate-50/60 p-6 sm:p-10">
+        <div className="mx-auto max-w-xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <GraduationCap className="mx-auto h-12 w-12 text-slate-400" />
+          <h2 className="mt-4 text-xl font-bold text-slate-900">Teacher Not Found</h2>
+          <p className="mt-1 text-sm text-slate-600">The requested teacher account could not be found.</p>
+          <Button className="mt-6 rounded-xl bg-slate-900" onClick={() => navigate("/admin-dashboard")}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            {t("back_to_admin_dashboard")}
+            Return to Dashboard
           </Button>
         </div>
       </div>
     );
   }
 
-  if (teacherQuery.isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center px-4">
-          <div className="rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm font-medium text-slate-600 shadow-lg shadow-slate-200/60">
-          {t("loading_teacher_details")}
-        </div>
-      </div>
-    );
-  }
-
-  if (teacherQuery.error || !teacher) {
-    return (
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(37,99,235,0.12),transparent_35%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_55%,#ffffff_100%)] px-4 py-10 sm:px-6 lg:px-8">
-        <div className="mx-auto w-full max-w-3xl rounded-[1.75rem] border border-slate-200 bg-white p-8 shadow-xl">
-          <p className="text-lg font-semibold text-slate-900">{t("teacher_not_available")}</p>
-          <p className="mt-2 text-sm text-slate-600">
-            {String(teacherQuery.error || "").includes("404")
-              ? t("teacher_not_found")
-              : t("teacher_not_available")}
-          </p>
-          <Button className="mt-6" onClick={() => navigate("/admin-dashboard")}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            {t("back_to_admin_dashboard")}
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const displayName = teacher.fullName || teacher.username;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(37,99,235,0.12),transparent_35%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_55%,#ffffff_100%)] px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-        <Card className="overflow-hidden rounded-[1.75rem] border-slate-200/80 bg-white/95 shadow-2xl shadow-slate-200/70">
-          <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="space-y-3">
-              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.28em] text-cyan-700">
-                <Shield className="h-3.5 w-3.5" />
-                {t("teacher_details")}
+    <div className="min-h-screen bg-slate-50/60 pb-16">
+      {/* Top Bar */}
+      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/admin-dashboard")}
+            className="rounded-xl text-slate-700 hover:bg-slate-100 font-semibold text-xs"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Dashboard
+          </Button>
+
+          <div className="flex items-center gap-2">
+            <Badge className="bg-slate-100 text-slate-800 border-slate-200 text-xs font-mono">
+              ID: {teacher.id}
+            </Badge>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8 space-y-6">
+        {/* Profile Hero Header Card */}
+        <div className="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-950 p-6 text-white shadow-xl sm:p-8">
+          <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-blue-600/20 blur-3xl" />
+          <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-blue-600 font-black text-white text-2xl shadow-lg shadow-blue-500/20">
+                {getInitials(displayName)}
               </div>
-              <CardTitle className="text-3xl font-black tracking-tight text-slate-900">
-                {teacher.fullName || teacher.username}
-              </CardTitle>
-              <CardDescription className="max-w-2xl text-slate-600">
-                {t("detailed_teacher_profile")}
-              </CardDescription>
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl">{displayName}</h1>
+                  <Badge className={teacher.approved ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" : "bg-amber-500/20 text-amber-300 border-amber-500/30"}>
+                    {teacher.approved ? "Approved" : "Pending Approval"}
+                  </Badge>
+                  <Badge className={teacher.verified ? "bg-blue-500/20 text-blue-300 border-blue-500/30" : "bg-slate-500/20 text-slate-300 border-slate-500/30"}>
+                    {teacher.verified ? "Email Verified" : "Unverified"}
+                  </Badge>
+                </div>
+                <p className="text-sm font-mono text-slate-300">{teacher.email}</p>
+                <div className="flex items-center gap-4 text-xs text-slate-400 pt-1">
+                  <span className="flex items-center gap-1">
+                    <School className="h-3.5 w-3.5 text-slate-400" />
+                    {teacher.school || "School Not set"}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                    Joined {joinedDate}
+                  </span>
+                </div>
+              </div>
             </div>
 
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigate("/admin-dashboard")}
-              className="h-11 rounded-xl border-slate-300 px-5 font-semibold text-slate-700"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              {t("back_to_admin_dashboard")}
-            </Button>
-          </CardHeader>
-        </Card>
-
-        <Card className="rounded-[1.75rem] border-slate-200/80 bg-white/95 shadow-xl shadow-slate-200/50">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold text-slate-900">Admin Actions</CardTitle>
-            <CardDescription className="text-slate-600">
-              Manage the teacher account and safely remove related records when needed.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {/* Actions */}
+            <div className="flex flex-wrap gap-2 sm:self-start">
               <Button
                 type="button"
-                onClick={() => activateMutation.mutate()}
-                disabled={activateMutation.isPending}
-                className="h-11 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700"
-              >
-                <CheckCircle2 className="mr-2 h-4 w-4" />
-                Activate Account
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => suspendMutation.mutate()}
-                disabled={suspendMutation.isPending}
-                className="h-11 rounded-xl border-amber-300 text-amber-800 hover:bg-amber-50"
-              >
-                <Clock3 className="mr-2 h-4 w-4" />
-                Deactivate / Suspend
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
                 onClick={handleSendEmail}
-                className="h-11 rounded-xl border-slate-300 text-slate-700"
+                className="h-10 rounded-xl bg-blue-600 font-semibold text-white hover:bg-blue-700 text-xs shadow-sm"
               >
-                <Mail className="mr-2 h-4 w-4" />
+                <Mail className="mr-1.5 h-4 w-4" />
                 Send Email
               </Button>
+              {!teacher.approved ? (
+                <Button
+                  type="button"
+                  onClick={() => activateMutation.mutate()}
+                  disabled={activateMutation.isPending}
+                  className="h-10 rounded-xl bg-emerald-600 font-semibold text-white hover:bg-emerald-700 text-xs shadow-sm"
+                >
+                  <UserCheck className="mr-1.5 h-4 w-4" />
+                  Approve Teacher
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => suspendMutation.mutate()}
+                  disabled={suspendMutation.isPending}
+                  className="h-10 rounded-xl border-amber-500/30 bg-amber-500/10 font-semibold text-amber-200 hover:bg-amber-500/20 text-xs"
+                >
+                  <UserX className="mr-1.5 h-4 w-4" />
+                  Suspend Access
+                </Button>
+              )}
               <Button
                 type="button"
+                variant="outline"
                 onClick={() => setDeleteOpen(true)}
-                className="h-11 rounded-xl bg-rose-600 text-white hover:bg-rose-700"
+                className="h-10 rounded-xl border-rose-500/30 bg-rose-500/10 font-semibold text-rose-200 hover:bg-rose-500/20 text-xs"
               >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Permanently Delete
+                <Trash2 className="mr-1.5 h-4 w-4" />
+                Delete
               </Button>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-              <span className="font-semibold text-slate-900">Deletion summary:</span>{" "}
-              {actionSummary.totalTestsGenerated} tests, {actionSummary.totalQuestionsGenerated} questions,{" "}
-              {actionSummary.totalStudents} students, {actionSummary.recentStudentActivity} recent activity rows.
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {/* Stats Grid */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            title="Total Tests Generated"
-            value={statistics?.totalTestsGenerated ?? 0}
-            description="All tests created by this teacher."
+            title="Tests Generated"
+            value={actionSummary.totalTestsGenerated}
+            description="Custom MCQ test sets created"
             icon={<BookOpenCheck className="h-5 w-5" />}
-            accent="bg-slate-900"
-          />
-          <StatCard
-            title="Published Tests"
-            value={statistics?.publishedTests ?? 0}
-            description="Tests already published."
-            icon={<CheckCircle2 className="h-5 w-5" />}
-            accent="bg-emerald-600"
-          />
-          <StatCard
-            title="Draft Tests"
-            value={statistics?.draftTests ?? 0}
-            description="Tests still in draft state."
-            icon={<Clock3 className="h-5 w-5" />}
-            accent="bg-amber-600"
-          />
-          <StatCard
-            title="Total Questions"
-            value={statistics?.totalQuestionsGenerated ?? 0}
-            description="Questions generated across all tests."
-            icon={<GraduationCap className="h-5 w-5" />}
-            accent="bg-blue-600"
-          />
-          <StatCard
-            title="Total Students"
-            value={statistics?.totalStudents ?? 0}
-            description="Distinct students who attempted tests."
-            icon={<Users className="h-5 w-5" />}
-            accent="bg-cyan-600"
-          />
-          <StatCard
-            title="Active Students"
-            value={statistics?.activeStudents ?? 0}
-            description="Students active in the last 30 days."
-            icon={<Users2 className="h-5 w-5" />}
             accent="bg-violet-600"
           />
           <StatCard
-            title="Average Score"
-            value={statistics?.averageStudentScore !== null && statistics?.averageStudentScore !== undefined ? `${statistics.averageStudentScore}%` : notAvailable}
-            description="Average score across student attempts."
-            icon={<CheckCircle2 className="h-5 w-5" />}
-            accent="bg-rose-600"
+            title="Questions Created"
+            value={actionSummary.totalQuestionsGenerated}
+            description="Total question items authored"
+            icon={<Shield className="h-5 w-5" />}
+            accent="bg-indigo-600"
+          />
+          <StatCard
+            title="Total Students"
+            value={actionSummary.totalStudents}
+            description="Students enrolled under teacher"
+            icon={<Users className="h-5 w-5" />}
+            accent="bg-blue-600"
+          />
+          <StatCard
+            title="Active Students"
+            value={actionSummary.activeStudents}
+            description="Engaged in recent tests"
+            icon={<Users2 className="h-5 w-5" />}
+            accent="bg-emerald-600"
           />
         </div>
 
-        <Card className="rounded-[1.75rem] border-slate-200/80 bg-white/95 shadow-xl shadow-slate-200/50">
-          <CardHeader>
-              <CardTitle className="text-xl font-bold text-slate-900">
-              Profile Information
-              </CardTitle>
-              <CardDescription className="text-slate-600">
-              Requested profile fields are shown where available and marked as not available otherwise.
-              </CardDescription>
+        {/* Profile Details & Metadata */}
+        <Card className="rounded-3xl border border-slate-200/90 bg-white shadow-sm overflow-hidden">
+          <CardHeader className="border-b border-slate-100 bg-slate-50/50 p-5">
+            <CardTitle className="text-base font-bold text-slate-900">
+              Teacher Profile Details
+            </CardTitle>
+            <CardDescription className="text-xs text-slate-500">
+              Verified teacher metadata and system credentials.
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              <DetailItem label="Full Name" value={teacher.fullName} />
-              <DetailItem label="Email" value={teacher.email} />
-              <DetailItem label="School" value={teacher.school} />
-              <DetailItem label="Qualification" value={teacher.qualification} />
-              <DetailItem label="Subjects" value={teacher.subjects} />
-              <DetailItem label="Experience" value={teacher.experience} />
-              <DetailItem label="Board" value={teacher.board} />
-              <DetailItem label="Country" value={teacher.country} />
-              <DetailItem label="State" value={teacher.state} />
-              <DetailItem label="City" value={teacher.city} />
-              <DetailItem label="Joined Date" value={joinedDate} />
-              <DetailItem label="Last Login" value={teacher.lastLogin} />
-            </div>
-
-            <Separator className="my-6" />
-
-            <div className="flex flex-wrap gap-3">
-              <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
-                Verification Status: {teacher.verified ? "Verified" : "Unverified"}
-              </Badge>
-              <Badge className={teacher.approved ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100" : "bg-amber-100 text-amber-800 hover:bg-amber-100"}>
-                Approval Status: {teacher.approved ? "Approved" : "Pending"}
-              </Badge>
-            </div>
+          <CardContent className="p-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <DetailItem label="Full Name" value={teacher.fullName} />
+            <DetailItem label="Username" value={teacher.username} />
+            <DetailItem label="Email Address" value={teacher.email} />
+            <DetailItem label="School / Institution" value={teacher.school} />
+            <DetailItem label="Qualification" value={teacher.qualification} />
+            <DetailItem label="Subjects Taught" value={teacher.subjects} />
+            <DetailItem label="Teaching Experience" value={teacher.experience} />
+            <DetailItem label="Board / Curriculum" value={teacher.board} />
+            <DetailItem label="Country" value={teacher.country} />
           </CardContent>
         </Card>
 
-        <div className="grid gap-6 xl:grid-cols-3">
-          <Card className="rounded-[1.75rem] border-slate-200/80 bg-white/95 shadow-xl shadow-slate-200/50 xl:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-xl font-bold text-slate-900">
-                Recent Tests
+        {/* Tests & Activity Grid */}
+        <div className="grid gap-6 xl:grid-cols-2">
+          {/* Recent Tests Created */}
+          <Card className="rounded-3xl border border-slate-200/90 bg-white shadow-sm overflow-hidden">
+            <CardHeader className="border-b border-slate-100 bg-slate-50/50 p-5">
+              <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <FileText className="h-4 w-4 text-violet-600" />
+                Recent Tests Generated
               </CardTitle>
-              <CardDescription className="text-slate-600">
-                Latest tests created by this teacher.
+              <CardDescription className="text-xs text-slate-500">
+                Latest test papers generated by this teacher.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-5">
               {recentTests.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center text-sm text-slate-600">
-                  No recent tests available.
+                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-8 text-center text-xs text-slate-500">
+                  No custom tests created by this teacher yet.
                 </div>
               ) : (
-                <div className="overflow-hidden rounded-[1.25rem] border border-slate-200">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Title</TableHead>
-                        <TableHead>Subject</TableHead>
-                        <TableHead>Class</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Questions</TableHead>
-                        <TableHead>Created</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {recentTests.map((test) => (
-                        <TableRow key={test.id}>
-                          <TableCell className="font-medium text-slate-900">{test.title}</TableCell>
-                          <TableCell className="text-slate-600">{test.subject}</TableCell>
-                          <TableCell className="text-slate-600">{test.classLevel ?? "Not set"}</TableCell>
-                          <TableCell className="text-slate-600">{test.status}</TableCell>
-                          <TableCell className="text-slate-600">{test.totalQuestions}</TableCell>
-                          <TableCell className="text-slate-600">{formatDate(test.createdAt, notAvailable)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                <div className="space-y-3">
+                  {recentTests.map((test) => (
+                    <div key={test.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-slate-900 text-sm truncate">{test.title}</p>
+                        <p className="text-xs text-slate-500 truncate">{test.subject} • Class {test.classLevel} • {test.totalQuestions} Qs</p>
+                      </div>
+                      <Badge variant="outline" className="shrink-0 rounded-lg border-slate-200 bg-white font-mono text-[10px] text-slate-600">
+                        {test.createdAt}
+                      </Badge>
+                    </div>
+                  ))}
                 </div>
               )}
             </CardContent>
           </Card>
 
-          <Card className="rounded-[1.75rem] border-slate-200/80 bg-white/95 shadow-xl shadow-slate-200/50">
-            <CardHeader>
-              <CardTitle className="text-xl font-bold text-slate-900">
-                Recent Student Activity
+          {/* Activity Timeline */}
+          <Card className="rounded-3xl border border-slate-200/90 bg-white shadow-sm overflow-hidden">
+            <CardHeader className="border-b border-slate-100 bg-slate-50/50 p-5">
+              <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Clock3 className="h-4 w-4 text-blue-600" />
+                Activity Timeline
               </CardTitle>
-              <CardDescription className="text-slate-600">
-                Latest submissions tied to this teacher's tests.
+              <CardDescription className="text-xs text-slate-500">
+                Combined history of test creation and student engagement.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {recentStudentActivity.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center text-sm text-slate-600">
-                  No recent student activity.
+            <CardContent className="p-5">
+              {activityTimeline.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-8 text-center text-xs text-slate-500">
+                  No recorded activity entries for this teacher.
                 </div>
               ) : (
-                recentStudentActivity.map((activity) => (
-                  <div key={activity.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="font-semibold text-slate-900">{activity.studentName}</p>
-                        <p className="text-sm text-slate-600">{activity.testTitle}</p>
+                <div className="space-y-3">
+                  {activityTimeline.map((item) => (
+                    <div key={item.id} className="flex items-start justify-between gap-3 rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-slate-900 text-sm">{item.title}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{item.description}</p>
+                        <p className="text-[10px] font-mono text-slate-400 mt-1">{item.createdAt}</p>
                       </div>
-                      <Badge className="bg-slate-900 text-white hover:bg-slate-900">
-                        {activity.score}/{activity.totalQuestions}
+                      <Badge className={item.type === "test" ? "bg-violet-50 text-violet-700 border-violet-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"}>
+                        {item.type === "test" ? "Test" : "Student"}
                       </Badge>
                     </div>
-                    <p className="mt-2 text-xs text-slate-500">
-                      {formatDate(activity.createdAt, notAvailable)}
-                    </p>
-                  </div>
-                ))
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>
         </div>
-
-        <Card className="rounded-[1.75rem] border-slate-200/80 bg-white/95 shadow-xl shadow-slate-200/50">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold text-slate-900">
-              Teacher Activity Timeline
-            </CardTitle>
-            <CardDescription className="text-slate-600">
-              A combined timeline of test creation and student activity.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {activityTimeline.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center text-sm text-slate-600">
-                No activity to display yet.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {activityTimeline.map((item) => (
-                  <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="font-semibold text-slate-900">{item.title}</p>
-                        <p className="text-sm text-slate-600">{item.description}</p>
-                      </div>
-                      <Badge className={item.type === "test" ? "bg-blue-100 text-blue-800 hover:bg-blue-100" : "bg-emerald-100 text-emerald-800 hover:bg-emerald-100"}>
-                        {item.type === "test" ? "Test" : "Student Activity"}
-                      </Badge>
-                    </div>
-                    <p className="mt-2 text-xs text-slate-500">{formatDate(item.createdAt, notAvailable)}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      </main>
 
       <DeleteAccountDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title="Delete teacher account permanently?"
-        description="This removes the teacher profile and all safely linked test data."
+        title="Delete Teacher Account Permanently?"
+        description="This removes the teacher profile and all safely linked test data from PostgreSQL."
         summaryItems={[
-          { label: "Teacher", value: teacher.fullName || teacher.username },
+          { label: "Teacher", value: displayName },
           { label: "Email", value: teacher.email },
           { label: "Tests to remove", value: String(actionSummary.totalTestsGenerated) },
           { label: "Questions to remove", value: String(actionSummary.totalQuestionsGenerated) },
-          { label: "Submissions to remove", value: String(actionSummary.recentStudentActivity) },
         ]}
         isDeleting={deleteMutation.isPending}
         onConfirm={() => deleteMutation.mutate()}
+      />
+
+      <SendEmailModal
+        open={emailModalOpen}
+        onOpenChange={setEmailModalOpen}
+        recipientType="teacher"
+        recipientId={String(teacherId)}
+        recipientName={displayName}
+        recipientEmail={teacher.email || ""}
       />
     </div>
   );

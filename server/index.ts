@@ -61,6 +61,7 @@ app.use((req, res, next) => {
 (async () => {
   await ensureBaseTables();
   const server = await registerRoutes(app);
+  log("✔ Registered admin email routes: POST /api/admin/send-email, GET /api/admin/email-health");
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     res.status(err.status || 500).json({

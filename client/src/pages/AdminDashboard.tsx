@@ -16,6 +16,13 @@ import {
   XCircle,
   ArrowRight,
   RefreshCw,
+  X,
+  UserCheck,
+  UserX,
+  Eye,
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -24,7 +31,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { fetchAdminSession, logoutAdmin, type AdminSession } from "@/lib/adminAuth";
 import {
@@ -42,13 +49,21 @@ import AdminAnalytics from "@/pages/AdminAnalytics";
 const DASHBOARD_QUERY_KEY = ["admin", "dashboard"];
 const TEACHERS_QUERY_KEY = ["admin", "teachers", "all"];
 const STUDENTS_QUERY_KEY = ["admin", "students", "all"];
+const ITEMS_PER_PAGE = 10;
 
-const formatDate = (value: string | null, fallback = "") => {
+const formatDate = (value: string | null, fallback = "N/A") => {
   if (!value) return fallback;
   return new Intl.DateTimeFormat("en-IN", {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
+};
+
+const getInitials = (name: string) => {
+  if (!name) return "A";
+  const parts = name.trim().split(" ");
+  if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  return name.slice(0, 2).toUpperCase();
 };
 
 const matchesSearch = (value: string | number | null | undefined, search: string) => {
@@ -70,7 +85,7 @@ function StatCard({
   accent: string;
 }) {
   return (
-    <Card className="group relative overflow-hidden rounded-[1.75rem] border-slate-200/80 bg-white/90 shadow-[0_18px_60px_rgba(15,23,42,0.08)] backdrop-blur transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_24px_70px_rgba(15,23,42,0.12)]">
+    <Card className="group relative overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white/90 shadow-[0_18px_60px_rgba(15,23,42,0.08)] backdrop-blur transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_24px_70px_rgba(15,23,42,0.12)]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.12),transparent_45%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
       <CardContent className="relative p-5">
         <div className="flex items-start justify-between gap-4">
@@ -84,7 +99,7 @@ function StatCard({
             <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
           </div>
 
-          <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${accent} text-white shadow-lg ring-1 ring-white/60`}>
+          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${accent} text-white shadow-lg ring-1 ring-white/60`}>
             {icon}
           </div>
         </div>
@@ -100,18 +115,28 @@ function StatusBadge({
   value: string;
   variant: "green" | "amber" | "slate" | "rose" | "blue";
 }) {
-  const className =
-    variant === "green"
-      ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100"
-      : variant === "amber"
-        ? "bg-amber-100 text-amber-800 hover:bg-amber-100"
-        : variant === "rose"
-          ? "bg-rose-100 text-rose-800 hover:bg-rose-100"
-          : variant === "blue"
-            ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
-            : "bg-slate-100 text-slate-700 hover:bg-slate-100";
+  const styles = {
+    green: "bg-emerald-50 text-emerald-700 border-emerald-200/80",
+    amber: "bg-amber-50 text-amber-700 border-amber-200/80",
+    rose: "bg-rose-50 text-rose-700 border-rose-200/80",
+    blue: "bg-blue-50 text-blue-700 border-blue-200/80",
+    slate: "bg-slate-50 text-slate-700 border-slate-200/80",
+  }[variant];
 
-  return <Badge className={className}>{value}</Badge>;
+  const dotStyles = {
+    green: "bg-emerald-500",
+    amber: "bg-amber-500 animate-pulse",
+    rose: "bg-rose-500",
+    blue: "bg-blue-500",
+    slate: "bg-slate-400",
+  }[variant];
+
+  return (
+    <Badge className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${styles} hover:${styles}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${dotStyles}`} />
+      {value}
+    </Badge>
+  );
 }
 
 function TeacherTable({
@@ -131,125 +156,252 @@ function TeacherTable({
   onViewDetails: (teacherId: string) => void;
   isMutating: boolean;
 }) {
-  const filteredTeachers = useMemo(
-    () =>
-      teachers.filter((teacher) =>
-        [
-          teacher.fullName,
-          teacher.username,
-          teacher.email,
-          teacher.school,
-          teacher.approved ? "approved" : "pending",
-          teacher.verified ? "verified" : "unverified",
-        ].some((value) => matchesSearch(value, search)),
-      ),
-    [search, teachers],
-  );
+  const [filterStatus, setFilterStatus] = useState<"all" | "pending" | "approved">("all");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const filteredTeachers = useMemo(() => {
+    return teachers.filter((teacher) => {
+      const matchesFilter =
+        filterStatus === "all"
+          ? true
+          : filterStatus === "pending"
+            ? !teacher.approved
+            : teacher.approved;
+
+      const matchesText = [
+        teacher.fullName,
+        teacher.username,
+        teacher.email,
+        teacher.school,
+        teacher.approved ? "approved" : "pending",
+        teacher.verified ? "verified" : "unverified",
+      ].some((value) => matchesSearch(value, search));
+
+      return matchesFilter && matchesText;
+    });
+  }, [filterStatus, search, teachers]);
+
+  const totalPages = Math.ceil(filteredTeachers.length / ITEMS_PER_PAGE) || 1;
+  const paginatedTeachers = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredTeachers.slice(start, start + ITEMS_PER_PAGE);
+  }, [currentPage, filteredTeachers]);
+
+  const pendingCount = useMemo(() => teachers.filter((t) => !t.approved).length, [teachers]);
+  const approvedCount = useMemo(() => teachers.filter((t) => t.approved).length, [teachers]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterStatus]);
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 rounded-[1.5rem] border border-slate-200/80 bg-gradient-to-br from-white to-slate-50 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.32em] text-slate-500">
-            Teachers
-          </p>
-          <p className="mt-1 text-sm text-slate-600">
-            Search across the full teacher directory.
-          </p>
+      {/* Control bar */}
+      <div className="flex flex-col gap-4 rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        {/* Filter Pills */}
+        <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 p-1">
+          <button
+            type="button"
+            onClick={() => setFilterStatus("all")}
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+              filterStatus === "all"
+                ? "bg-white text-slate-900 shadow-xs"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            All ({teachers.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterStatus("pending")}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+              filterStatus === "pending"
+                ? "bg-amber-500 text-white shadow-xs"
+                : "text-amber-700 hover:bg-amber-100/60"
+            }`}
+          >
+            <Clock3 className="h-3.5 w-3.5" />
+            Pending ({pendingCount})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterStatus("approved")}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+              filterStatus === "approved"
+                ? "bg-emerald-600 text-white shadow-xs"
+                : "text-emerald-700 hover:bg-emerald-100/60"
+            }`}
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Approved ({approvedCount})
+          </button>
         </div>
 
-        <div className="relative w-full sm:max-w-sm">
+        {/* Search */}
+        <div className="relative w-full sm:max-w-xs">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
             value={search}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search teachers..."
-            className="h-11 rounded-2xl border-slate-200 bg-white pl-9 shadow-sm"
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Search name, email, school..."
+            className="h-10 rounded-xl border-slate-200 bg-slate-50/50 pl-9 pr-8 text-sm focus-visible:bg-white focus-visible:ring-blue-500"
           />
+          {search ? (
+            <button
+              type="button"
+              onClick={() => onSearchChange("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          ) : null}
         </div>
       </div>
 
+      {/* Table Card */}
       {filteredTeachers.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-slate-300 bg-white/90 px-6 py-10 text-center text-sm text-slate-600 shadow-sm">
-          No teachers match your search.
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 px-6 py-12 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-200/80 text-slate-500">
+            <UserX className="h-6 w-6" />
+          </div>
+          <h3 className="mt-3 text-base font-bold text-slate-900">No teachers match criteria</h3>
+          <p className="mt-1 text-xs text-slate-500">
+            {search ? `No teacher records match "${search}".` : "No teacher accounts in this view."}
+          </p>
+          {search ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onSearchChange("")}
+              className="mt-4 rounded-xl border-slate-300 text-xs"
+            >
+              Clear Search
+            </Button>
+          ) : null}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white/95 shadow-[0_20px_70px_rgba(15,23,42,0.06)]">
+        <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm">
           <Table>
-            <TableHeader>
-              <TableRow className="bg-slate-50/80">
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>School</TableHead>
-                <TableHead>Approval Status</TableHead>
-                <TableHead>Verification Status</TableHead>
-                <TableHead>Joined Date</TableHead>
-                <TableHead className="text-right">View Details</TableHead>
+            <TableHeader className="bg-slate-50/80">
+              <TableRow className="border-slate-200/80 hover:bg-transparent">
+                <TableHead className="font-semibold text-slate-700">Teacher</TableHead>
+                <TableHead className="font-semibold text-slate-700">School</TableHead>
+                <TableHead className="font-semibold text-slate-700">Approval</TableHead>
+                <TableHead className="font-semibold text-slate-700">Email Verification</TableHead>
+                <TableHead className="font-semibold text-slate-700">Joined</TableHead>
+                <TableHead className="text-right font-semibold text-slate-700">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredTeachers.map((teacher) => (
-                <TableRow key={teacher.id} className="transition-colors hover:bg-slate-50/70">
-                  <TableCell>
-                    <div className="space-y-1">
-                      <p className="font-semibold text-slate-950">{teacher.fullName || teacher.username}</p>
-                      <p className="text-xs text-slate-500">@{teacher.username}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-slate-600">{teacher.email}</TableCell>
-                  <TableCell className="text-slate-600">{teacher.school || "Not provided"}</TableCell>
-                  <TableCell>
-                    <StatusBadge
-                      value={teacher.approved ? "Approved" : "Pending"}
-                      variant={teacher.approved ? "green" : "amber"}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge
-                      value={teacher.verified ? "Verified" : "Unverified"}
-                      variant={teacher.verified ? "blue" : "slate"}
-                    />
-                  </TableCell>
-                  <TableCell className="text-slate-600">{formatDate(teacher.createdAt)}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-col items-end gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onViewDetails(teacher.id)}
-                        className="rounded-xl border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
-                      >
-                        View Details
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => onApprove(teacher.id)}
-                          disabled={isMutating || teacher.approved}
-                          className="rounded-xl bg-emerald-600 text-white shadow-sm hover:bg-emerald-700"
-                        >
-                          Approve
-                        </Button>
+              {paginatedTeachers.map((teacher) => {
+                const displayName = teacher.fullName || teacher.username;
+                return (
+                  <TableRow key={teacher.id} className="border-slate-100 transition-colors hover:bg-slate-50/70">
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-100 font-bold text-blue-700 text-xs">
+                          {getInitials(displayName)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-slate-900 text-sm truncate">{displayName}</p>
+                          <p className="text-xs font-mono text-slate-500 truncate">{teacher.email}</p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-slate-700 text-xs">
+                      {teacher.school || <span className="italic text-slate-400">Not provided</span>}
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge
+                        value={teacher.approved ? "Approved" : "Pending"}
+                        variant={teacher.approved ? "green" : "amber"}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge
+                        value={teacher.verified ? "Verified" : "Unverified"}
+                        variant={teacher.verified ? "blue" : "slate"}
+                      />
+                    </TableCell>
+                    <TableCell className="text-xs text-slate-500 whitespace-nowrap">
+                      {formatDate(teacher.createdAt)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-end gap-1.5">
                         <Button
                           type="button"
                           size="sm"
                           variant="outline"
-                          onClick={() => onReject(teacher.id)}
-                          disabled={isMutating}
-                          className="rounded-xl border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
+                          onClick={() => onViewDetails(teacher.id)}
+                          className="h-8 rounded-xl border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100"
                         >
-                          Reject
+                          <Eye className="mr-1 h-3.5 w-3.5" />
+                          View
                         </Button>
+                        {!teacher.approved ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => onApprove(teacher.id)}
+                            disabled={isMutating}
+                            className="h-8 rounded-xl bg-emerald-600 text-xs font-semibold text-white hover:bg-emerald-700"
+                          >
+                            <UserCheck className="mr-1 h-3.5 w-3.5" />
+                            Approve
+                          </Button>
+                        ) : (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => onReject(teacher.id)}
+                            disabled={isMutating}
+                            className="h-8 rounded-xl border-amber-300 text-xs font-semibold text-amber-800 hover:bg-amber-50"
+                          >
+                            Suspend
+                          </Button>
+                        )}
                       </div>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 ? (
+            <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/50 px-4 py-3 text-xs text-slate-500">
+              <p>
+                Showing <span className="font-semibold text-slate-900">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> to{" "}
+                <span className="font-semibold text-slate-900">{Math.min(currentPage * ITEMS_PER_PAGE, filteredTeachers.length)}</span> of{" "}
+                <span className="font-semibold text-slate-900">{filteredTeachers.length}</span> teachers
+              </p>
+              <div className="flex items-center gap-1.5">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="h-7 w-7 p-0 rounded-lg border-slate-200"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="px-2 font-mono font-semibold text-slate-700">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="h-7 w-7 p-0 rounded-lg border-slate-200"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </div>
       )}
     </div>
@@ -267,6 +419,8 @@ function StudentTable({
   onSearchChange: (value: string) => void;
   onViewDetails: (studentId: string) => void;
 }) {
+  const [currentPage, setCurrentPage] = useState(1);
+
   const filteredStudents = useMemo(
     () =>
       students.filter((student) =>
@@ -280,60 +434,92 @@ function StudentTable({
     [search, students],
   );
 
+  const totalPages = Math.ceil(filteredStudents.length / ITEMS_PER_PAGE) || 1;
+  const paginatedStudents = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredStudents.slice(start, start + ITEMS_PER_PAGE);
+  }, [currentPage, filteredStudents]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 rounded-[1.5rem] border border-slate-200/80 bg-gradient-to-br from-white to-slate-50 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      {/* Control Bar */}
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.32em] text-slate-500">
-            Students
-          </p>
-          <p className="mt-1 text-sm text-slate-600">
-            Search across registered student profiles.
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Student Directory ({students.length} Total)
           </p>
         </div>
 
-        <div className="relative w-full sm:max-w-sm">
+        <div className="relative w-full sm:max-w-xs">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
             value={search}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search students..."
-            className="h-11 rounded-2xl border-slate-200 bg-white pl-9 shadow-sm"
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Search name, email, class, board..."
+            className="h-10 rounded-xl border-slate-200 bg-slate-50/50 pl-9 pr-8 text-sm focus-visible:bg-white focus-visible:ring-blue-500"
           />
+          {search ? (
+            <button
+              type="button"
+              onClick={() => onSearchChange("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          ) : null}
         </div>
       </div>
 
+      {/* Table Card */}
       {filteredStudents.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-slate-300 bg-white/90 px-6 py-10 text-center text-sm text-slate-600 shadow-sm">
-          No students match your search.
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 px-6 py-12 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-200/80 text-slate-500">
+            <UserX className="h-6 w-6" />
+          </div>
+          <h3 className="mt-3 text-base font-bold text-slate-900">No students found</h3>
+          <p className="mt-1 text-xs text-slate-500">
+            {search ? `No student records match "${search}".` : "No registered student accounts in database."}
+          </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white/95 shadow-[0_20px_70px_rgba(15,23,42,0.06)]">
+        <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm">
           <Table>
-            <TableHeader>
-              <TableRow className="bg-slate-50/80">
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Class</TableHead>
-                <TableHead>Board</TableHead>
-                <TableHead>Joined Date</TableHead>
-                <TableHead className="text-right">View Details</TableHead>
+            <TableHeader className="bg-slate-50/80">
+              <TableRow className="border-slate-200/80 hover:bg-transparent">
+                <TableHead className="font-semibold text-slate-700">Student</TableHead>
+                <TableHead className="font-semibold text-slate-700">Class</TableHead>
+                <TableHead className="font-semibold text-slate-700">Board</TableHead>
+                <TableHead className="font-semibold text-slate-700">Registration Date</TableHead>
+                <TableHead className="text-right font-semibold text-slate-700">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredStudents.map((student) => (
-                <TableRow key={student.id} className="transition-colors hover:bg-slate-50/70">
-                  <TableCell className="font-semibold text-slate-950">
-                    {student.name}
+              {paginatedStudents.map((student) => (
+                <TableRow key={student.id} className="border-slate-100 transition-colors hover:bg-slate-50/70">
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-100 font-bold text-cyan-800 text-xs">
+                        {getInitials(student.name)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-slate-900 text-sm truncate">{student.name}</p>
+                        <p className="text-xs font-mono text-slate-500 truncate">{student.email}</p>
+                      </div>
+                    </div>
                   </TableCell>
-                  <TableCell className="text-slate-600">{student.email}</TableCell>
-                  <TableCell className="text-slate-600">
-                    {student.classLevel ?? "Not set"}
+                  <TableCell>
+                    <Badge className="bg-cyan-50 text-cyan-800 border-cyan-200/80 font-medium text-xs">
+                      Class {student.classLevel ?? "N/A"}
+                    </Badge>
                   </TableCell>
-                  <TableCell className="text-slate-600">
-                    {student.board || "Not provided"}
+                  <TableCell className="text-xs text-slate-700">
+                    {student.board || <span className="italic text-slate-400">Not set</span>}
                   </TableCell>
-                  <TableCell className="text-slate-600">
+                  <TableCell className="text-xs text-slate-500 whitespace-nowrap">
                     {formatDate(student.createdAt)}
                   </TableCell>
                   <TableCell>
@@ -343,10 +529,10 @@ function StudentTable({
                         size="sm"
                         variant="outline"
                         onClick={() => onViewDetails(student.id)}
-                        className="rounded-xl border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
+                        className="h-8 rounded-xl border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100"
                       >
-                        View Details
-                        <ArrowRight className="ml-2 h-4 w-4" />
+                        <Eye className="mr-1.5 h-3.5 w-3.5" />
+                        View Profile
                       </Button>
                     </div>
                   </TableCell>
@@ -354,6 +540,40 @@ function StudentTable({
               ))}
             </TableBody>
           </Table>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 ? (
+            <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/50 px-4 py-3 text-xs text-slate-500">
+              <p>
+                Showing <span className="font-semibold text-slate-900">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> to{" "}
+                <span className="font-semibold text-slate-900">{Math.min(currentPage * ITEMS_PER_PAGE, filteredStudents.length)}</span> of{" "}
+                <span className="font-semibold text-slate-900">{filteredStudents.length}</span> students
+              </p>
+              <div className="flex items-center gap-1.5">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="h-7 w-7 p-0 rounded-lg border-slate-200"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="px-2 font-mono font-semibold text-slate-700">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="h-7 w-7 p-0 rounded-lg border-slate-200"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </div>
       )}
     </div>
@@ -369,6 +589,7 @@ export default function AdminDashboard() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [teacherSearch, setTeacherSearch] = useState("");
   const [studentSearch, setStudentSearch] = useState("");
+  const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
     let cancelled = false;
@@ -425,21 +646,25 @@ export default function AdminDashboard() {
     await queryClient.invalidateQueries({ queryKey: DASHBOARD_QUERY_KEY });
     await queryClient.invalidateQueries({ queryKey: TEACHERS_QUERY_KEY });
     await queryClient.invalidateQueries({ queryKey: STUDENTS_QUERY_KEY });
+    toast({
+      title: "Data Refreshed",
+      description: "Admin dashboard stats and tables updated.",
+    });
   };
 
   const approveMutation = useMutation({
     mutationFn: approveTeacher,
     onSuccess: async () => {
       toast({
-        title: "Teacher approved",
-        description: "The teacher can now access the dashboard.",
+        title: "Teacher Approved",
+        description: "The teacher account has been activated.",
       });
       await refreshData();
     },
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "Approval failed",
+        title: "Approval Failed",
         description: error.message || "Could not approve teacher.",
       });
     },
@@ -449,15 +674,15 @@ export default function AdminDashboard() {
     mutationFn: rejectTeacher,
     onSuccess: async () => {
       toast({
-        title: "Teacher rejected",
-        description: "The approval flag has been cleared.",
+        title: "Teacher Suspended",
+        description: "The teacher account has been suspended.",
       });
       await refreshData();
     },
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "Rejection failed",
+        title: "Rejection Failed",
         description: error.message || "Could not reject teacher.",
       });
     },
@@ -468,15 +693,15 @@ export default function AdminDashboard() {
       setIsLoggingOut(true);
       await logoutAdmin();
       toast({
-        title: t("admin_dashboard_logged_out"),
-        description: t("admin_dashboard_cleared"),
+        title: "Logged Out",
+        description: "Your admin session has ended.",
       });
       navigate("/admin-login", { replace: true });
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: t("admin_dashboard_logout_failed"),
-        description: error.message || t("admin_dashboard_logout_error"),
+        title: "Logout Failed",
+        description: error.message || "Could not end session.",
       });
     } finally {
       setIsLoggingOut(false);
@@ -494,307 +719,275 @@ export default function AdminDashboard() {
   const handleViewTeacher = (teacherId: string) => navigate(`/admin/teachers/${teacherId}`);
   const handleViewStudent = (studentId: string) => navigate(`/admin/students/${studentId}`);
 
+  const approvalRate = useMemo(() => {
+    if (!stats || !stats.totalTeachers) return "0%";
+    return `${Math.round((stats.approvedTeachers / stats.totalTeachers) * 100)}%`;
+  }, [stats]);
+
+  const activeStudentRate = useMemo(() => {
+    if (!stats || !stats.totalStudents) return "0%";
+    return `${Math.round((stats.activeStudents / stats.totalStudents) * 100)}%`;
+  }, [stats]);
+
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.12),transparent_28%),radial-gradient(circle_at_top_right,rgba(99,102,241,0.14),transparent_24%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_44%,#ffffff_100%)] px-4 py-8 sm:px-6 lg:px-8">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-[linear-gradient(180deg,rgba(15,23,42,0.08),transparent)] opacity-40" />
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-        <div className="grid gap-6 lg:grid-cols-[1.35fr_0.9fr]">
-          <Card className="relative overflow-hidden rounded-[2rem] border-slate-200/80 bg-slate-950 text-white shadow-[0_24px_80px_rgba(15,23,42,0.24)]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.35),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.18),transparent_28%)]" />
-            <CardHeader className="relative gap-6 p-7 sm:p-8">
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.34em] text-white/85">
-                  <Shield className="h-3.5 w-3.5" />
-                  Admin Control Center
-                </div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-100">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                  Live data
-                </div>
+    <div className="min-h-screen bg-slate-50/70 pb-16">
+      {/* Top Header Bar */}
+      <header className="sticky top-0 z-30 border-b border-slate-200/90 bg-white/85 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-500/20">
+              <Shield className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold tracking-tight text-slate-900 text-lg">MCQGyaan AI</span>
+                <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-[10px] font-bold tracking-wider uppercase px-2 py-0.2">
+                  Admin
+                </Badge>
               </div>
+              <p className="text-xs text-slate-500 font-medium">Executive Control Dashboard</p>
+            </div>
+          </div>
 
-              <div className="space-y-4">
-                <CardTitle className="max-w-3xl text-3xl font-black tracking-tight text-white sm:text-4xl">
-                  {t("admin_dashboard_summary")}
-                </CardTitle>
-                <CardDescription className="max-w-2xl text-base leading-7 text-slate-300">
-                  {t("admin_dashboard_desc")}
-                </CardDescription>
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-600 sm:flex">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="font-mono text-slate-800 font-semibold">{session?.email || "Super Admin"}</span>
+            </div>
 
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur">
-                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-slate-400">
-                    Signed in
-                  </p>
-                  <p className="mt-2 text-sm font-semibold text-white">
-                    {session?.email || "Loading..."}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur">
-                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-slate-400">
-                    Approval flow
-                  </p>
-                  <p className="mt-2 text-sm font-semibold text-white">
-                    Teachers, students, analytics
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur">
-                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-slate-400">
-                    Status
-                  </p>
-                  <p className="mt-2 text-sm font-semibold text-white">
-                    Secure admin session
-                  </p>
-                </div>
-              </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={refreshData}
+              disabled={isLoading}
+              className="h-9 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-100"
+            >
+              <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
 
-              <div className="flex flex-wrap gap-3 pt-1">
-                <Button
-                  type="button"
-                  onClick={refreshData}
-                  className="rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-black/10 hover:bg-slate-100"
-                >
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Refresh data
-                </Button>
-                <div className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200">
-                  <Sparkles className="h-4 w-4 text-emerald-300" />
-                  Premium admin workspace
-                </div>
-              </div>
-            </CardHeader>
-          </Card>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="h-9 rounded-xl text-rose-700 hover:bg-rose-50 hover:text-rose-800 font-medium"
+            >
+              <LogOut className="mr-1.5 h-3.5 w-3.5" />
+              Logout
+            </Button>
+          </div>
+        </div>
+      </header>
 
-          <Card className="overflow-hidden rounded-[2rem] border-slate-200/80 bg-white/85 shadow-[0_20px_70px_rgba(15,23,42,0.08)] backdrop-blur">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
-                    Session
-                  </p>
-                  <CardTitle className="mt-2 text-xl font-bold text-slate-950">
-                    Admin presence
-                  </CardTitle>
-                </div>
-                <div className="rounded-2xl bg-slate-950 px-3 py-2 text-xs font-semibold text-white shadow-lg shadow-slate-950/20">
-                  Protected
-                </div>
+      {/* Main Container */}
+      <main className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8 space-y-6">
+        {/* Banner Card */}
+        <div className="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-950 p-6 text-white shadow-xl sm:p-8">
+          <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-blue-600/20 blur-3xl" />
+          <div className="absolute -left-16 -bottom-16 h-64 w-64 rounded-full bg-emerald-600/15 blur-3xl" />
+
+          <div className="relative flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white/90">
+                <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+                Control Center
               </div>
-              <CardDescription className="text-slate-600">
-                A premium overview of access, approvals, and platform health.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="rounded-3xl border border-slate-200 bg-slate-50/90 p-4">
-                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-slate-500">
-                  Session owner
-                </p>
-                <p className="mt-2 text-sm font-semibold text-slate-950">
-                  {session?.email || "loading..."}
-                </p>
+              <h1 className="text-2xl font-black tracking-tight sm:text-3xl text-white">
+                Platform Overview
+              </h1>
+              <p className="max-w-2xl text-sm text-slate-300 leading-relaxed">
+                Manage teacher verification approvals, inspect student performance footprints, and track platform-wide custom test generation metrics.
+              </p>
+            </div>
+
+            {/* Quick Metrics */}
+            <div className="flex shrink-0 flex-wrap items-center gap-3">
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-center backdrop-blur">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Teacher Approval Rate</p>
+                <p className="mt-1 text-xl font-black text-emerald-400">{approvalRate}</p>
               </div>
-              <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-950 to-slate-800 p-4 text-white">
-                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-white/60">
-                  Management scope
-                </p>
-                <p className="mt-2 text-sm leading-6 text-slate-200">
-                  Approvals, analytics, and account operations now sit in a single polished workspace.
-                </p>
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-center backdrop-blur">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Active Student Ratio</p>
+                <p className="mt-1 text-xl font-black text-cyan-400">{activeStudentRate}</p>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleLogout}
-                disabled={isLoggingOut}
-                className="h-11 w-full rounded-2xl border-slate-300 bg-white font-semibold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50"
-              >
-                <XCircle className="mr-2 h-4 w-4" />
-                {isLoggingOut ? t("logging_out") : t("admin_dashboard_logout")}
-              </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {/* KPI Grid */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <StatCard
             title="Total Teachers"
             value={stats?.totalTeachers ?? (isLoading ? "..." : 0)}
-            description="All teachers in the system."
+            description="Registered educator profiles."
             icon={<GraduationCap className="h-5 w-5" />}
             accent="bg-slate-900"
           />
           <StatCard
             title="Approved Teachers"
             value={stats?.approvedTeachers ?? (isLoading ? "..." : 0)}
-            description="Teachers who can access the dashboard."
+            description="Verified & active teacher accounts."
             icon={<CheckCircle2 className="h-5 w-5" />}
             accent="bg-emerald-600"
           />
           <StatCard
-            title="Pending Teachers"
+            title="Pending Approval"
             value={stats?.pendingTeachers ?? (isLoading ? "..." : 0)}
-            description="Verified teachers waiting for approval."
+            description="Verified teachers awaiting admin signoff."
             icon={<Clock3 className="h-5 w-5" />}
             accent="bg-amber-600"
           />
           <StatCard
             title="Total Students"
             value={stats?.totalStudents ?? (isLoading ? "..." : 0)}
-            description="Registered student profiles."
+            description="Registered student accounts."
             icon={<Users className="h-5 w-5" />}
             accent="bg-blue-600"
           />
           <StatCard
-            title="Active Students"
+            title="Active Students (30D)"
             value={stats?.activeStudents ?? (isLoading ? "..." : 0)}
-            description="Distinct students active in the last 30 days."
+            description="Students active in the past 30 days."
             icon={<Users2 className="h-5 w-5" />}
             accent="bg-cyan-600"
           />
           <StatCard
-            title="Total Tests Generated"
+            title="Tests Generated"
             value={stats?.totalTestsGenerated ?? (isLoading ? "..." : 0)}
-            description="Custom tests created by teachers."
+            description="Custom MCQ tests created by teachers."
             icon={<BookOpenCheck className="h-5 w-5" />}
             accent="bg-violet-600"
           />
         </div>
 
-        <Card className="rounded-[2rem] border-slate-200/80 bg-white/88 shadow-[0_20px_70px_rgba(15,23,42,0.08)] backdrop-blur">
-          <CardHeader className="pb-4">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        {/* Workspace Card with Tabs */}
+        <Card className="rounded-3xl border border-slate-200/90 bg-white shadow-sm overflow-hidden">
+          <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-4">
+            <div className="flex items-center justify-between">
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-slate-500">
-                  <LayoutDashboard className="h-3.5 w-3.5" />
-                  Workspace
-                </div>
-                <CardTitle className="mt-3 text-2xl font-black tracking-tight text-slate-950">
-                  Admin controls
+                <CardTitle className="text-xl font-bold text-slate-900">
+                  Management Workspace
                 </CardTitle>
-                <CardDescription className="mt-2 max-w-2xl text-slate-600">
-                  Session owner: {session?.email || "loading..."}
+                <CardDescription className="text-xs text-slate-500 mt-1">
+                  Filter, inspect, and approve system accounts.
                 </CardDescription>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500 shadow-sm">
-                Teacher approval actions remain available from the Teachers tab.
               </div>
             </div>
           </CardHeader>
 
-          <CardContent className="pt-0">
-            <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="sticky top-4 z-10 grid h-auto w-full grid-cols-4 rounded-[1.25rem] border border-slate-200/70 bg-white/90 p-1 shadow-lg shadow-slate-200/60 backdrop-blur">
-                <TabsTrigger value="overview" className="rounded-xl px-4 py-2.5 data-[state=active]:bg-slate-950 data-[state=active]:text-white">
+          <CardContent className="p-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-4 rounded-xl border border-slate-200 bg-slate-100 p-1">
+                <TabsTrigger
+                  value="overview"
+                  className="rounded-lg py-2 text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs"
+                >
                   Overview
                 </TabsTrigger>
-                <TabsTrigger value="teachers" className="rounded-xl px-4 py-2.5 data-[state=active]:bg-slate-950 data-[state=active]:text-white">
-                  Teachers
+                <TabsTrigger
+                  value="teachers"
+                  className="rounded-lg py-2 text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs"
+                >
+                  Teachers ({teachers.length})
                 </TabsTrigger>
-                <TabsTrigger value="students" className="rounded-xl px-4 py-2.5 data-[state=active]:bg-slate-950 data-[state=active]:text-white">
-                  Students
+                <TabsTrigger
+                  value="students"
+                  className="rounded-lg py-2 text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs"
+                >
+                  Students ({students.length})
                 </TabsTrigger>
-                <TabsTrigger value="analytics" className="rounded-xl px-4 py-2.5 data-[state=active]:bg-slate-950 data-[state=active]:text-white">
+                <TabsTrigger
+                  value="analytics"
+                  className="rounded-lg py-2 text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs"
+                >
                   Analytics
                 </TabsTrigger>
               </TabsList>
 
+              {/* Tab 1: Overview */}
               <TabsContent value="overview" className="mt-6 space-y-6">
                 <div className="grid gap-4 lg:grid-cols-2">
-                  <Card className="rounded-[1.75rem] border-slate-200/80 bg-gradient-to-br from-white to-slate-50 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
-                    <CardHeader>
-                      <div className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-slate-500">
-                        <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
-                        Overview
-                      </div>
-                      <CardTitle className="text-lg font-bold text-slate-950">
-                        Overview summary
-                      </CardTitle>
-                      <CardDescription className="text-slate-600">
-                        Live counts from the existing teacher and student tables.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid gap-3 sm:grid-cols-2">
-                      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Teachers</p>
-                        <p className="mt-2 text-2xl font-black text-slate-900">{stats?.totalTeachers ?? 0}</p>
-                        <p className="text-sm text-slate-600">Total</p>
-                      </div>
-                      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Approved</p>
-                        <p className="mt-2 text-2xl font-black text-slate-900">{stats?.approvedTeachers ?? 0}</p>
-                        <p className="text-sm text-slate-600">Teachers</p>
-                      </div>
-                      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Pending</p>
-                        <p className="mt-2 text-2xl font-black text-slate-900">{stats?.pendingTeachers ?? 0}</p>
-                        <p className="text-sm text-slate-600">Teachers</p>
-                      </div>
-                      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Students</p>
-                        <p className="mt-2 text-2xl font-black text-slate-900">{stats?.totalStudents ?? 0}</p>
-                        <p className="text-sm text-slate-600">Registered</p>
-                      </div>
-                      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Active</p>
-                        <p className="mt-2 text-2xl font-black text-slate-900">{stats?.activeStudents ?? 0}</p>
-                        <p className="text-sm text-slate-600">Students</p>
-                      </div>
-                      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Tests</p>
-                        <p className="mt-2 text-2xl font-black text-slate-900">{stats?.totalTestsGenerated ?? 0}</p>
-                        <p className="text-sm text-slate-600">Generated</p>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <div className="rounded-2xl border border-slate-200/90 bg-slate-50/50 p-5">
+                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                      <GraduationCap className="h-5 w-5 text-blue-600" />
+                      Teacher Management Summary
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1">Review approval queue and teacher counts.</p>
 
-                  <Card className="rounded-[1.75rem] border-slate-200/80 bg-gradient-to-br from-slate-950 to-slate-800 text-white shadow-[0_18px_60px_rgba(15,23,42,0.12)]">
-                    <CardHeader>
-                      <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-slate-300">
-                        <Shield className="h-3.5 w-3.5 text-cyan-300" />
-                        Session
+                    <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total</p>
+                        <p className="mt-1 text-2xl font-black text-slate-900">{stats?.totalTeachers ?? 0}</p>
                       </div>
-                      <CardTitle className="text-lg font-bold text-white">
-                        Session status
-                      </CardTitle>
-                      <CardDescription className="text-slate-300">
-                        Protected by the admin session cookie.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
-                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-                          Signed in as
-                        </p>
-                        <p className="mt-2 text-lg font-bold text-white">
-                          {session?.email || "Loading..."}
-                        </p>
+                      <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Approved</p>
+                        <p className="mt-1 text-2xl font-black text-emerald-600">{stats?.approvedTeachers ?? 0}</p>
                       </div>
-                      <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
-                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-                          Teacher approvals
-                        </p>
-                        <p className="mt-2 text-sm leading-6 text-slate-200">
-                          Approval and rejection actions still use the existing workflow, now surfaced from the management table.
-                        </p>
+                      <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pending</p>
+                        <p className="mt-1 text-2xl font-black text-amber-600">{stats?.pendingTeachers ?? 0}</p>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+
+                    <Button
+                      onClick={() => setActiveTab("teachers")}
+                      className="mt-4 w-full rounded-xl bg-slate-900 text-xs font-semibold text-white hover:bg-slate-800"
+                    >
+                      Manage Teacher Directory
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200/90 bg-slate-50/50 p-5">
+                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                      <Users className="h-5 w-5 text-cyan-600" />
+                      Student Footprint Summary
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1">Active student engagement and test generation.</p>
+
+                    <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Registered</p>
+                        <p className="mt-1 text-2xl font-black text-slate-900">{stats?.totalStudents ?? 0}</p>
+                      </div>
+                      <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Active (30D)</p>
+                        <p className="mt-1 text-2xl font-black text-cyan-600">{stats?.activeStudents ?? 0}</p>
+                      </div>
+                      <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Tests Created</p>
+                        <p className="mt-1 text-2xl font-black text-violet-600">{stats?.totalTestsGenerated ?? 0}</p>
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={() => setActiveTab("students")}
+                      className="mt-4 w-full rounded-xl bg-slate-900 text-xs font-semibold text-white hover:bg-slate-800"
+                    >
+                      View Student Directory
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </TabsContent>
 
+              {/* Tab 2: Teachers */}
               <TabsContent value="teachers" className="mt-6">
                 <TeacherTable
                   teachers={teachers}
                   search={teacherSearch}
                   onSearchChange={setTeacherSearch}
-                  onApprove={(teacherId) => approveMutation.mutate(teacherId)}
-                  onReject={(teacherId) => rejectMutation.mutate(teacherId)}
+                  onApprove={(id) => approveMutation.mutate(id)}
+                  onReject={(id) => rejectMutation.mutate(id)}
                   onViewDetails={handleViewTeacher}
                   isMutating={isMutating}
                 />
               </TabsContent>
 
+              {/* Tab 3: Students */}
               <TabsContent value="students" className="mt-6">
                 <StudentTable
                   students={students}
@@ -804,19 +997,14 @@ export default function AdminDashboard() {
                 />
               </TabsContent>
 
+              {/* Tab 4: Analytics */}
               <TabsContent value="analytics" className="mt-6">
                 <AdminAnalytics />
               </TabsContent>
             </Tabs>
-
-            <Separator className="my-6" />
-
-            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 text-sm text-slate-600 shadow-sm">
-              Teacher approvals stay available in the Teachers tab, and the new detail routes are placeholders for the next phase.
-            </div>
           </CardContent>
         </Card>
-      </div>
+      </main>
     </div>
   );
 }

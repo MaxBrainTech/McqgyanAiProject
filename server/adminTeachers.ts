@@ -6,6 +6,8 @@ import { requireAdminSession } from "./adminAuth";
 import {
   sendTeacherApprovalEmail,
   sendTeacherRejectionEmail,
+  sendAdminPersonalEmail,
+  verifyTransporterConnection,
 } from "./services/emailService";
 import { storage } from "./storage";
 import { getServerAppUrl } from "./lib/appUrl";
@@ -1108,7 +1110,7 @@ const getAnalytics = async (): Promise<AdminAnalytics> => {
   };
 };
 
-const getStudentDetails = async (studentId: string): Promise<AdminStudentDetails | null> => {
+export const getStudentDetails = async (studentId: string): Promise<AdminStudentDetails | null> => {
   const profileResult = await pool.query(
     `
       SELECT id, user_id, full_name, display_name, email_address, class_level, board, medium, school, country, state, city, created_at, updated_at
@@ -1569,6 +1571,7 @@ const getStudentDeleteSummary = async (studentId: string): Promise<AdminStudentD
 };
 
 export function registerAdminTeacherRoutes(app: Express) {
+  console.log("[ADMIN EMAIL] POST /api/admin/send-email registered");
   app.get("/api/admin/dashboard", requireAdminSession, async (_req, res) => {
     try {
       const counts = await getTeacherCounts();
@@ -1912,5 +1915,106 @@ export function registerAdminTeacherRoutes(app: Express) {
       console.error("Failed to load teacher details:", error);
       return res.status(500).json({ error: "Failed to load teacher details" });
     }
+  });
+
+  app.post("/api/admin/send-email", requireAdminSession, async (req, res) => {
+    console.log("[ADMIN EMAIL] Request received for POST /api/admin/send-email");
+    try {
+      const { recipientType, recipientId, subject, message } = req.body || {};
+
+      console.log(`[ADMIN EMAIL] Recipient type: ${recipientType}, Recipient ID: ${recipientId}`);
+      console.log(`[ADMIN EMAIL] Subject: "${subject}", Message length: ${message?.length ?? 0} chars`);
+
+      if (!recipientType || !["teacher", "student"].includes(recipientType)) {
+        return res.status(400).json({ error: "Invalid recipient type. Must be 'teacher' or 'student'." });
+      }
+
+      if (!recipientId || typeof recipientId !== "string" || !recipientId.trim()) {
+        return res.status(400).json({ error: "Recipient ID is required." });
+      }
+
+      if (!subject || typeof subject !== "string" || !subject.trim()) {
+        return res.status(400).json({ error: "Email subject is required." });
+      }
+
+      if (!message || typeof message !== "string" || !message.trim()) {
+        return res.status(400).json({ error: "Email message body is required." });
+      }
+
+      let recipientEmail = "";
+      let recipientName = "";
+
+      if (recipientType === "teacher") {
+        const teacherResult = await pool.query(
+          `SELECT id, username, email, full_name FROM teachers WHERE id = $1 LIMIT 1`,
+          [recipientId.trim()]
+        );
+
+        if (teacherResult.rowCount === 0) {
+          console.error(`[ADMIN EMAIL] Teacher not found for ID: ${recipientId}`);
+          return res.status(404).json({ error: "Teacher not found in database." });
+        }
+
+        const teacherRow = teacherResult.rows[0];
+        recipientEmail = teacherRow.email || "";
+        recipientName = teacherRow.full_name || teacherRow.username || "Teacher";
+      } else {
+        const studentDetails = await getStudentDetails(recipientId.trim());
+
+        if (!studentDetails || !studentDetails.profile) {
+          console.error(`[ADMIN EMAIL] Student not found for ID: ${recipientId}`);
+          return res.status(404).json({ error: "Student not found in database." });
+        }
+
+        recipientEmail = studentDetails.profile.email || "";
+        recipientName =
+          studentDetails.profile.fullName ||
+          studentDetails.profile.displayName ||
+          studentDetails.profile.name ||
+          "Student";
+      }
+
+      console.log(`[ADMIN EMAIL] Recipient found: ${recipientName} (${recipientEmail})`);
+
+      if (!recipientEmail || !recipientEmail.includes("@")) {
+        console.error(`[ADMIN EMAIL] Invalid email for recipient: "${recipientEmail}"`);
+        return res.status(400).json({
+          error: `Recipient ${recipientName} does not have a valid email address configured.`,
+        });
+      }
+
+      console.log(`[ADMIN EMAIL] Dispatching email to ${recipientEmail}...`);
+
+      await sendAdminPersonalEmail({
+        to: recipientEmail,
+        subject: subject.trim(),
+        message: message.trim(),
+        recipientName,
+      });
+
+      console.log(`[ADMIN EMAIL] Email sent successfully to ${recipientEmail}`);
+
+      return res.json({
+        success: true,
+        message: `Email sent successfully to ${recipientName} (${recipientEmail}).`,
+      });
+    } catch (error: any) {
+      console.error("[ADMIN EMAIL ERROR]", error);
+      return res.status(500).json({
+        error: error?.message
+          ? `Failed to send email: ${error.message}`
+          : "Failed to send email due to an internal server/SMTP error.",
+      });
+    }
+  });
+
+  app.get("/api/admin/email-health", requireAdminSession, async (_req, res) => {
+    const smtpHealth = await verifyTransporterConnection();
+    return res.json({
+      success: true,
+      service: "admin-email",
+      timestamp: new Date().toISOString(),
+      smtp: smtpHealth,
+    });
   });
 }

@@ -15,7 +15,6 @@ import {
   CheckCircle2,
   Clock3,
   GraduationCap,
-  Layers3,
   Sparkles,
   Users,
   Users2,
@@ -23,10 +22,11 @@ import {
   Shield,
   Activity,
   FileText,
-  School,
   BadgeCheck,
   CalendarClock,
   TestTube2,
+  Layers,
+  Award,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -53,9 +53,9 @@ const formatValue = (value: number | null | undefined, fallback = "0") => {
   }).format(value);
 };
 
-const formatPercent = (value: number | null | undefined, fallback = "Not available") => {
+const formatPercent = (value: number | null | undefined, fallback = "N/A") => {
   if (value === null || value === undefined || Number.isNaN(value)) return fallback;
-  return `${Number(value).toFixed(2)}%`;
+  return `${Number(value).toFixed(1)}%`;
 };
 
 const hasSeriesData = (series: Array<{ value: number }>) => series.some((item) => Number(item.value) > 0);
@@ -112,19 +112,17 @@ function MetricCard({
   accent: string;
 }) {
   return (
-    <Card className="group overflow-hidden rounded-[1.75rem] border-slate-200/80 bg-white/90 shadow-[0_18px_60px_rgba(15,23,42,0.08)] backdrop-blur transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_24px_70px_rgba(15,23,42,0.12)]">
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.32em] text-slate-500">{title}</p>
-            <p className="mt-2 text-3xl font-black tracking-tight text-slate-950">{value}</p>
-            <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
-          </div>
-          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${accent} text-white shadow-lg ring-1 ring-white/60`}>
-            {icon}
-          </div>
+    <Card className="group overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{title}</p>
+          <p className="mt-1.5 text-2xl font-black tracking-tight text-slate-900">{value}</p>
+          <p className="mt-1 text-xs text-slate-500 leading-relaxed">{description}</p>
         </div>
-      </CardContent>
+        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${accent} text-white shadow-sm transition-transform duration-200 group-hover:scale-105`}>
+          {icon}
+        </div>
+      </div>
     </Card>
   );
 }
@@ -141,17 +139,17 @@ function SectionCard({
   children: ReactNode;
 }) {
   return (
-    <Card className="rounded-[1.75rem] border-slate-200/80 bg-white/88 shadow-[0_20px_70px_rgba(15,23,42,0.08)] backdrop-blur">
-      <CardHeader className="flex flex-row items-start justify-between gap-4">
+    <Card className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm">
+      <CardHeader className="border-b border-slate-100 bg-slate-50/50 p-5 flex flex-row items-center justify-between gap-4">
         <div>
-          <CardTitle className="text-xl font-bold text-slate-950">{title}</CardTitle>
-          <CardDescription className="mt-1 text-slate-600">{description}</CardDescription>
+          <CardTitle className="text-base font-bold text-slate-900">{title}</CardTitle>
+          <CardDescription className="mt-0.5 text-xs text-slate-500">{description}</CardDescription>
         </div>
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-lg shadow-slate-950/20">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm">
           {icon}
         </div>
       </CardHeader>
-      <CardContent>{children}</CardContent>
+      <CardContent className="p-5">{children}</CardContent>
     </Card>
   );
 }
@@ -164,9 +162,9 @@ function EmptyState({
   description: string;
 }) {
   return (
-    <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
+    <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-8 text-center">
       <p className="text-sm font-semibold text-slate-900">{title}</p>
-      <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
+      <p className="mt-1 text-xs text-slate-500 leading-relaxed">{description}</p>
     </div>
   );
 }
@@ -174,27 +172,21 @@ function EmptyState({
 function LoadingState() {
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 8 }).map((_, index) => (
-          <Card key={index} className="rounded-[1.5rem] border-slate-200/80 bg-white/95 shadow-lg shadow-slate-200/50">
-            <CardContent className="p-5">
-              <Skeleton className="h-4 w-28 rounded-full" />
-              <Skeleton className="mt-4 h-10 w-20 rounded-full" />
-              <Skeleton className="mt-3 h-4 w-full rounded-full" />
-            </CardContent>
+          <Card key={index} className="rounded-2xl border-slate-200/80 bg-white p-5">
+            <Skeleton className="h-4 w-28 rounded-full" />
+            <Skeleton className="mt-3 h-8 w-20 rounded-full" />
+            <Skeleton className="mt-2 h-3 w-full rounded-full" />
           </Card>
         ))}
       </div>
       <div className="grid gap-6 xl:grid-cols-2">
         {Array.from({ length: 4 }).map((_, index) => (
-          <Card key={index} className="rounded-[1.75rem] border-slate-200/80 bg-white/95 shadow-xl shadow-slate-200/50">
-            <CardHeader className="space-y-4">
-              <Skeleton className="h-6 w-48 rounded-full" />
-              <Skeleton className="h-4 w-80 rounded-full" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-[280px] rounded-2xl" />
-            </CardContent>
+          <Card key={index} className="rounded-2xl border-slate-200/80 bg-white p-6">
+            <Skeleton className="h-6 w-48 rounded-full" />
+            <Skeleton className="mt-2 h-4 w-80 rounded-full" />
+            <Skeleton className="mt-6 h-[260px] rounded-xl" />
           </Card>
         ))}
       </div>
@@ -244,89 +236,68 @@ function TimeSeriesChart({
   return (
     <SectionCard title={title} description={description} icon={icon}>
       {hasData ? (
-        <ChartContainer config={chartConfig} className="h-[300px] w-full">
+        <ChartContainer config={chartConfig} className="h-[280px] w-full">
           {type === "line" ? (
             <LineChart data={chartData} margin={{ top: 12, right: 12, bottom: 8, left: 0 }}>
               <defs>
-                <linearGradient id={`${title.replace(/\s+/g, "-").toLowerCase()}-fill`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={fillColor} stopOpacity={0.35} />
-                  <stop offset="95%" stopColor={fillColor} stopOpacity={0.02} />
+                <linearGradient id={`gradient-${strokeColor}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={strokeColor} stopOpacity={0.3} />
+                  <stop offset="95%" stopColor={strokeColor} stopOpacity={0.0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="4 4" vertical={false} strokeOpacity={0.35} />
-              <XAxis
-                dataKey="label"
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-                interval="preserveStartEnd"
-                tick={{ fontSize: 12, fill: "hsl(215 20% 45%)" }}
-              />
-              <YAxis
-                tickLine={false}
-                axisLine={false}
-                width={44}
-                tickMargin={6}
-                tickFormatter={yAxisFormatter}
-                tick={{ fontSize: 12, fill: "hsl(215 20% 45%)" }}
-              />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+              <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} tick={{ fontSize: 11, fill: "#64748b" }} />
+              <YAxis tickLine={false} axisLine={false} tickFormatter={yAxisFormatter} tick={{ fontSize: 11, fill: "#64748b" }} />
               <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
-              <Line
-                type="monotone"
-                dataKey="value"
-                stroke="var(--color-value)"
-                strokeWidth={3}
-                dot={{ r: 3, fill: "#fff", strokeWidth: 2 }}
-              />
+              <Line type="monotone" dataKey="value" stroke={strokeColor} strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
             </LineChart>
           ) : (
             <AreaChart data={chartData} margin={{ top: 12, right: 12, bottom: 8, left: 0 }}>
               <defs>
-                <linearGradient id={`${title.replace(/\s+/g, "-").toLowerCase()}-fill`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={fillColor} stopOpacity={0.35} />
-                  <stop offset="95%" stopColor={fillColor} stopOpacity={0.02} />
+                <linearGradient id={`areaGradient-${strokeColor.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={strokeColor} stopOpacity={0.25} />
+                  <stop offset="95%" stopColor={strokeColor} stopOpacity={0.01} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="4 4" vertical={false} strokeOpacity={0.35} />
-              <XAxis
-                dataKey="label"
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-                interval="preserveStartEnd"
-                tick={{ fontSize: 12, fill: "hsl(215 20% 45%)" }}
-              />
-              <YAxis
-                tickLine={false}
-                axisLine={false}
-                width={44}
-                tickMargin={6}
-                tickFormatter={yAxisFormatter}
-                tick={{ fontSize: 12, fill: "hsl(215 20% 45%)" }}
-              />
-              <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
-              <Area
-                type="monotone"
-                dataKey="value"
-                stroke="var(--color-value)"
-                strokeWidth={3}
-                fill={`url(#${title.replace(/\s+/g, "-").toLowerCase()}-fill)`}
-                dot={{ r: 3, fill: "#fff", strokeWidth: 2 }}
-              />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+              <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} tick={{ fontSize: 11, fill: "#64748b" }} />
+              <YAxis tickLine={false} axisLine={false} tickFormatter={yAxisFormatter} tick={{ fontSize: 11, fill: "#64748b" }} />
+              <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
+              <Area type="monotone" dataKey="value" stroke={strokeColor} strokeWidth={2} fill={`url(#areaGradient-${strokeColor.replace('#', '')})`} />
             </AreaChart>
           )}
         </ChartContainer>
       ) : (
-        <EmptyState
-          title={`No ${title.toLowerCase()} data yet`}
-          description={`We could not find any platform data for ${title.toLowerCase()}.`}
-        />
+        <EmptyState title="No trend data available" description="Data points will render as users interact with the platform." />
       )}
     </SectionCard>
   );
+}function RankBadge({ rank }: { rank: number }) {
+  if (rank === 1) {
+    return (
+      <Badge className="bg-amber-100 text-amber-800 border-amber-300 font-bold text-[10px] px-2 py-0.5">
+        🥇 #1
+      </Badge>
+    );
+  }
+  if (rank === 2) {
+    return (
+      <Badge className="bg-slate-100 text-slate-700 border-slate-300 font-bold text-[10px] px-2 py-0.5">
+        🥈 #2
+      </Badge>
+    );
+  }
+  if (rank === 3) {
+    return (
+      <Badge className="bg-amber-50 text-amber-900 border-amber-200 font-bold text-[10px] px-2 py-0.5">
+        🥉 #3
+      </Badge>
+    );
+  }
+  return <span className="font-mono text-xs font-semibold text-slate-400">#{rank}</span>;
 }
 
-function RankTable({
+function RankTable<T extends Record<string, any>>({
   title,
   description,
   icon,
@@ -338,8 +309,12 @@ function RankTable({
   title: string;
   description: string;
   icon: ReactNode;
-  rows: Array<Record<string, any>>;
-  columns: Array<{ header: string; accessor: string; format?: (value: any) => React.ReactNode }>;
+  rows: T[];
+  columns: Array<{
+    header: string;
+    accessor: keyof T | string;
+    format?: (value: any, row: T) => ReactNode;
+  }>;
   emptyTitle: string;
   emptyDescription: string;
 }) {
@@ -348,23 +323,33 @@ function RankTable({
       {rows.length === 0 ? (
         <EmptyState title={emptyTitle} description={emptyDescription} />
       ) : (
-        <div className="overflow-hidden rounded-[1.25rem] border border-slate-200">
+        <div className="overflow-hidden rounded-xl border border-slate-200/90">
           <Table>
-            <TableHeader>
-              <TableRow>
-                {columns.map((column) => (
-                  <TableHead key={column.header}>{column.header}</TableHead>
+            <TableHeader className="bg-slate-50/80">
+              <TableRow className="border-slate-200/80 hover:bg-transparent">
+                <TableHead className="w-16 text-center font-semibold text-slate-700">Rank</TableHead>
+                {columns.map((col) => (
+                  <TableHead key={String(col.accessor)} className="font-semibold text-slate-700">
+                    {col.header}
+                  </TableHead>
                 ))}
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.map((row, index) => (
-                <TableRow key={row.id ?? `${title}-${index}`}>
-                  {columns.map((column) => (
-                    <TableCell key={column.header} className={column.accessor === "name" ? "font-medium text-slate-900" : "text-slate-600"}>
-                      {column.format ? column.format(row[column.accessor]) : row[column.accessor]}
-                    </TableCell>
-                  ))}
+                <TableRow key={index} className="border-slate-100 hover:bg-slate-50/60">
+                  <TableCell className="text-center font-bold text-xs">
+                    <RankBadge rank={index + 1} />
+                  </TableCell>
+                  {columns.map((col) => {
+                    const raw = (row as any)[col.accessor];
+                    const content = col.format ? col.format(raw, row) : (raw as ReactNode);
+                    return (
+                      <TableCell key={String(col.accessor)} className="text-sm font-medium text-slate-900">
+                        {content}
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
               ))}
             </TableBody>
@@ -385,15 +370,8 @@ function ActivityList({
 }: {
   title: string;
   description: string;
-  icon: React.ReactNode;
-  items: Array<{
-    id: string;
-    title: string;
-    description: string;
-    createdAt: string | null;
-    badge: string;
-    badgeClassName: string;
-  }>;
+  icon: ReactNode;
+  items: Array<{ id: string; title: string; subtitle: string; timestamp: string }>;
   emptyTitle: string;
   emptyDescription: string;
 }) {
@@ -404,15 +382,14 @@ function ActivityList({
       ) : (
         <div className="space-y-3">
           {items.map((item) => (
-            <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-slate-900">{item.title}</p>
-                  <p className="mt-1 text-sm leading-6 text-slate-600">{item.description}</p>
-                </div>
-                <Badge className={item.badgeClassName}>{item.badge}</Badge>
+            <div key={item.id} className="flex items-center justify-between gap-4 rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 transition-colors hover:bg-slate-100/60">
+              <div className="min-w-0">
+                <p className="font-semibold text-slate-900 text-sm truncate">{item.title}</p>
+                <p className="text-xs text-slate-500 truncate">{item.subtitle}</p>
               </div>
-              <p className="mt-2 text-xs text-slate-500">{item.createdAt ?? "Not available"}</p>
+              <Badge variant="outline" className="shrink-0 rounded-lg border-slate-200 bg-white font-mono text-[10px] text-slate-600">
+                {item.timestamp}
+              </Badge>
             </div>
           ))}
         </div>
@@ -422,375 +399,274 @@ function ActivityList({
 }
 
 export default function AdminAnalytics() {
-  const analyticsQuery = useQuery({
+  const analyticsQuery = useQuery<AdminAnalyticsResponse>({
     queryKey: ["admin", "analytics"],
     queryFn: getAdminAnalytics,
   });
+
+  const data = analyticsQuery.data ?? EMPTY_ANALYTICS;
+  const overview = data.overview;
+
+  const latestStudentRegistrations = useMemo(
+    () =>
+      data.recentActivity.latestStudentRegistrations.map((item) => ({
+        id: item.id,
+        title: item.name,
+        subtitle: `${item.email} • Class ${item.classLevel ?? "N/A"}`,
+        timestamp: item.createdAt || "N/A",
+      })),
+    [data.recentActivity.latestStudentRegistrations],
+  );
+
+  const latestTeacherApprovals = useMemo(
+    () =>
+      data.recentActivity.latestTeacherApprovals.map((item) => ({
+        id: item.id,
+        title: item.fullName,
+        subtitle: `${item.email} • ${item.school || "School N/A"}`,
+        timestamp: item.approvedAt || "N/A",
+      })),
+    [data.recentActivity.latestTeacherApprovals],
+  );
+
+  const latestGeneratedTests = useMemo(
+    () =>
+      data.recentActivity.latestGeneratedTests.map((item) => ({
+        id: item.id,
+        title: item.title,
+        subtitle: `${item.teacherName || "Teacher"} • ${item.subject}${item.classLevel ? ` (Class ${item.classLevel})` : ""}`,
+        timestamp: item.createdAt || "N/A",
+      })),
+    [data.recentActivity.latestGeneratedTests],
+  );
+
+  const latestTestAttempts = useMemo(
+    () =>
+      data.recentActivity.latestTestAttempts.map((item) => ({
+        id: item.id,
+        title: `${item.studentName} — ${item.subject}`,
+        subtitle: `Score: ${item.score}/${item.totalQuestions} (${item.percentage}%)`,
+        timestamp: item.createdAt || "N/A",
+      })),
+    [data.recentActivity.latestTestAttempts],
+  );
 
   if (analyticsQuery.isLoading) {
     return <LoadingState />;
   }
 
-  const data = analyticsQuery.data ?? EMPTY_ANALYTICS;
-  const overview = data.overview;
-
-  const topTeachersByTestsGenerated = data.teacherAnalytics.topTeachersByTestsGenerated.map((teacher) => ({
-    ...teacher,
-    name: teacher.fullName,
-  }));
-  const topTeachersByActiveStudents = data.teacherAnalytics.topTeachersByActiveStudents.map((teacher) => ({
-    ...teacher,
-    name: teacher.fullName,
-  }));
-
-  const latestStudentRegistrations = data.recentActivity.latestStudentRegistrations.map((item) => ({
-    id: item.id,
-    title: item.name,
-    description: `${item.email || "No email"}${item.classLevel ? ` - Class ${item.classLevel}` : ""}${item.board ? ` - ${item.board}` : ""}`,
-    createdAt: item.createdAt,
-    badge: item.classLevel ? `Class ${item.classLevel}` : "Student",
-    badgeClassName: "bg-cyan-100 text-cyan-800 hover:bg-cyan-100",
-  }));
-
-  const latestTeacherApprovals = data.recentActivity.latestTeacherApprovals.map((item) => ({
-    id: item.id,
-    title: item.fullName,
-    description: `${item.email || "No email"}${item.school ? ` - ${item.school}` : ""}`,
-    createdAt: item.approvedAt,
-    badge: item.approved ? "Approved" : "Pending",
-    badgeClassName: item.approved
-      ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100"
-      : "bg-amber-100 text-amber-800 hover:bg-amber-100",
-  }));
-
-  const latestGeneratedTests = data.recentActivity.latestGeneratedTests.map((item) => ({
-    id: item.id,
-    title: item.title,
-    description: `${item.subject}${item.classLevel ? ` - Class ${item.classLevel}` : ""}${item.teacherName ? ` - ${item.teacherName}` : ""}`,
-    createdAt: item.createdAt,
-    badge: item.status || "draft",
-    badgeClassName: item.status?.toLowerCase() === "published"
-      ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
-      : "bg-slate-100 text-slate-700 hover:bg-slate-100",
-  }));
-
-  const latestTestAttempts = data.recentActivity.latestTestAttempts.map((item) => ({
-    id: item.id,
-    title: item.studentName,
-    description: `${item.subject} - ${item.score}/${item.totalQuestions} - ${formatPercent(item.percentage, "0%")}`,
-    createdAt: item.createdAt,
-    badge: "Attempt",
-    badgeClassName: "bg-violet-100 text-violet-800 hover:bg-violet-100",
-  }));
-
   return (
     <div className="space-y-6">
-      {analyticsQuery.error ? (
-        <Card className="rounded-[1.5rem] border-amber-200 bg-amber-50/80">
-          <CardContent className="px-5 py-4 text-sm text-amber-900">
-            Analytics data is temporarily unavailable, so the dashboard is showing safe defaults.
-          </CardContent>
-        </Card>
-      ) : null}
-      <Card className="relative overflow-hidden rounded-[2rem] border-slate-200/80 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white shadow-[0_24px_80px_rgba(15,23,42,0.2)]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.22),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.14),transparent_28%)]" />
-        <CardContent className="relative flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.32em] text-slate-200">
-              <Shield className="h-3.5 w-3.5 text-cyan-300" />
-              Intelligence layer
-            </div>
-            <div className="space-y-3">
-              <h3 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
-                Platform intelligence at a glance
-              </h3>
-              <p className="max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-                Track teacher growth, student engagement, test volume, and score trends from a single premium analytics surface.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-3 lg:w-[32rem]">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
-              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-slate-400">
-                Students
-              </p>
-              <p className="mt-2 text-2xl font-black text-white">
-                {formatValue(overview.totalStudents)}
-              </p>
-              <p className="mt-1 text-xs text-slate-300">Registered profiles</p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
-              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-slate-400">
-                Teachers
-              </p>
-              <p className="mt-2 text-2xl font-black text-white">
-                {formatValue(overview.totalTeachers)}
-              </p>
-              <p className="mt-1 text-xs text-slate-300">Live accounts</p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
-              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-slate-400">
-                Avg score
-              </p>
-              <p className="mt-2 text-2xl font-black text-white">
-                {formatPercent(overview.averageStudentScore)}
-              </p>
-              <p className="mt-1 text-xs text-slate-300">Platform-wide trend</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {/* Metric Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Total Students"
           value={formatValue(overview.totalStudents)}
-          description="Registered student profiles."
+          description="Registered platform students"
           icon={<Users className="h-5 w-5" />}
-          accent="bg-slate-900"
+          accent="bg-blue-600"
         />
         <MetricCard
           title="Active Students"
           value={formatValue(overview.activeStudents)}
-          description="Students active in the last 30 days."
+          description="Active in past 30 days"
           icon={<Users2 className="h-5 w-5" />}
           accent="bg-cyan-600"
         />
         <MetricCard
           title="Total Teachers"
           value={formatValue(overview.totalTeachers)}
-          description="Registered teacher accounts."
+          description="All teacher accounts"
           icon={<GraduationCap className="h-5 w-5" />}
-          accent="bg-blue-600"
+          accent="bg-slate-900"
         />
         <MetricCard
           title="Approved Teachers"
           value={formatValue(overview.approvedTeachers)}
-          description="Teachers approved for dashboard access."
+          description="Active verified educators"
           icon={<CheckCircle2 className="h-5 w-5" />}
           accent="bg-emerald-600"
         />
         <MetricCard
-          title="Pending Teachers"
+          title="Pending Approvals"
           value={formatValue(overview.pendingTeachers)}
-          description="Verified teachers waiting for approval."
+          description="Awaiting admin signoff"
           icon={<Clock3 className="h-5 w-5" />}
           accent="bg-amber-600"
         />
         <MetricCard
           title="Tests Generated"
           value={formatValue(overview.totalTestsGenerated)}
-          description="Custom tests created on the platform."
-          icon={<FileText className="h-5 w-5" />}
+          description="Custom test sets created"
+          icon={<BookOpenCheck className="h-5 w-5" />}
           accent="bg-violet-600"
         />
         <MetricCard
           title="Questions Generated"
           value={formatValue(overview.totalQuestionsGenerated)}
-          description="Total questions across generated tests."
-          icon={<BookOpenCheck className="h-5 w-5" />}
-          accent="bg-rose-600"
+          description="AI & custom questions"
+          icon={<Layers className="h-5 w-5" />}
+          accent="bg-indigo-600"
         />
         <MetricCard
-          title="Average Student Score"
+          title="Average Score"
           value={formatPercent(overview.averageStudentScore)}
-          description="Average score across submitted attempts."
-          icon={<TrendingUp className="h-5 w-5" />}
-          accent="bg-slate-700"
+          description="Platform-wide score average"
+          icon={<Award className="h-5 w-5" />}
+          accent="bg-emerald-600"
         />
       </div>
 
+      {/* Charts Grid */}
       <div className="grid gap-6 xl:grid-cols-2">
         <TimeSeriesChart
-          title="Student Registrations"
-          description="Daily student sign-ups over the last 30 days."
+          title="Student Registrations Trend"
+          description="New student accounts registered per day."
           series={data.charts.studentRegistrations}
-          valueLabel="Student registrations"
-          strokeColor="hsl(221 83% 53%)"
-          fillColor="hsl(221 83% 53%)"
-          icon={<Shield className="h-5 w-5" />}
+          valueLabel="Students"
+          strokeColor="#0284c7"
+          fillColor="#0284c7"
+          icon={<Users className="h-5 w-5" />}
+          yAxisFormatter={(value) => formatValue(value)}
         />
         <TimeSeriesChart
-          title="Teacher Registrations"
-          description="Daily teacher sign-ups over the last 30 days."
+          title="Teacher Registrations Trend"
+          description="New teacher accounts created per day."
           series={data.charts.teacherRegistrations}
-          valueLabel="Teacher registrations"
-          strokeColor="hsl(160 84% 39%)"
-          fillColor="hsl(160 84% 39%)"
-          icon={<School className="h-5 w-5" />}
+          valueLabel="Teachers"
+          strokeColor="#0f172a"
+          fillColor="#0f172a"
+          icon={<GraduationCap className="h-5 w-5" />}
+          yAxisFormatter={(value) => formatValue(value)}
         />
         <TimeSeriesChart
           title="Tests Generated Per Day"
-          description="Daily custom-test creation activity."
+          description="Custom test creation activity over time."
           series={data.charts.testsGeneratedPerDay}
-          valueLabel="Tests generated"
-          strokeColor="hsl(262 83% 58%)"
-          fillColor="hsl(262 83% 58%)"
-          icon={<Layers3 className="h-5 w-5" />}
+          valueLabel="Tests"
+          strokeColor="#7c3aed"
+          fillColor="#7c3aed"
+          icon={<BookOpenCheck className="h-5 w-5" />}
+          yAxisFormatter={(value) => formatValue(value)}
         />
         <TimeSeriesChart
           title="Tests Attempted Per Day"
-          description="Daily student attempts recorded in score history."
+          description="Student test submission frequency over time."
           series={data.charts.testsAttemptedPerDay}
-          valueLabel="Tests attempted"
-          strokeColor="hsl(14 100% 57%)"
-          fillColor="hsl(14 100% 57%)"
-          icon={<TestTube2 className="h-5 w-5" />}
-        />
-        <TimeSeriesChart
-          title="Average Score Trend"
-          description="Daily average score across submitted attempts."
-          series={data.charts.averageScoreTrend}
-          valueLabel="Average score"
-          strokeColor="hsl(199 89% 48%)"
-          fillColor="hsl(199 89% 48%)"
+          valueLabel="Attempts"
+          strokeColor="#059669"
+          fillColor="#059669"
           icon={<Activity className="h-5 w-5" />}
-          yAxisFormatter={(value) => `${value}%`}
-          type="line"
+          yAxisFormatter={(value) => formatValue(value)}
         />
       </div>
 
+      {/* Leaderboards & Subject Tables */}
       <div className="grid gap-6 xl:grid-cols-2">
         <RankTable
-          title="Top Teachers by Tests Generated"
-          description="Teachers with the highest number of custom tests."
-          icon={<BarChart3 className="h-5 w-5" />}
-          rows={topTeachersByTestsGenerated}
+          title="Top Teachers by Tests Created"
+          description="Educators who have generated the most test sets."
+          icon={<GraduationCap className="h-5 w-5" />}
+          rows={data.teacherAnalytics.topTeachersByTestsGenerated}
           columns={[
-            { header: "Teacher", accessor: "name" },
-            { header: "Email", accessor: "email" },
-            { header: "Tests", accessor: "totalTestsGenerated", format: (value) => formatValue(value) },
-            { header: "Active Students", accessor: "activeStudents", format: (value) => formatValue(value) },
             {
-              header: "Status",
-              accessor: "approved",
-              format: (value) => (
-                <Badge className={value ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100" : "bg-amber-100 text-amber-800 hover:bg-amber-100"}>
-                  {value ? "Approved" : "Pending"}
-                </Badge>
-              ),
+              header: "Teacher Name",
+              accessor: "fullName",
+              format: (val, row) => val || row.email || "Teacher",
+            },
+            {
+              header: "Tests Created",
+              accessor: "totalTestsGenerated",
+              format: (value) => formatValue(value),
             },
           ]}
-          emptyTitle="No teacher analytics yet"
-          emptyDescription="Teacher creation stats will appear once custom tests exist."
+          emptyTitle="No teacher data"
+          emptyDescription="Teacher generation rankings will appear once tests exist."
         />
         <RankTable
           title="Top Teachers by Active Students"
-          description="Teachers whose tests are attracting the most active students."
+          description="Educators engaging the highest student volume."
           icon={<Users2 className="h-5 w-5" />}
-          rows={topTeachersByActiveStudents}
+          rows={data.teacherAnalytics.topTeachersByActiveStudents}
           columns={[
-            { header: "Teacher", accessor: "name" },
-            { header: "Email", accessor: "email" },
-            { header: "Active Students", accessor: "activeStudents", format: (value) => formatValue(value) },
-            { header: "Tests", accessor: "totalTestsGenerated", format: (value) => formatValue(value) },
             {
-              header: "Status",
-              accessor: "approved",
-              format: (value) => (
-                <Badge className={value ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100" : "bg-amber-100 text-amber-800 hover:bg-amber-100"}>
-                  {value ? "Approved" : "Pending"}
-                </Badge>
-              ),
+              header: "Teacher Name",
+              accessor: "fullName",
+              format: (val, row) => val || row.email || "Teacher",
+            },
+            {
+              header: "Active Students",
+              accessor: "activeStudents",
+              format: (value) => formatValue(value),
             },
           ]}
-          emptyTitle="No teacher activity yet"
-          emptyDescription="Active-student rankings will appear once tests are being attempted."
+          emptyTitle="No active student data"
+          emptyDescription="Teacher student rankings will appear after student engagement."
         />
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-2">
         <RankTable
           title="Top Performing Students"
-          description="Students with the strongest average test scores."
-          icon={<Sparkles className="h-5 w-5" />}
+          description="Students with the highest average test scores."
+          icon={<Award className="h-5 w-5" />}
           rows={data.studentAnalytics.topPerformingStudents}
           columns={[
-            { header: "Student", accessor: "name" },
-            { header: "Email", accessor: "email" },
-            { header: "Attempts", accessor: "attempts", format: (value) => formatValue(value) },
-            { header: "Average", accessor: "averageScore", format: (value) => formatPercent(value) },
-            { header: "High", accessor: "highestScore", format: (value) => formatPercent(value) },
-            { header: "Low", accessor: "lowestScore", format: (value) => formatPercent(value) },
+            {
+              header: "Student Name",
+              accessor: "name",
+              format: (val, row) => val || row.email || "Student",
+            },
+            {
+              header: "Attempts",
+              accessor: "attempts",
+              format: (value) => formatValue(value),
+            },
+            {
+              header: "Average Score",
+              accessor: "averageScore",
+              format: (value) => formatPercent(value),
+            },
           ]}
-          emptyTitle="No student score history yet"
-          emptyDescription="Top-performing student rankings will appear after attempts are recorded."
+          emptyTitle="No student test scores"
+          emptyDescription="Performance rankings will appear after test submissions."
         />
-        <RankTable
-          title="Most Active Students"
-          description="Students with the highest number of attempts."
-          icon={<BookOpenCheck className="h-5 w-5" />}
-          rows={data.studentAnalytics.mostActiveStudents}
-          columns={[
-            { header: "Student", accessor: "name" },
-            { header: "Email", accessor: "email" },
-            { header: "Attempts", accessor: "attempts", format: (value) => formatValue(value) },
-            { header: "Average", accessor: "averageScore", format: (value) => formatPercent(value) },
-            { header: "High", accessor: "highestScore", format: (value) => formatPercent(value) },
-            { header: "Low", accessor: "lowestScore", format: (value) => formatPercent(value) },
-          ]}
-          emptyTitle="No student attempts yet"
-          emptyDescription="The most-active list will fill once students begin taking tests."
-        />
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-2">
         <RankTable
           title="Most Attempted Subjects"
-          description="Subjects with the highest number of attempts."
+          description="Subjects with the highest submission volume."
           icon={<BarChart3 className="h-5 w-5" />}
           rows={data.subjectAnalytics.mostAttemptedSubjects}
           columns={[
             { header: "Subject", accessor: "subject" },
-            { header: "Attempts", accessor: "attempts", format: (value) => formatValue(value) },
-            { header: "Average", accessor: "averageScore", format: (value) => formatPercent(value) },
-            { header: "High", accessor: "highestScore", format: (value) => formatPercent(value) },
-            { header: "Low", accessor: "lowestScore", format: (value) => formatPercent(value) },
+            { header: "Total Attempts", accessor: "attempts", format: (value) => formatValue(value) },
+            { header: "Average Score", accessor: "averageScore", format: (value) => formatPercent(value) },
           ]}
           emptyTitle="No subject activity yet"
-          emptyDescription="Subject analytics will appear once test attempts are available."
-        />
-        <RankTable
-          title="Average Score by Subject"
-          description="Subjects ranked by average student score."
-          icon={<TrendingUp className="h-5 w-5" />}
-          rows={data.subjectAnalytics.averageScoreBySubject}
-          columns={[
-            { header: "Subject", accessor: "subject" },
-            { header: "Attempts", accessor: "attempts", format: (value) => formatValue(value) },
-            { header: "Average", accessor: "averageScore", format: (value) => formatPercent(value) },
-            { header: "High", accessor: "highestScore", format: (value) => formatPercent(value) },
-            { header: "Low", accessor: "lowestScore", format: (value) => formatPercent(value) },
-          ]}
-          emptyTitle="No subject score data yet"
-          emptyDescription="Average score by subject will appear after student attempts exist."
+          emptyDescription="Subject analytics will appear once test attempts exist."
         />
       </div>
 
+      {/* Recent Activity Section */}
       <div className="grid gap-6 xl:grid-cols-2">
         <ActivityList
           title="Latest Student Registrations"
-          description="Newest student profiles created on the platform."
+          description="Newest student profiles registered."
           icon={<CalendarClock className="h-5 w-5" />}
           items={latestStudentRegistrations}
-          emptyTitle="No student registrations yet"
-          emptyDescription="Student registrations will appear here once profiles are created."
+          emptyTitle="No student registrations"
+          emptyDescription="Registrations will appear here as profiles are created."
         />
         <ActivityList
           title="Latest Teacher Approvals"
-          description="Recently approved teachers using the available admin data."
+          description="Approved educators on the platform."
           icon={<BadgeCheck className="h-5 w-5" />}
           items={latestTeacherApprovals}
-          emptyTitle="No teacher approvals yet"
+          emptyTitle="No teacher approvals"
           emptyDescription="Approved teacher records will appear here when available."
         />
         <ActivityList
           title="Latest Generated Tests"
-          description="Newest custom tests generated by teachers."
+          description="Newest custom tests created by teachers."
           icon={<FileText className="h-5 w-5" />}
           items={latestGeneratedTests}
-          emptyTitle="No generated tests yet"
+          emptyTitle="No generated tests"
           emptyDescription="Generated tests will appear here once teachers start creating them."
         />
         <ActivityList
@@ -798,8 +674,8 @@ export default function AdminAnalytics() {
           description="Most recent student submissions."
           icon={<TestTube2 className="h-5 w-5" />}
           items={latestTestAttempts}
-          emptyTitle="No test attempts yet"
-          emptyDescription="Recent attempts will appear here once students begin submitting tests."
+          emptyTitle="No test attempts"
+          emptyDescription="Recent attempts will appear here once students submit tests."
         />
       </div>
     </div>

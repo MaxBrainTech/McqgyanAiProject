@@ -9,6 +9,17 @@ import {
   RefreshCcw,
   Save,
   UserPen,
+  MapPin,
+  CheckCircle2,
+  AlertCircle,
+  TrendingUp,
+  Target,
+  Trophy,
+  ArrowRight,
+  Sparkles,
+  BarChart3,
+  Building2,
+  Compass,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { apiRequest } from "@/lib/queryClient";
@@ -18,6 +29,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -37,8 +50,22 @@ import {
   resetScoreHistory,
   type ScoreHistoryEntry,
 } from "@/lib/scoreHistory";
-import { TrendingUp, Target, Trophy, ArrowRight, BarChart3 } from "lucide-react";
 import { getNames } from "country-list";
+
+import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from "@/components/ui/command";
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 const countries = getNames().sort();
 const indianStates = [
@@ -134,21 +161,6 @@ const getFilteredOptions = (options: string[], search: string) => {
     });
 };
 
-import {
-  Command,
-  CommandInput,
-  CommandList,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-} from "@/components/ui/command";
-
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-
 interface ProfileForm {
   fullName: string;
   emailAddress: string;
@@ -167,21 +179,21 @@ const getProviderName = (user: User | null) => {
   if (!user) return "Not Available";
   const providerId = user.providerData?.[0]?.providerId;
   if (!providerId) return "Not Available";
-  if (providerId.includes("google")) return "Google";
-  if (providerId.includes("password")) return "Email";
+  if (providerId.includes("google")) return "Google Account";
+  if (providerId.includes("password")) return "Email & Password";
   return providerId;
 };
 
 const getStatusText = (user: User | null) => {
   if (!user) return "Not Available";
-  return user.emailVerified ? "Verified" : "Not Verified";
+  return user.emailVerified ? "Verified Account" : "Registered Account";
 };
 
-const formatValue = (value: string | null | undefined) => value || "Not Available";
+const formatValue = (value: string | null | undefined) => value || "Not set";
 
 const getClassLabel = (classLevel: string, t: (key: string) => string) => {
-  if (!classLevel.trim()) return "--";
-  return t(`class_${classLevel}`) || `${t("class_level")} ${classLevel}`;
+  if (!classLevel.trim()) return "Class N/A";
+  return t(`class_${classLevel}`) || `Class ${classLevel}`;
 };
 
 const getMediumLabel = (medium: string, t: (key: string) => string) => {
@@ -192,11 +204,11 @@ const getMediumLabel = (medium: string, t: (key: string) => string) => {
 };
 
 const getBoardLabel = (board: string, t: (key: string) => string) => {
-  if (!board.trim()) return "Board";
+  if (!board.trim()) return "Board N/A";
   if (board.toLowerCase().includes("cbse")) return "CBSE";
   if (board.toLowerCase().includes("rbse")) return "RBSE";
   if (board.toLowerCase().includes("icse")) return "ICSE";
-  if (board.toLowerCase().includes("state")) return "State";
+  if (board.toLowerCase().includes("state")) return "State Board";
   return board;
 };
 
@@ -252,8 +264,8 @@ export default function StudentProfile() {
     cityListRef.current?.scrollTo({ top: 0 });
   }, [cityOpen, citySearch]);
 
-  const isProfileComplete = () =>
-    [
+  const completionStats = useMemo(() => {
+    const fields = [
       profile.fullName,
       profile.classLevel,
       profile.school,
@@ -262,20 +274,26 @@ export default function StudentProfile() {
       profile.country,
       profile.state,
       profile.city,
-    ].every((value) => value.trim().length > 0);
+    ];
+    const filled = fields.filter((v) => (v ?? "").trim().length > 0).length;
+    const percentage = Math.round((filled / fields.length) * 100);
+    return { filled, total: fields.length, percentage };
+  }, [profile]);
 
-  const profileComplete = isProfileComplete();
+  const profileComplete = completionStats.percentage === 100;
+
   const handleResetScoreHistory = async () => {
     resetScoreHistory();
     if (user) {
       try {
         await resetRemoteScoreHistory(user.uid);
-      } catch (error) {
-        console.warn("Failed to reset remote score history from profile", error);
+      } catch (err) {
+        console.warn("Failed to reset remote score history from profile", err);
       }
     }
     setScoreHistory([]);
   };
+
   const normalizedScoreHistory = useMemo(
     () =>
       [...scoreHistory]
@@ -283,6 +301,7 @@ export default function StudentProfile() {
         .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
     [scoreHistory]
   );
+
   const scoreSummary = useMemo(
     () => buildScoreSummary(normalizedScoreHistory),
     [normalizedScoreHistory]
@@ -471,34 +490,33 @@ export default function StudentProfile() {
   };
 
   return (
-    <div
-      className="relative min-h-screen overflow-x-hidden overflow-y-auto bg-slate-50 text-slate-900 transition-colors dark:bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.16),_transparent_30%),radial-gradient(circle_at_bottom,_rgba(99,102,241,0.18),_transparent_35%),linear-gradient(180deg,_#020617_0%,_#0f172a_100%)] dark:text-slate-50"
-      style={{
-        backgroundImage: `
-          radial-gradient(circle at 20% 10%, rgba(59,130,246,0.08), transparent 30%),
-          radial-gradient(circle at 80% 80%, rgba(168,85,247,0.08), transparent 35%),
-          radial-gradient(circle, rgba(100,116,139,0.38) 1.8px, transparent 2px)
-        `,
-        backgroundSize: `
-          100% 100%,
-          100% 100%,
-          26px 26px
-        `,
-        backgroundAttachment: "fixed",
-      }}
-    >
-      <div className="container mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-        {!loading && !user ? (
-          <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-2xl items-center">
-            <Card className="w-full overflow-hidden rounded-[1.75rem] border border-blue-200/70 bg-white/95 p-6 shadow-2xl dark:border-blue-900/40 dark:bg-slate-950/85 sm:p-8">
-              <CardHeader className="text-center">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-indigo-600 shadow-lg shadow-blue-500/30">
-                  <UserPen className="h-8 w-8 text-white" />
+    <div className="min-h-screen bg-slate-50/60 pb-16 text-slate-900 dark:bg-slate-950 dark:text-slate-50">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+        {/* Loading State */}
+        {loading ? (
+          <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center p-4">
+            <Card className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-lg dark:border-slate-800 dark:bg-slate-900">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400">
+                <svg className="h-6 w-6 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" opacity="0.25" />
+                  <path d="M22 12a10 10 0 00-10-10" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+                </svg>
+              </div>
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("loading_profile")}</p>
+            </Card>
+          </div>
+        ) : !user ? (
+          /* Logged-Out Login Prompts */
+          <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-md items-center">
+            <Card className="w-full overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-800 dark:bg-slate-900 sm:p-8">
+              <CardHeader className="text-center pb-6">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-500/25">
+                  <UserPen className="h-8 w-8" />
                 </div>
-                <CardTitle className="text-2xl font-black text-slate-900 dark:text-slate-50 sm:text-3xl">
+                <CardTitle className="text-2xl font-black tracking-tight text-slate-900 dark:text-white sm:text-3xl">
                   {t("student_profile_title")}
                 </CardTitle>
-                <CardDescription className="mt-2 text-slate-600 dark:text-slate-300">
+                <CardDescription className="mt-2 text-sm text-slate-600 dark:text-slate-300">
                   {t("student_profile_description")}
                 </CardDescription>
               </CardHeader>
@@ -508,7 +526,7 @@ export default function StudentProfile() {
                   type="button"
                   onClick={() => navigate("/teacher-auth")}
                   variant="outline"
-                  className="h-12 w-full rounded-xl border-slate-200 bg-slate-50 font-semibold text-slate-800 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+                  className="h-11 w-full rounded-xl border-slate-200 bg-white font-semibold text-slate-800 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                 >
                   <GraduationCap className="mr-2 h-4 w-4" />
                   {t("teacher_login")}
@@ -518,579 +536,548 @@ export default function StudentProfile() {
               </CardContent>
             </Card>
           </div>
-        ) : null}
+        ) : (
+          /* Main Logged-In Profile Dashboard */
+          <div className="space-y-6">
+            {/* Top Navigation */}
+            <div className="flex items-center justify-between">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/", { replace: true })}
+                className="rounded-xl border-slate-200 bg-white text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                {t("back_home")}
+              </Button>
 
-        {loading && !user ? (
-          <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center">
-            <Card className="rounded-[1.5rem] border bg-card p-6 shadow-sm">
-              <p className="text-sm text-muted-foreground">{t("loading_profile")}</p>
-            </Card>
-          </div>
-        ) : null}
+              <div className="flex items-center gap-2">
+                <Badge className={profileComplete ? "bg-emerald-50 text-emerald-700 border-emerald-200 font-semibold text-xs" : "bg-amber-50 text-amber-700 border-amber-200 font-semibold text-xs"}>
+                  <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                  {completionStats.percentage}% Profile Complete
+                </Badge>
+              </div>
+            </div>
 
-        {user ? (
-          <>
-        <Button
-          variant="outline"
-          onClick={() => navigate("/", { replace: true })}
-          className="mb-3 bg-white/85 text-slate-700 shadow-sm backdrop-blur-md transition-all hover:bg-white dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-100 dark:hover:bg-slate-800"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          {t("back_home")}
-        </Button>
+            {/* Student Hero Header Banner */}
+            <div className="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-950 p-6 text-white shadow-xl sm:p-8">
+              <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-blue-600/20 blur-3xl pointer-events-none" />
+              <div className="absolute -left-16 -bottom-16 h-64 w-64 rounded-full bg-indigo-600/15 blur-3xl pointer-events-none" />
 
-        {/* {showProfileWarning && !profileComplete && (
-          <div className="mb-5 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-900/50 dark:bg-blue-950/30">
-            <p className="text-sm text-blue-700 dark:text-blue-200">
-              {t("profile_complete_warning")}
-              {" "}
-              {t("profile_complete_warning_desc")}
-            </p>
-          </div>
-        )} */}
-
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:gap-6">
-          <Card className="overflow-hidden rounded-[1.5rem] border border-slate-200/80 bg-white/90 p-4 text-slate-900 shadow-md transition-all duration-300 hover:shadow-xl sm:p-6 dark:border-slate-800 dark:bg-slate-950/70 dark:text-slate-50">
-            <CardHeader className="p-4 sm:p-6">
-              <CardTitle className="text-xl text-slate-900 sm:text-2xl dark:text-slate-50">{t("my_profile")}</CardTitle>
-              <CardDescription className="text-sm text-slate-600 sm:text-base dark:text-slate-300">
-                {t("profile_desc")}
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent className="space-y-5 p-4 pt-0 sm:space-y-6 sm:p-6">
-              <div className="relative min-w-0 overflow-hidden rounded-[32px] bg-gradient-to-br from-cyan-500 via-blue-600 to-violet-600 px-5 py-6 text-white shadow-2xl ring-1 ring-white/10 sm:min-h-[240px] sm:px-8 sm:py-10">
-                <div className="absolute inset-0 bg-black/0 dark:bg-slate-950/10" />
-                <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
-                <div className="absolute -bottom-12 -left-12 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
-
-                <div className="relative flex flex-col gap-5 text-center sm:flex-row sm:items-center sm:text-left">
-                  <div className="mx-auto h-24 w-24 overflow-hidden rounded-full border-[5px] border-white shadow-2xl ring-8 ring-white/10 transition-all duration-300 hover:scale-105 sm:mx-0 sm:h-32 sm:w-32">
-                    {user?.photoURL ? (
+              <div className="relative flex flex-col items-center gap-6 text-center sm:flex-row sm:items-center sm:text-left">
+                <div className="relative shrink-0">
+                  <div className="h-24 w-24 overflow-hidden rounded-2xl border-4 border-white/20 bg-gradient-to-br from-blue-600 to-indigo-700 shadow-xl sm:h-28 sm:w-28 flex items-center justify-center text-3xl font-black text-white">
+                    {user.photoURL ? (
                       <img
                         src={user.photoURL}
                         alt={user.displayName || t("profile")}
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-pink-500 to-purple-600 text-4xl font-bold text-white">
-                        {(profile.fullName || user?.displayName || "S").charAt(0).toUpperCase()}
-                      </div>
+                      (profile.fullName || user.displayName || "S").charAt(0).toUpperCase()
                     )}
                   </div>
+                  <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 ring-4 ring-slate-950 text-white">
+                    <CheckCircle2 className="h-4 w-4" />
+                  </span>
+                </div>
 
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium uppercase tracking-widest text-blue-100">
-                      {t("welcome")}
-                    </p>
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+                    <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 font-bold uppercase tracking-wider text-[10px]">
+                      Student Dashboard
+                    </Badge>
+                    <Badge className="bg-white/10 text-slate-200 border-white/15 font-semibold text-[11px]">
+                      {getProviderName(user)}
+                    </Badge>
+                  </div>
 
-                    <h2 className="mt-1 break-words text-2xl font-extrabold tracking-tight drop-shadow-md sm:text-3xl lg:text-4xl">
-                      {formatValue(profile.fullName || user?.displayName)}
-                    </h2>
+                  <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl lg:text-4xl truncate">
+                    {formatValue(profile.fullName || user.displayName)}
+                  </h1>
 
-                    <p className="mt-2 break-words text-sm text-blue-100 sm:text-base lg:text-lg">
-                      {formatValue(profile.emailAddress || user?.email)}
-                    </p>
+                  <p className="text-sm font-mono text-slate-300 truncate">
+                    {formatValue(profile.emailAddress || user.email)}
+                  </p>
 
-                    <div className="mt-5 flex flex-wrap justify-center gap-2 sm:justify-start sm:gap-3">
-                      <span className="flex min-w-0 items-center gap-2 rounded-full border border-white/20 bg-white/15 px-3 py-2 text-xs backdrop-blur-xl shadow-lg transition-all duration-300 hover:scale-105 hover:bg-white/25 sm:px-4 sm:text-sm">
-                        <GraduationCap className="h-4 w-4" />
-                        {getClassLabel(profile.classLevel, t)}
-                      </span>
-                      <span className="flex min-w-0 items-center gap-2 rounded-full border border-white/20 bg-white/15 px-3 py-2 text-xs backdrop-blur-xl shadow-lg transition-all duration-300 hover:scale-105 hover:bg-white/25 sm:px-4 sm:text-sm">
-                        <BookOpen className="h-4 w-4" />
-                        {getBoardLabel(profile.board, t)}
-                      </span>
-                      <span className="flex min-w-0 items-center gap-2 rounded-full border border-white/20 bg-white/15 px-3 py-2 text-xs backdrop-blur-xl shadow-lg transition-all duration-300 hover:scale-105 hover:bg-white/25 sm:px-4 sm:text-sm">
-                        <Globe2 className="h-4 w-4" />
-                        {getMediumLabel(profile.medium, t)}
-                      </span>
-                    </div>
+                  <div className="flex flex-wrap justify-center gap-2 pt-2 sm:justify-start">
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-slate-200 backdrop-blur">
+                      <GraduationCap className="h-3.5 w-3.5 text-cyan-400" />
+                      {getClassLabel(profile.classLevel, t)}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-slate-200 backdrop-blur">
+                      <BookOpen className="h-3.5 w-3.5 text-blue-400" />
+                      {getBoardLabel(profile.board, t)}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-slate-200 backdrop-blur">
+                      <Globe2 className="h-3.5 w-3.5 text-violet-400" />
+                      {getMediumLabel(profile.medium, t)}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                <div className="rounded-[1.5rem] border border-slate-200 bg-gradient-to-br from-slate-50 to-blue-50 p-4 text-slate-900 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:to-slate-950 dark:text-slate-50">
-                  <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-                    {t("login_provider")}
-                  </p>
-                  <p className="mt-2 text-base font-medium text-slate-900 dark:text-slate-50">
-                    {getProviderName(user)}
-                  </p>
-                </div>
-
-                <div className="rounded-[1.5rem] border border-slate-200 bg-gradient-to-br from-slate-50 to-blue-50 p-4 text-slate-900 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:to-slate-950 dark:text-slate-50">
-                  <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-                    {t("account_status")}
-                  </p>
-                  <p className="mt-2 text-base font-medium text-slate-900 dark:text-slate-50">
-                    {getStatusText(user)}
-                  </p>
+              {/* Completion Progress Bar */}
+              <div className="mt-6 pt-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-300">
+                <span>Profile completion status ({completionStats.filled} of {completionStats.total} fields filled)</span>
+                <div className="w-full sm:w-48 h-2 rounded-full bg-white/10 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 rounded-full transition-all duration-500"
+                    style={{ width: `${completionStats.percentage}%` }}
+                  />
                 </div>
               </div>
+            </div>
 
-              <div className="overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 p-4 text-white shadow-[0_20px_60px_rgba(37,99,235,.22)] transition-all duration-300 hover:shadow-[0_24px_70px_rgba(37,99,235,.32)] sm:p-6 dark:border-slate-800">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="max-w-2xl">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-blue-50 backdrop-blur">
-                      <BarChart3 className="h-3.5 w-3.5" />
-                      {t("score_history")}
-                    </div>
-                    <h3 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">
-                      {t("overall_result")}
-                    </h3>
-                    <p className="mt-2 max-w-2xl text-sm leading-6 text-blue-50/90 sm:text-base">
-                      {scoreSummary.attempts > 0
-                        ? scoreSummary.trendLabel
-                        : t("score_history_empty_hint")}
-                    </p>
-                  </div>
-
-                  <Button
-                    type="button"
-                    onClick={() => setScoreHistoryOpen(true)}
-                    className="w-full rounded-full bg-white px-5 text-slate-900 shadow-lg shadow-black/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-blue-50 hover:shadow-xl sm:w-auto"
-                  >
-                    {t("view_full_report")}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-
-                <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur">
-                    <div className="flex items-center gap-3">
-                      <div className="rounded-2xl bg-white/15 p-3">
-                        <Trophy className="h-5 w-5" />
-                      </div>
+            {/* Profile Overview & Edit Form Layout */}
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)]">
+              {/* Left Column: Performance Report & Academic Footprint */}
+              <div className="space-y-6">
+                {/* Score Performance Card */}
+                <Card className="overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                  <CardHeader className="border-b border-slate-100 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-slate-950/50">
+                    <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs uppercase tracking-wide text-blue-50/80">
-                          {t("attempts")}
-                        </p>
-                        <p className="mt-1 text-2xl font-black">
-                          {scoreSummary.attempts}
-                        </p>
+                        <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                          <BarChart3 className="h-4 w-4 text-blue-600" />
+                          {t("score_history")} & Performance
+                        </CardTitle>
+                        <CardDescription className="text-xs text-slate-500 mt-0.5">
+                          {scoreSummary.attempts > 0 ? scoreSummary.trendLabel : t("score_history_empty_hint")}
+                        </CardDescription>
                       </div>
-                    </div>
-                  </div>
 
-                  <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur">
-                    <div className="flex items-center gap-3">
-                      <div className="rounded-2xl bg-white/15 p-3">
-                        <TrendingUp className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-xs uppercase tracking-wide text-blue-50/80">
-                          {t("average_score")}
-                        </p>
-                        <p className="mt-1 text-2xl font-black">
-                          {scoreSummary.averagePercentage}%
-                        </p>
-                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => setScoreHistoryOpen(true)}
+                        className="rounded-xl bg-blue-600 text-xs font-semibold text-white hover:bg-blue-700 shadow-sm"
+                      >
+                        {t("view_full_report")}
+                        <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                      </Button>
                     </div>
-                  </div>
+                  </CardHeader>
 
-                  <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur">
-                    <div className="flex items-center gap-3">
-                      <div className="rounded-2xl bg-white/15 p-3">
-                        <Target className="h-5 w-5" />
+                  <CardContent className="p-5">
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                      <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-950/40">
+                        <div className="flex items-center gap-2 text-slate-500 mb-1">
+                          <Trophy className="h-3.5 w-3.5 text-amber-500" />
+                          <p className="text-[10px] font-bold uppercase tracking-wider">{t("attempts")}</p>
+                        </div>
+                        <p className="text-2xl font-black text-slate-900 dark:text-white">{scoreSummary.attempts}</p>
                       </div>
-                      <div>
-                        <p className="text-xs uppercase tracking-wide text-blue-50/80">
-                          {t("best_score")}
-                        </p>
-                        <p className="mt-1 text-2xl font-black">
-                          {scoreSummary.bestPercentage}%
-                        </p>
-                      </div>
-                    </div>
-                  </div>
 
-                  <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur">
-                    <div className="flex items-center gap-3">
-                      <div className="rounded-2xl bg-white/15 p-3">
-                        <BookOpen className="h-5 w-5" />
+                      <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-950/40">
+                        <div className="flex items-center gap-2 text-slate-500 mb-1">
+                          <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
+                          <p className="text-[10px] font-bold uppercase tracking-wider">{t("average_score")}</p>
+                        </div>
+                        <p className="text-2xl font-black text-emerald-600">{scoreSummary.averagePercentage}%</p>
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-xs uppercase tracking-wide text-blue-50/80">
-                          {t("latest_score")}
-                        </p>
-                        <p className="mt-1 text-lg font-black">
+
+                      <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-950/40">
+                        <div className="flex items-center gap-2 text-slate-500 mb-1">
+                          <Target className="h-3.5 w-3.5 text-blue-500" />
+                          <p className="text-[10px] font-bold uppercase tracking-wider">{t("best_score")}</p>
+                        </div>
+                        <p className="text-2xl font-black text-blue-600">{scoreSummary.bestPercentage}%</p>
+                      </div>
+
+                      <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-950/40">
+                        <div className="flex items-center gap-2 text-slate-500 mb-1">
+                          <BookOpen className="h-3.5 w-3.5 text-violet-500" />
+                          <p className="text-[10px] font-bold uppercase tracking-wider">{t("latest_score")}</p>
+                        </div>
+                        <p className="text-2xl font-black text-violet-600">
                           {normalizedScoreHistory[0]
                             ? `${normalizedScoreHistory[0].score}/${normalizedScoreHistory[0].maxScore}`
                             : "0/0"}
                         </p>
                       </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                  </CardContent>
+                </Card>
 
-          <Card className="overflow-hidden rounded-[32px] border border-slate-200/70 bg-white/80 text-slate-900 backdrop-blur-xl shadow-[0_20px_60px_rgba(15,23,42,.08)] transition-all duration-300 hover:shadow-[0_25px_70px_rgba(59,130,246,.12)] dark:border-slate-800 dark:bg-slate-950/75 dark:text-slate-50">
-            <CardHeader className="relative overflow-hidden rounded-[24px] border border-slate-200/70 bg-gradient-to-br from-white via-slate-50 to-blue-50 p-4 shadow-sm sm:p-6 dark:border-slate-700 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950">
-              <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-blue-500/10 blur-3xl" />
-              <div className="absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-violet-500/10 blur-3xl" />
-              <div className="absolute inset-0 bg-white/40 dark:bg-slate-950/10" />
-
-              <div className="relative flex flex-col items-center gap-4 text-center sm:flex-row sm:items-center sm:gap-5 sm:text-left">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-500 to-violet-600 shadow-lg shadow-blue-500/30 sm:h-16 sm:w-16">
-                  <UserPen className="h-7 w-7 text-white sm:h-8 sm:w-8" />
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-col items-center gap-2 sm:flex-row sm:items-center sm:gap-3">
-                    <CardTitle className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl dark:text-slate-50">
-                      {t("edit_profile")}
+                {/* Academic Footprint Card */}
+                <Card className="rounded-3xl border border-slate-200/90 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                  <CardHeader className="border-b border-slate-100 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-slate-950/50">
+                    <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <GraduationCap className="h-4 w-4 text-cyan-600" />
+                      Academic Details & Location
                     </CardTitle>
-                    <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-950/70 dark:text-blue-200">
-                      {t("student")}
-                    </span>
-                  </div>
+                    <CardDescription className="text-xs text-slate-500">
+                      Detailed view of your enrolled academic track and regional details.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-5 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-950/40">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                        <GraduationCap className="h-3.5 w-3.5 text-cyan-500" />
+                        {t("class_level")}
+                      </p>
+                      <p className="mt-1.5 text-sm font-semibold text-slate-900 dark:text-white">{getClassLabel(profile.classLevel, t)}</p>
+                    </div>
 
-                  <CardDescription className="mt-2 max-w-md text-sm leading-relaxed text-slate-500 sm:text-base dark:text-slate-300">
-                    {t("profile_edit_desc")}
-                  </CardDescription>
-                </div>
+                    <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-950/40">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                        <Building2 className="h-3.5 w-3.5 text-blue-500" />
+                        {t("school")}
+                      </p>
+                      <p className="mt-1.5 text-sm font-semibold text-slate-900 dark:text-white truncate">{formatValue(profile.school)}</p>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-950/40">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                        <Globe2 className="h-3.5 w-3.5 text-violet-500" />
+                        {t("medium")}
+                      </p>
+                      <p className="mt-1.5 text-sm font-semibold text-slate-900 dark:text-white">{getMediumLabel(profile.medium, t)}</p>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-950/40">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                        <BookOpen className="h-3.5 w-3.5 text-indigo-500" />
+                        {t("education_board")}
+                      </p>
+                      <p className="mt-1.5 text-sm font-semibold text-slate-900 dark:text-white">{getBoardLabel(profile.board, t)}</p>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-950/40">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                        <Compass className="h-3.5 w-3.5 text-emerald-500" />
+                        {t("country")}
+                      </p>
+                      <p className="mt-1.5 text-sm font-semibold text-slate-900 dark:text-white truncate">{formatValue(profile.country)}</p>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-950/40">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                        <MapPin className="h-3.5 w-3.5 text-rose-500" />
+                        State & City
+                      </p>
+                      <p className="mt-1.5 text-sm font-semibold text-slate-900 dark:text-white truncate">
+                        {[profile.city, profile.state].filter(Boolean).join(", ") || "Not set"}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-            </CardHeader>
 
-            <CardContent className="space-y-4 p-4 pt-0 sm:p-6">
-              {error ? (
-                <div className="rounded-3xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
-                  {error}
-                </div>
-              ) : null}
-
-              <div className="space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-200" htmlFor="fullName">
-                      {t("full_name")}
-                    </Label>
-                    <Input
-                      id="fullName"
-                      value={profile.fullName}
-                      onChange={(e) => handleChange("fullName", e.target.value)}
-                      disabled={loading}
-                      className="h-12 rounded-xl border-slate-200 bg-slate-50 transition-all focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:placeholder:text-slate-400 dark:focus:bg-slate-950"
-                    />
+              {/* Right Column: Edit Profile Form */}
+              <Card className="rounded-3xl border border-slate-200/90 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <CardHeader className="border-b border-slate-100 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-slate-950/50">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+                      <UserPen className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
+                        {t("edit_profile")}
+                      </CardTitle>
+                      <CardDescription className="text-xs text-slate-500">
+                        {t("profile_edit_desc")}
+                      </CardDescription>
+                    </div>
                   </div>
+                </CardHeader>
 
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-200" htmlFor="classLevel">
-                      {t("class_level")}
-                    </Label>
-                    <Select
-                      value={String(profile.classLevel ?? "")}
-                      onValueChange={(value) => handleChange("classLevel", value)}
-                      disabled={loading}
-                    >
-                      <SelectTrigger className="h-12 rounded-xl border-slate-200 bg-slate-50 transition-all focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:focus:bg-slate-950">
-                        <SelectValue placeholder={t("select_class")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CLASS_OPTIONS.map((cls) => (
-                          <SelectItem key={cls} value={String(cls)}>
-                            {t(`class_${cls}`)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <CardContent className="p-5 space-y-4">
+                  {error ? (
+                    <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-xs font-semibold text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-200">
+                      <AlertCircle className="h-4 w-4 shrink-0" />
+                      <span>{error}</span>
+                    </div>
+                  ) : null}
 
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-200" htmlFor="school">
-                      {t("school")}
-                    </Label>
-                    <Input
-                      id="school"
-                      value={profile.school}
-                      onChange={(e) => handleChange("school", e.target.value)}
-                      disabled={loading}
-                      className="h-12 rounded-xl border-slate-200 bg-slate-50 transition-all focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:placeholder:text-slate-400 dark:focus:bg-slate-950"
-                    />
-                  </div>
+                  {/* Form Grid */}
+                  <div className="space-y-3.5">
+                    {/* Full Name */}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="fullName" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        {t("full_name")} <span className="text-rose-500">*</span>
+                      </Label>
+                      <Input
+                        id="fullName"
+                        value={profile.fullName}
+                        onChange={(e) => handleChange("fullName", e.target.value)}
+                        disabled={loading}
+                        placeholder="Enter full name"
+                        className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-sm focus-visible:bg-white focus-visible:ring-blue-500 dark:border-slate-700 dark:bg-slate-800"
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-200" htmlFor="medium">
-                      {t("medium")}
-                    </Label>
-                    <Select
-                      value={profile.medium}
-                      onValueChange={(value) => handleChange("medium", value)}
-                      disabled={loading}
-                    >
-                      <SelectTrigger
-                        id="medium"
-                        className="h-12 rounded-xl border-slate-200 bg-slate-50 transition-all focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:focus:bg-slate-950"
-                      >
-                        <SelectValue placeholder={t("select_medium")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="English">{t("medium_english")}</SelectItem>
-                        <SelectItem value="Hindi">{t("medium_hindi")}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-200" htmlFor="board">
-                      {t("education_board")}
-                    </Label>
-                    <Select
-                      value={profile.board}
-                      onValueChange={(value) => handleChange("board", value)}
-                      disabled={loading}
-                    >
-                      <SelectTrigger
-                        id="board"
-                        className="h-12 rounded-xl border-slate-200 bg-slate-50 transition-all focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:focus:bg-slate-950"
-                      >
-                        <SelectValue placeholder={t("select_board")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="CBSE">{t("board_cbse")}</SelectItem>
-                        <SelectItem value="RBSE">{t("board_rbse")}</SelectItem>
-                        <SelectItem value="ICSE">{t("board_icse")}</SelectItem>
-                        <SelectItem value="State Board">{t("board_state")}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* <div className="space-y-2">
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-200" htmlFor="country">
-                      {t("country")}
-                    </Label>
-                    <Input
-                      id="country"
-                      value={profile.country}
-                      onChange={(e) => handleChange("country", e.target.value)}
-                      disabled={loading}
-                      className="h-12 rounded-xl border-slate-200 bg-slate-50 transition-all focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:placeholder:text-slate-400 dark:focus:bg-slate-950"
-                    />
-                  </div> */}
-
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="country"
-                      className="text-sm font-semibold text-slate-700 dark:text-slate-200"
-                    >
-                      {t("country")}
-                    </Label>
-
-                    <Popover open={countryOpen} onOpenChange={setCountryOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="h-12 w-full justify-start rounded-xl border-slate-200 bg-slate-50 font-normal"
+                    {/* Class Level & Medium */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="classLevel" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                          {t("class_level")} <span className="text-rose-500">*</span>
+                        </Label>
+                        <Select
+                          value={String(profile.classLevel ?? "")}
+                          onValueChange={(value) => handleChange("classLevel", value)}
+                          disabled={loading}
                         >
-                          {profile.country || "Select Country"}
-                        </Button>
-                      </PopoverTrigger>
-
-                      <PopoverContent className="w-full p-0">
-                        <Command shouldFilter={false}>
-                        <CommandInput
-                          placeholder="Search Country..."
-                          value={countrySearch}
-                          onValueChange={setCountrySearch}
-                          autoComplete="off"
-                          autoCorrect="off"
-                          spellCheck={false}
-                        />
-
-                        <CommandList
-                          ref={countryListRef}
-                          className="max-h-64 overflow-auto"
-                        >
-                          <CommandEmpty>No Country Found.</CommandEmpty>
-
-                          <CommandGroup>
-                            {filteredCountries.map((country) => (
-                              <CommandItem
-                                key={country}
-                                onSelect={() => {
-                                  handleChange("country", country);
-                                  setCountryOpen(false);
-                                  setCountrySearch("");
-                                }}
-                              >
-                                {country}
-                              </CommandItem>
+                          <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-sm focus-visible:bg-white focus-visible:ring-blue-500 dark:border-slate-700 dark:bg-slate-800">
+                            <SelectValue placeholder={t("select_class")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {CLASS_OPTIONS.map((cls) => (
+                              <SelectItem key={cls} value={String(cls)}>
+                                {t(`class_${cls}`)}
+                              </SelectItem>
                             ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-200" htmlFor="state">
-                      {t("state")}
-                    </Label>
-                    <Popover open={stateOpen} onOpenChange={setStateOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="h-12 w-full justify-start rounded-xl border-slate-200 bg-slate-50 font-normal"
+                      <div className="space-y-1.5">
+                        <Label htmlFor="medium" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                          {t("medium")} <span className="text-rose-500">*</span>
+                        </Label>
+                        <Select
+                          value={profile.medium}
+                          onValueChange={(value) => handleChange("medium", value)}
+                          disabled={loading}
                         >
-                          {profile.state || "Select State"}
-                        </Button>
-                      </PopoverTrigger>
+                          <SelectTrigger id="medium" className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-sm focus-visible:bg-white focus-visible:ring-blue-500 dark:border-slate-700 dark:bg-slate-800">
+                            <SelectValue placeholder={t("select_medium")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="English">{t("medium_english")}</SelectItem>
+                            <SelectItem value="Hindi">{t("medium_hindi")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
 
-                      <PopoverContent className="w-full p-0">
-                        <Command shouldFilter={false}>
-                          <CommandInput
-                            placeholder="Search State..."
-                            value={stateSearch}
-                            onValueChange={setStateSearch}
-                            autoComplete="off"
-                            autoCorrect="off"
-                            spellCheck={false}
-                          />
+                    {/* School Name */}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="school" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        {t("school")} <span className="text-rose-500">*</span>
+                      </Label>
+                      <Input
+                        id="school"
+                        value={profile.school}
+                        onChange={(e) => handleChange("school", e.target.value)}
+                        disabled={loading}
+                        placeholder="Enter school name"
+                        className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-sm focus-visible:bg-white focus-visible:ring-blue-500 dark:border-slate-700 dark:bg-slate-800"
+                      />
+                    </div>
 
-                          <CommandList
-                            ref={stateListRef}
-                            className="max-h-64 overflow-auto"
+                    {/* Board */}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="board" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        {t("education_board")} <span className="text-rose-500">*</span>
+                      </Label>
+                      <Select
+                        value={profile.board}
+                        onValueChange={(value) => handleChange("board", value)}
+                        disabled={loading}
+                      >
+                        <SelectTrigger id="board" className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-sm focus-visible:bg-white focus-visible:ring-blue-500 dark:border-slate-700 dark:bg-slate-800">
+                          <SelectValue placeholder={t("select_board")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="CBSE">{t("board_cbse")}</SelectItem>
+                          <SelectItem value="RBSE">{t("board_rbse")}</SelectItem>
+                          <SelectItem value="ICSE">{t("board_icse")}</SelectItem>
+                          <SelectItem value="State Board">{t("board_state")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Country Selector */}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="country" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        {t("country")} <span className="text-rose-500">*</span>
+                      </Label>
+                      <Popover open={countryOpen} onOpenChange={setCountryOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="h-10 w-full justify-start rounded-xl border-slate-200 bg-slate-50/50 text-sm font-normal dark:border-slate-700 dark:bg-slate-800"
                           >
-                            <CommandEmpty>No State Found.</CommandEmpty>
+                            <MapPin className="mr-2 h-3.5 w-3.5 text-slate-400" />
+                            {profile.country || "Select Country"}
+                          </Button>
+                        </PopoverTrigger>
 
-                            <CommandGroup>
-                              {filteredStates.map((state) => (
-                                <CommandItem
-                                  key={state}
-                                  onSelect={() => {
-                                    handleChange("state", state);
-                                    setStateOpen(false);
-                                    setStateSearch("");
-                                  }}
-                                >
-                                  {state}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
+                        <PopoverContent className="w-full p-0">
+                          <Command shouldFilter={false}>
+                            <CommandInput
+                              placeholder="Search Country..."
+                              value={countrySearch}
+                              onValueChange={setCountrySearch}
+                              autoComplete="off"
+                            />
+                            <CommandList ref={countryListRef} className="max-h-56 overflow-auto">
+                              <CommandEmpty>No Country Found.</CommandEmpty>
+                              <CommandGroup>
+                                {filteredCountries.map((country) => (
+                                  <CommandItem
+                                    key={country}
+                                    onSelect={() => {
+                                      handleChange("country", country);
+                                      setCountryOpen(false);
+                                      setCountrySearch("");
+                                    }}
+                                  >
+                                    {country}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    {/* State & City Grid */}
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* State Selector */}
+                      <div className="space-y-1.5">
+                        <Label htmlFor="state" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                          {t("state")} <span className="text-rose-500">*</span>
+                        </Label>
+                        <Popover open={stateOpen} onOpenChange={setStateOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className="h-10 w-full justify-start rounded-xl border-slate-200 bg-slate-50/50 text-sm font-normal dark:border-slate-700 dark:bg-slate-800"
+                            >
+                              <span className="truncate">{profile.state || "Select State"}</span>
+                            </Button>
+                          </PopoverTrigger>
+
+                          <PopoverContent className="w-full p-0">
+                            <Command shouldFilter={false}>
+                              <CommandInput
+                                placeholder="Search State..."
+                                value={stateSearch}
+                                onValueChange={setStateSearch}
+                                autoComplete="off"
+                              />
+                              <CommandList ref={stateListRef} className="max-h-56 overflow-auto">
+                                <CommandEmpty>No State Found.</CommandEmpty>
+                                <CommandGroup>
+                                  {filteredStates.map((state) => (
+                                    <CommandItem
+                                      key={state}
+                                      onSelect={() => {
+                                        handleChange("state", state);
+                                        setStateOpen(false);
+                                        setStateSearch("");
+                                      }}
+                                    >
+                                      {state}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+
+                      {/* City Selector */}
+                      <div className="space-y-1.5">
+                        <Label htmlFor="city" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                          {t("city")} <span className="text-rose-500">*</span>
+                        </Label>
+                        <Popover open={cityOpen} onOpenChange={setCityOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className="h-10 w-full justify-start rounded-xl border-slate-200 bg-slate-50/50 text-sm font-normal dark:border-slate-700 dark:bg-slate-800"
+                            >
+                              <span className="truncate">{profile.city || "Select City"}</span>
+                            </Button>
+                          </PopoverTrigger>
+
+                          <PopoverContent className="w-full p-0">
+                            <Command shouldFilter={false}>
+                              <CommandInput
+                                placeholder="Search City..."
+                                value={citySearch}
+                                onValueChange={setCitySearch}
+                                autoComplete="off"
+                              />
+                              <CommandList ref={cityListRef} className="max-h-56 overflow-auto">
+                                <CommandEmpty>No City Found.</CommandEmpty>
+                                <CommandGroup>
+                                  {filteredCities.map((city) => (
+                                    <CommandItem
+                                      key={city}
+                                      onSelect={() => {
+                                        handleChange("city", city);
+                                        setCityOpen(false);
+                                        setCitySearch("");
+                                      }}
+                                    >
+                                      {city}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-200" htmlFor="city">
-                      {t("city")}
-                    </Label>
-                    <Popover open={cityOpen} onOpenChange={setCityOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="h-12 w-full justify-start rounded-xl border-slate-200 bg-slate-50 font-normal"
-                        >
-                          {profile.city || "Select City"}
-                        </Button>
-                      </PopoverTrigger>
+                  {/* Form Action Buttons */}
+                  <div className="pt-4 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        if (initialProfile) {
+                          setProfile(initialProfile);
+                        } else if (user) {
+                          setProfile((current) => ({
+                            ...current,
+                            fullName: user.displayName || "",
+                            emailAddress: user.email || "",
+                          }));
+                        }
+                      }}
+                      disabled={loading || saving}
+                      className="h-10 rounded-xl border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                    >
+                      <RefreshCcw className="mr-1.5 h-3.5 w-3.5" />
+                      {t("reset")}
+                    </Button>
 
-                      <PopoverContent className="w-full p-0">
-                        <Command shouldFilter={false}>
-                          <CommandInput
-                            placeholder="Search City..."
-                            value={citySearch}
-                            onValueChange={setCitySearch}
-                            autoComplete="off"
-                            autoCorrect="off"
-                            spellCheck={false}
-                          />
-
-                          <CommandList
-                            ref={cityListRef}
-                            className="max-h-64 overflow-auto"
-                          >
-                            <CommandEmpty>No City Found.</CommandEmpty>
-
-                            <CommandGroup>
-                              {filteredCities.map((city) => (
-                                <CommandItem
-                                  key={city}
-                                  onSelect={() => {
-                                    handleChange("city", city);
-                                    setCityOpen(false);
-                                    setCitySearch("");
-                                  }}
-                                >
-                                  {city}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
+                    <Button
+                      onClick={handleSave}
+                      disabled={loading || saving}
+                      className="h-10 rounded-xl bg-blue-600 text-xs font-semibold text-white shadow-sm hover:bg-blue-700"
+                    >
+                      {saving ? (
+                        <>
+                          <svg className="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" opacity="0.25" />
+                            <path d="M22 12a10 10 0 00-10-10" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+                          </svg>
+                          {t("saving")}
+                        </>
+                      ) : (
+                        <>
+                          <Save className="mr-1.5 h-3.5 w-3.5" />
+                          {t("save_changes")}
+                        </>
+                      )}
+                    </Button>
                   </div>
-                </div>
-
-                <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      if (initialProfile) {
-                        setProfile(initialProfile);
-                      } else if (user) {
-                        setProfile((current) => ({
-                          ...current,
-                          fullName: user.displayName || "",
-                          emailAddress: user.email || "",
-                        }));
-                      }
-                    }}
-                    disabled={loading || saving}
-                    className="h-12 w-full rounded-xl border-slate-200 bg-white px-6 font-semibold text-slate-700 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700 hover:shadow-md disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-50 sm:w-auto"
-                  >
-                    <RefreshCcw className="mr-2 h-4 w-4" />
-                    {t("reset")}
-                  </Button>
-
-                  <Button
-                    onClick={handleSave}
-                    disabled={loading || saving}
-                    className="h-12 w-full rounded-xl bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 px-7 font-semibold text-white shadow-lg shadow-blue-500/30 transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/40 active:scale-[0.98] disabled:opacity-60 disabled:hover:scale-100 sm:w-auto"
-                  >
-                    {saving ? (
-                      <>
-                        <svg className="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                          <circle
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                            opacity="0.25"
-                          />
-                          <path
-                            d="M22 12a10 10 0 00-10-10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                        {t("saving")}
-                      </>
-                    ) : (
-                      <>
-                        <Save className="mr-2 h-4 w-4" />
-                        {t("save_changes")}
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-          </>
-        ) : null}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
       </div>
 
       <ScoreHistoryReportDialog
