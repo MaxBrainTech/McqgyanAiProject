@@ -1,19 +1,9 @@
 import OpenAI from "openai";
 import PDFDocument from "pdfkit";
 import { Request, Response } from "express";
-import { getServerAppUrl } from "./lib/appUrl";
 import dotenv from "dotenv";
-import { Pool } from "pg";
 
 dotenv.config();
-
-const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: Number(process.env.DB_PORT),
-});
 
 interface EvaluationParams {
   images: string[];
@@ -166,10 +156,12 @@ export function generateEvaluationPDF(req: Request, res: Response) {
     answerEvaluations,
   } = req.body;
 
+  // A4 Document with precise margins and page buffering
   const doc = new PDFDocument({
     size: "A4",
-    margins: { top: 56, bottom: 54, left: 48, right: 48 },
+    margins: { top: 56, bottom: 50, left: 48, right: 48 },
     bufferPages: true,
+    autoFirstPage: true,
   });
 
   res.setHeader("Content-Type", "application/pdf");
@@ -177,21 +169,17 @@ export function generateEvaluationPDF(req: Request, res: Response) {
 
   doc.pipe(res);
 
-  const pageWidth = doc.page.width;
-  const pageHeight = doc.page.height;
+  const pageWidth = doc.page.width; // 595.28 pt
+  const pageHeight = doc.page.height; // 841.89 pt
   const left = 48;
   const right = pageWidth - 48;
-  const contentWidth = pageWidth - left * 2;
-  const contentBottom = pageHeight - 64;
-  const footerY = pageHeight - 24;
-  const footerRuleY = pageHeight - 34;
+  const contentWidth = pageWidth - left * 2; // 499.28 pt
+  const topStart = 58;
+  const contentBottom = pageHeight - 52; // 789.89 pt
+  const footerRuleY = pageHeight - 38;
+  const footerY = pageHeight - 26;
 
-  const setBodyText = (fontSize = 10, color = "#263238", bold = false) => {
-    doc.fillColor(color);
-    doc.fontSize(fontSize);
-    doc.font(bold ? "Helvetica-Bold" : "Helvetica");
-  };
-
+  // Page Header Drawing Function
   const drawPageHeader = () => {
     doc.save();
     // Header Banner Background
@@ -203,13 +191,14 @@ export function generateEvaluationPDF(req: Request, res: Response) {
     doc.font("Helvetica").fontSize(9).fillColor("#94a3b8").text("Answer Sheet Evaluation Report", left, 27);
 
     const formattedDate = new Date().toLocaleDateString();
-    doc.font("Helvetica-Bold").fontSize(9).fillColor("#93c5fd").text(formattedDate, right - 120, 18, {
-      width: 120,
+    doc.font("Helvetica-Bold").fontSize(9).fillColor("#93c5fd").text(formattedDate, right - 130, 18, {
+      width: 130,
       align: "right",
     });
     doc.restore();
   };
 
+  // Page Footer Drawing Function
   const drawPageFooter = (pageNumber: number, totalPages: number) => {
     doc.save();
     doc.strokeColor("#e2e8f0").lineWidth(0.5).moveTo(left, footerRuleY).lineTo(right, footerRuleY).stroke();
@@ -225,184 +214,218 @@ export function generateEvaluationPDF(req: Request, res: Response) {
     doc.restore();
   };
 
+  // Space check helper that adds a page ONLY if content will cross contentBottom
   const ensureSpace = (requiredHeight: number) => {
-    if (doc.y + requiredHeight <= contentBottom) return;
-    doc.addPage();
-    doc.y = 54;
+    if (doc.y + requiredHeight > contentBottom) {
+      doc.addPage();
+      doc.y = topStart;
+    }
   };
 
-  const blockHeight = (text: string | undefined, width: number, fontSize: number) => {
-    if (!text) return fontSize * 1.4;
-    doc.font("Helvetica").fontSize(fontSize);
-    return Math.max(doc.heightOfString(text, { width }), fontSize * 1.4);
-  };
-
-  const bulletHeight = (items: string[] | undefined, width: number, fontSize: number) => {
-    if (!items?.length) return 0;
-    return items.reduce((total, item) => total + blockHeight(item, width - 12, fontSize) + 2, 0);
-  };
-
+  // Section Title Helper
   const drawSectionTitle = (title: string, accent = "#1d4ed8") => {
-    setBodyText(12.5, accent, true);
+    ensureSpace(24);
+    doc.fillColor(accent).font("Helvetica-Bold").fontSize(12);
     doc.text(title, left, doc.y, { width: contentWidth });
-    doc.moveDown(0.12);
+    doc.y += 3;
     doc.strokeColor("#e2e8f0").lineWidth(0.5).moveTo(left, doc.y).lineTo(right, doc.y).stroke();
-    doc.moveDown(0.3);
+    doc.y += 10;
   };
 
-  const drawBulletList = (items: string[], bulletColor = "#334155") => {
-    items.forEach((item) => {
-      setBodyText(9.5, bulletColor, false);
-      doc.text(`•  ${item}`, left + 4, doc.y, {
-        width: contentWidth - 8,
-        align: "left",
-        lineGap: 1.1,
-      });
-      doc.moveDown(0.15);
-    });
-  };
+  doc.y = topStart;
 
-  drawPageHeader();
-  doc.y = 54;
-
-  // Student Info Card
+  // --- 1. STUDENT PROFILE CARD ---
+  const profileY = doc.y;
   doc.save();
-  doc.roundedRect(left, doc.y, contentWidth, 24, 4).fillAndStroke("#f8fafc", "#e2e8f0");
-  doc.fillColor("#0f172a").font("Helvetica-Bold").fontSize(13).text(studentName || "Student", left + 10, doc.y + 5);
-  doc.fillColor("#475569").font("Helvetica").fontSize(9.5).text(
-    `Class: ${classLevel ?? "N/A"}   |   Subject: ${subject || "General"}   |   Evaluated Answers: ${totalAnswers ?? 0}`,
-    left + 10,
-    doc.y + 14,
+  doc.roundedRect(left, profileY, contentWidth, 32, 4).fillAndStroke("#f8fafc", "#e2e8f0");
+  doc.fillColor("#0f172a").font("Helvetica-Bold").fontSize(12).text(studentName || "Student", left + 12, profileY + 6);
+  doc.fillColor("#475569").font("Helvetica").fontSize(9).text(
+    `Class: ${classLevel ?? "N/A"}   |   Subject: ${subject || "General"}   |   Total Answers Evaluated: ${totalAnswers ?? 0}`,
+    left + 12,
+    profileY + 19,
   );
   doc.restore();
 
-  doc.y += 30;
+  doc.y = profileY + 44;
 
-  // Evaluation Summary Section
-  drawSectionTitle("Evaluation Summary");
+  // --- 2. OVERALL EVALUATION SUMMARY CARD ---
+  drawSectionTitle("Overall Evaluation Summary", "#1d4ed8");
 
   const summaryFeedback = overallFeedback || "No overall feedback was provided.";
-  const summaryFeedbackHeight = blockHeight(summaryFeedback, contentWidth - 20, 9.5);
-  const summaryCardHeight = 32 + summaryFeedbackHeight;
+  doc.font("Helvetica").fontSize(9.5);
+  const summaryFeedbackHeight = doc.heightOfString(summaryFeedback, { width: contentWidth - 24, lineGap: 1.2 });
+  const summaryCardHeight = Math.max(48, 30 + summaryFeedbackHeight);
 
-  ensureSpace(summaryCardHeight);
+  ensureSpace(summaryCardHeight + 10);
   const summaryY = doc.y;
 
   doc.save();
   doc.roundedRect(left, summaryY, contentWidth, summaryCardHeight, 4).fillAndStroke("#eff6ff", "#bfdbfe");
 
-  doc.fillColor("#1e3a8a").font("Helvetica-Bold").fontSize(11).text("Overall Performance Rating", left + 10, summaryY + 6);
+  doc.fillColor("#1e3a8a").font("Helvetica-Bold").fontSize(11).text("Overall Performance Rating", left + 12, summaryY + 8);
   doc.font("Helvetica-Bold").fontSize(18).fillColor("#1d4ed8").text(
     `${Number(averageScore ?? 0).toFixed(1)} / 10`,
-    right - 110,
-    summaryY + 5,
-    { width: 100, align: "right" },
+    right - 120,
+    summaryY + 6,
+    { width: 108, align: "right" },
   );
 
-  doc.fillColor("#334155").font("Helvetica").fontSize(9.5).text(summaryFeedback, left + 10, summaryY + 22, {
-    width: contentWidth - 20,
-    align: "justify",
-    lineGap: 1.15,
+  doc.fillColor("#334155").font("Helvetica").fontSize(9.5).text(summaryFeedback, left + 12, summaryY + 24, {
+    width: contentWidth - 24,
+    align: "left",
+    lineGap: 1.2,
   });
   doc.restore();
 
-  doc.y = summaryY + summaryCardHeight + 12;
+  doc.y = summaryY + summaryCardHeight + 16;
 
-  // Answer Breakdown Section
-  drawSectionTitle("Detailed Answer Breakdown", "#0f766e");
+  // --- 3. DETAILED QUESTION BREAKDOWN ---
+  drawSectionTitle("Detailed Question Breakdown", "#0f766e");
 
   const items = (answerEvaluations || []) as AnswerEvaluationItem[];
-  items.forEach((ans, index) => {
-    const answerHeight =
-      32 +
-      blockHeight(`Question ${ans.questionNumber}`, contentWidth - 110, 11) +
-      blockHeight(ans.extractedAnswer || "", contentWidth - 16, 9.5) +
-      bulletHeight(ans.strengths, contentWidth - 16, 9.5) +
-      bulletHeight(ans.improvements, contentWidth - 16, 9.5) +
-      blockHeight(ans.correctAnswer || "", contentWidth - 16, 9.5) +
-      blockHeight(ans.detailedFeedback || "", contentWidth - 16, 9.5);
 
-    ensureSpace(answerHeight + 10);
-
-    const startY = doc.y;
-
+  items.forEach((ans) => {
+    // A. Question Header Bar
+    ensureSpace(32);
+    const qHeaderY = doc.y;
     doc.save();
-    doc.roundedRect(left, startY, contentWidth, answerHeight, 4).fillAndStroke("#ffffff", "#e2e8f0");
-
-    let innerY = startY + 6;
-
-    // Header of Card
-    doc.fillColor("#0f172a").font("Helvetica-Bold").fontSize(11).text(`Question ${ans.questionNumber}`, left + 8, innerY);
-    doc.fillColor("#1d4ed8").font("Helvetica-Bold").fontSize(10).text(
+    doc.roundedRect(left, qHeaderY, contentWidth, 24, 3).fillAndStroke("#0f172a", "#0f172a");
+    doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(11).text(`Question ${ans.questionNumber}`, left + 10, qHeaderY + 6);
+    doc.fillColor("#93c5fd").font("Helvetica-Bold").fontSize(10).text(
       `Score: ${typeof ans.qualityScore === "number" ? ans.qualityScore : "N/A"} / 10`,
-      right - 100,
-      innerY,
-      { width: 92, align: "right" },
+      right - 110,
+      qHeaderY + 6,
+      { width: 100, align: "right" },
     );
-    innerY += 14;
-
-    doc.strokeColor("#f1f5f9").lineWidth(0.5).moveTo(left + 6, innerY).lineTo(right - 6, innerY).stroke();
-    innerY += 6;
-
-    // Student Answer
-    doc.fillColor("#0f172a").font("Helvetica-Bold").fontSize(9.5).text("Student Extracted Answer", left + 8, innerY);
-    innerY += 11;
-    doc.fillColor("#334155").font("Helvetica").fontSize(9).text(ans.extractedAnswer || "No answer extracted.", left + 8, innerY, {
-      width: contentWidth - 16,
-      align: "justify",
-      lineGap: 1.1,
-    });
-    innerY = doc.y + 6;
-
-    // Strengths
-    if (ans.strengths?.length) {
-      doc.fillColor("#15803d").font("Helvetica-Bold").fontSize(9.5).text("Strengths", left + 8, innerY);
-      innerY += 11;
-      doc.y = innerY;
-      drawBulletList(ans.strengths, "#166534");
-      innerY = doc.y + 6;
-    }
-
-    // Improvements
-    if (ans.improvements?.length) {
-      doc.fillColor("#c2410c").font("Helvetica-Bold").fontSize(9.5).text("Areas for Improvement", left + 8, innerY);
-      innerY += 11;
-      doc.y = innerY;
-      drawBulletList(ans.improvements, "#9a3412");
-      innerY = doc.y + 6;
-    }
-
-    // Correct Answer
-    if (ans.correctAnswer) {
-      doc.fillColor("#1d4ed8").font("Helvetica-Bold").fontSize(9.5).text("Correct / Model Answer", left + 8, innerY);
-      innerY += 11;
-      doc.fillColor("#1e40af").font("Helvetica").fontSize(9).text(ans.correctAnswer, left + 8, innerY, {
-        width: contentWidth - 16,
-        align: "justify",
-        lineGap: 1.1,
-      });
-      innerY = doc.y + 6;
-    }
-
-    // Detailed Feedback
-    if (ans.detailedFeedback) {
-      doc.fillColor("#0f172a").font("Helvetica-Bold").fontSize(9.5).text("Teacher Feedback", left + 8, innerY);
-      innerY += 11;
-      doc.fillColor("#475569").font("Helvetica").fontSize(9).text(ans.detailedFeedback, left + 8, innerY, {
-        width: contentWidth - 16,
-        align: "justify",
-        lineGap: 1.1,
-      });
-      innerY = doc.y + 6;
-    }
-
     doc.restore();
-    doc.y = Math.max(doc.y + 10, startY + answerHeight + 8);
+    doc.y = qHeaderY + 30;
+
+    // B. Student Extracted Answer Card
+    if (ans.extractedAnswer) {
+      doc.font("Helvetica").fontSize(9);
+      const textH = doc.heightOfString(ans.extractedAnswer, { width: contentWidth - 24, lineGap: 1.2 });
+      const boxH = textH + 20;
+
+      ensureSpace(boxH + 6);
+      const curY = doc.y;
+
+      doc.save();
+      doc.roundedRect(left, curY, contentWidth, boxH, 4).fillAndStroke("#f8fafc", "#e2e8f0");
+      doc.fillColor("#0f172a").font("Helvetica-Bold").fontSize(9.5).text("Student Extracted Answer", left + 12, curY + 6);
+      doc.fillColor("#334155").font("Helvetica").fontSize(9).text(ans.extractedAnswer, left + 12, curY + 18, {
+        width: contentWidth - 24,
+        align: "left",
+        lineGap: 1.2,
+      });
+      doc.restore();
+      doc.y = curY + boxH + 8;
+    }
+
+    // C. Strengths Section Card
+    if (ans.strengths?.length) {
+      doc.font("Helvetica").fontSize(9);
+      let bulletsH = 0;
+      ans.strengths.forEach((s) => {
+        bulletsH += doc.heightOfString(`•  ${s}`, { width: contentWidth - 24, lineGap: 1.1 }) + 3;
+      });
+      const boxH = bulletsH + 20;
+
+      ensureSpace(boxH + 6);
+      const curY = doc.y;
+
+      doc.save();
+      doc.roundedRect(left, curY, contentWidth, boxH, 4).fillAndStroke("#f0fdf4", "#bbf7d0");
+      doc.fillColor("#15803d").font("Helvetica-Bold").fontSize(9.5).text("Strengths / Well Done", left + 12, curY + 6);
+
+      let bY = curY + 18;
+      ans.strengths.forEach((s) => {
+        doc.fillColor("#166534").font("Helvetica").fontSize(9).text(`•  ${s}`, left + 12, bY, {
+          width: contentWidth - 24,
+          align: "left",
+          lineGap: 1.1,
+        });
+        bY = doc.y + 3;
+      });
+      doc.restore();
+      doc.y = curY + boxH + 8;
+    }
+
+    // D. Areas for Improvement Section Card
+    if (ans.improvements?.length) {
+      doc.font("Helvetica").fontSize(9);
+      let bulletsH = 0;
+      ans.improvements.forEach((imp) => {
+        bulletsH += doc.heightOfString(`•  ${imp}`, { width: contentWidth - 24, lineGap: 1.1 }) + 3;
+      });
+      const boxH = bulletsH + 20;
+
+      ensureSpace(boxH + 6);
+      const curY = doc.y;
+
+      doc.save();
+      doc.roundedRect(left, curY, contentWidth, boxH, 4).fillAndStroke("#fff7ed", "#ffedd5");
+      doc.fillColor("#c2410c").font("Helvetica-Bold").fontSize(9.5).text("Areas for Improvement", left + 12, curY + 6);
+
+      let bY = curY + 18;
+      ans.improvements.forEach((imp) => {
+        doc.fillColor("#9a3412").font("Helvetica").fontSize(9).text(`•  ${imp}`, left + 12, bY, {
+          width: contentWidth - 24,
+          align: "left",
+          lineGap: 1.1,
+        });
+        bY = doc.y + 3;
+      });
+      doc.restore();
+      doc.y = curY + boxH + 8;
+    }
+
+    // E. Model / Correct Answer Card
+    if (ans.correctAnswer) {
+      doc.font("Helvetica").fontSize(9);
+      const textH = doc.heightOfString(ans.correctAnswer, { width: contentWidth - 24, lineGap: 1.2 });
+      const boxH = textH + 20;
+
+      ensureSpace(boxH + 6);
+      const curY = doc.y;
+
+      doc.save();
+      doc.roundedRect(left, curY, contentWidth, boxH, 4).fillAndStroke("#eff6ff", "#bfdbfe");
+      doc.fillColor("#1e40af").font("Helvetica-Bold").fontSize(9.5).text("Model / Correct Answer", left + 12, curY + 6);
+      doc.fillColor("#1e3a8a").font("Helvetica").fontSize(9).text(ans.correctAnswer, left + 12, curY + 18, {
+        width: contentWidth - 24,
+        align: "left",
+        lineGap: 1.2,
+      });
+      doc.restore();
+      doc.y = curY + boxH + 8;
+    }
+
+    // F. Detailed Teacher Feedback Card
+    if (ans.detailedFeedback) {
+      doc.font("Helvetica").fontSize(9);
+      const textH = doc.heightOfString(ans.detailedFeedback, { width: contentWidth - 24, lineGap: 1.2 });
+      const boxH = textH + 20;
+
+      ensureSpace(boxH + 6);
+      const curY = doc.y;
+
+      doc.save();
+      doc.roundedRect(left, curY, contentWidth, boxH, 4).fillAndStroke("#f8fafc", "#cbd5e1");
+      doc.fillColor("#0f172a").font("Helvetica-Bold").fontSize(9.5).text("Detailed Teacher Feedback", left + 12, curY + 6);
+      doc.fillColor("#334155").font("Helvetica").fontSize(9).text(ans.detailedFeedback, left + 12, curY + 18, {
+        width: contentWidth - 24,
+        align: "left",
+        lineGap: 1.2,
+      });
+      doc.restore();
+      doc.y = curY + boxH + 14;
+    }
   });
 
+  // Apply Headers and Footers to all generated content pages
   const pages = doc.bufferedPageRange();
   const totalPages = pages.count;
-  for (let i = 0; i < pages.count; i += 1) {
+  for (let i = 0; i < totalPages; i += 1) {
     doc.switchToPage(i);
     drawPageHeader();
     drawPageFooter(i + 1, totalPages);
