@@ -105,31 +105,87 @@ export default function CustomTestPage() {
   const totalQuestions = testData?.questions?.length || 0;
   const activeDurationMinutes = testData?.test?.durationMinutes ?? durationMinutes;
 
-  const buildQuestionReview = () =>
-    (testData?.questions || []).map((question: any, index: number) => {
-      const result = results[question.id];
+  const buildQuestionReview = (overrideResultsArray?: any[], overrideFinalResult?: any) => {
+    const evalMap = new Map<string, any>();
+    if (Array.isArray(overrideResultsArray)) {
+      overrideResultsArray.forEach((r: any) => {
+        if (r?.questionId) {
+          evalMap.set(String(r.questionId), r);
+        }
+      });
+    }
+
+    return (testData?.questions || []).map((question: any, index: number) => {
+      const evalRes = evalMap.get(String(question.id)) || results[question.id];
+
+      let optionsList: string[] = [];
+      if (Array.isArray(question.options)) {
+        optionsList = question.options;
+      } else if (typeof question.options === "string" && question.options.trim().length > 0) {
+        try {
+          const parsed = JSON.parse(question.options);
+          if (Array.isArray(parsed)) optionsList = parsed;
+        } catch {}
+      }
+
+      const userAnswer = evalRes?.studentAnswer || answers[question.id] || "";
+      const correctAnswer = evalRes?.correctAnswer || question.correctAnswer || question.correctOption || "";
+      const isCorrect = evalRes?.isCorrect !== undefined ? Boolean(evalRes.isCorrect) : false;
+      const explanation = evalRes?.explanation || evalRes?.feedback || question.explanation || "";
+
       return {
         questionNumber: index + 1,
         question: question.question || "",
-        options: Array.isArray(question.options) ? question.options : [],
-        userAnswer: answers[question.id] || "",
-        correctAnswer: result?.correctAnswer || question.correctAnswer || question.correctOption || "",
-        isCorrect: Boolean(result?.isCorrect),
-        explanation: result?.explanation || question.explanation,
+        options: optionsList,
+        userAnswer,
+        correctAnswer,
+        isCorrect,
+        explanation,
         questionType: question.questionType,
       };
     });
+  };
 
-  const saveCurrentAttemptToHistory = async () => {
+  const calculateStats = () => {
+    const hasEvalResults = Object.keys(results).length > 0;
+    if (hasEvalResults) {
+      const total = Object.keys(results).length;
+      const correct = Object.values(results).filter((r: any) => r.isCorrect).length;
+      const totalScore = Object.values(results).reduce((sum: number, r: any) => sum + (r.score || 0), 0);
+      const maxScore = total * 10;
+      return { correct, total, totalScore, maxScore };
+    }
+
+    let correct = 0;
+    const total = testData?.questions?.length || 0;
+    testData?.questions?.forEach((q: any) => {
+      const ans = answers[q.id];
+      const correctOption = q.correctOption || q.correctAnswer;
+      if (ans && ans === correctOption) correct++;
+    });
+    const totalScore = total > 0 ? (correct / total) * 100 : 0;
+    const maxScore = total * 10;
+    return { correct, total, totalScore, maxScore };
+  };
+
+  const saveCurrentAttemptToHistory = async (submissionResultData?: any) => {
     if (scoreHistorySavedRef.current || !testData?.test) return;
 
-    const stats = finalResult
+    const currentFinal = submissionResultData || finalResult;
+    const evalResultsArray = currentFinal?.results;
+
+    const stats = currentFinal
       ? {
-          totalScore: finalResult.totalScore || 0,
-          correct: finalResult.correctAnswers || 0,
-          total: finalResult.totalQuestions || totalQuestions,
+          totalScore: currentFinal.totalScore || 0,
+          correct: currentFinal.correctAnswers || 0,
+          total: currentFinal.totalQuestions || totalQuestions,
         }
       : calculateStats();
+
+    const resolvedClassLevel =
+      extractClassLevel(testData?.test) ??
+      extractClassLevel({ classLevel: headerClassLabel }) ??
+      null;
 
     await saveScoreHistoryAttempt({
       subject: testData?.test?.subject || testData?.test?.title || "quiz",
@@ -137,11 +193,11 @@ export default function CustomTestPage() {
       totalQuestions: stats.total || totalQuestions,
       correctAnswers: stats.correct || 0,
       language: i18n.language || "en",
-      classLevel: Number(testData?.test?.classLevel ?? headerClassLabel ?? 0) || null,
+      classLevel: resolvedClassLevel,
       difficulty: String(testData?.test?.difficulty || ""),
       mode: "custom-test",
       questionPaperTitle: testData?.test?.title || t("question_paper_title"),
-      questionReview: buildQuestionReview(),
+      questionReview: buildQuestionReview(evalResultsArray, currentFinal),
     });
 
     scoreHistorySavedRef.current = true;
@@ -291,7 +347,7 @@ export default function CustomTestPage() {
 
       setFinalResult(data);
       setTestCompleted(true);
-      void saveCurrentAttemptToHistory().catch((saveError) => {
+      void saveCurrentAttemptToHistory(data).catch((saveError) => {
         console.warn("Failed to save custom test history", saveError);
       });
       persistSession({
@@ -471,14 +527,6 @@ export default function CustomTestPage() {
     } finally {
       setIsSubmittingAnswer(false);
     }
-  };
-
-  const calculateStats = () => {
-    const total = Object.keys(results).length;
-    const correct = Object.values(results).filter((r: any) => r.isCorrect).length;
-    const totalScore = Object.values(results).reduce((sum: number, r: any) => sum + (r.score || 0), 0);
-    const maxScore = totalQuestions * 10;
-    return { correct, total, totalScore, maxScore };
   };
 
   const getPerformanceKey = (percentage: number) => {

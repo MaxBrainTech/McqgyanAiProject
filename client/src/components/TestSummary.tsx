@@ -290,16 +290,28 @@ export default function TestSummary({
       classLevel: classLevel || null,
       difficulty,
       language: language || i18n.language || "en",
-      questions: questionReview.map((item, index) => ({
-        questionNumber: item.questionNumber || index + 1,
-        question: item.question,
-        options: item.options || [],
-        userAnswer: item.userAnswer || "",
-        correctAnswer: item.correctAnswer || "",
-        isCorrect: Boolean(item.isCorrect),
-        explanation: item.explanation,
-        questionType: item.questionType,
-      })),
+      questions: questionReview.map((item, index) => {
+        let optionsList: string[] = [];
+        if (Array.isArray(item.options)) {
+          optionsList = item.options;
+        } else if (typeof item.options === "string" && (item.options as string).trim().length > 0) {
+          try {
+            const parsed = JSON.parse(item.options);
+            if (Array.isArray(parsed)) optionsList = parsed;
+          } catch {}
+        }
+
+        return {
+          questionNumber: item.questionNumber || index + 1,
+          question: item.question,
+          options: optionsList,
+          userAnswer: item.userAnswer || "",
+          correctAnswer: item.correctAnswer || (item as any).correctOption || "",
+          isCorrect: Boolean(item.isCorrect),
+          explanation: item.explanation || (item as any).feedback,
+          questionType: item.questionType,
+        };
+      }),
     };
 
     const newEntry = normalizeScoreEntry({
@@ -349,7 +361,8 @@ export default function TestSummary({
         {
           userId: user.uid,
           userEmail: user.email,
-        }
+        },
+        snapshot
       ).catch((error) => {
         console.warn("Score history sync failed", error);
       });

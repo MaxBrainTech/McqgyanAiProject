@@ -208,6 +208,7 @@ export const studentScoreHistory = pgTable("student_score_history", {
   mode: text("mode"),
   difficulty: text("difficulty"),
   language: text("language").notNull().default("english"),
+  classLevel: integer("class_level"),
   score: integer("score").notNull().default(0),
   maxScore: integer("max_score").notNull().default(0),
   percentage: integer("percentage").notNull().default(0),

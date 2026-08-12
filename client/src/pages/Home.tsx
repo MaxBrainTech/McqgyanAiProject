@@ -133,8 +133,8 @@ const [selectedLanguage, setSelectedLanguage] = useState<string>("english");
   const [customTopic5, setCustomTopic5] = useState<string>("");
   const [customTopic6, setCustomTopic6] = useState<string>("");
 
-  // const [selectedGptModel, setSelectedGptModel] = useState<string>("gpt-5.2");
-const [selectedGptModel, setSelectedGptModel] = useState<string>("ft:gpt-4.1-mini-2025-04-14:maxbrain-technologies:430-example:E4OP0nFv");
+  const [selectedGptModel, setSelectedGptModel] = useState<string>("gpt-5.2");
+// const [selectedGptModel, setSelectedGptModel] = useState<string>("ft:gpt-4.1-mini-2025-04-14:maxbrain-technologies:430-example:E4OP0nFv");
 const [selectedBoard, setSelectedBoard] = useState<string>("CBSE");
 const [isGeneratingTest, setIsGeneratingTest] = useState<boolean>(false);
   // const [chapters, setChapters] = useState<Array<{ id: number; title: string; description: string }>>([]);

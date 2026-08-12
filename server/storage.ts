@@ -51,6 +51,30 @@ const normalizeCustomTest = (row: any) => {
 
 const normalizeStudentScoreHistory = (row: any): StudentScoreHistory | undefined => {
   if (!row) return row;
+  let parsedInsights = row.insights;
+  if (typeof parsedInsights === "string") {
+    try {
+      parsedInsights = JSON.parse(parsedInsights);
+      if (typeof parsedInsights === "string") {
+        parsedInsights = JSON.parse(parsedInsights);
+      }
+    } catch {
+      parsedInsights = {};
+    }
+  }
+
+  const rawClass =
+    row.class_level ??
+    row.classLevel ??
+    parsedInsights?.classLevel ??
+    parsedInsights?.questionPaper?.classLevel ??
+    null;
+
+  const classLevel =
+    rawClass != null && !Number.isNaN(Number(rawClass)) && Number(rawClass) > 0
+      ? Number(rawClass)
+      : null;
+
   return {
     id: row.id,
     userId: row.user_id ?? row.userId,
@@ -59,14 +83,15 @@ const normalizeStudentScoreHistory = (row: any): StudentScoreHistory | undefined
     mode: row.mode ?? null,
     difficulty: row.difficulty ?? null,
     language: row.language ?? "english",
+    classLevel,
     score: row.score ?? 0,
     maxScore: row.max_score ?? row.maxScore ?? 0,
     percentage: row.percentage ?? 0,
     totalQuestions: row.total_questions ?? row.totalQuestions ?? 0,
     correctAnswers: row.correct_answers ?? row.correctAnswers ?? 0,
-    insights: row.insights ?? {},
+    insights: parsedInsights ?? {},
     createdAt: row.created_at ?? row.createdAt,
-  };
+  } as any;
 };
 
 const normalizeStudentProfile = (row: any): StudentProfile | undefined => {
@@ -810,42 +835,99 @@ async clearTeacherResetToken(
   // ---------------- STUDENT SCORE HISTORY ----------------
 
   async upsertStudentScoreHistory(entry: InsertStudentScoreHistory): Promise<StudentScoreHistory> {
+    const sanitizeInsights = (insightsInput: any) => {
+      if (!insightsInput) return "{}";
+      let val = insightsInput;
+      if (typeof val === "string") {
+        try {
+          val = JSON.parse(val);
+        } catch {
+          return "{}";
+        }
+      }
+      return JSON.stringify(val ?? {});
+    };
+
+    const insightsJson = sanitizeInsights(entry.insights);
+    const rawClass = (entry as any).classLevel ?? (entry as any).class_level ?? null;
+    const classLevelVal = rawClass != null && !Number.isNaN(Number(rawClass)) && Number(rawClass) > 0 ? Number(rawClass) : null;
+
     try {
       await databaseReady;
-      const result = await pool.query(
-        `INSERT INTO student_score_history
-        (id, user_id, user_email, subject, mode, difficulty, language, score, max_score, percentage, total_questions, correct_answers, insights)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
-        ON CONFLICT (id) DO UPDATE SET
-          user_id = EXCLUDED.user_id,
-          user_email = EXCLUDED.user_email,
-          subject = EXCLUDED.subject,
-          mode = EXCLUDED.mode,
-          difficulty = EXCLUDED.difficulty,
-          language = EXCLUDED.language,
-          score = EXCLUDED.score,
-          max_score = EXCLUDED.max_score,
-          percentage = EXCLUDED.percentage,
-          total_questions = EXCLUDED.total_questions,
-          correct_answers = EXCLUDED.correct_answers,
-          insights = EXCLUDED.insights
-        RETURNING *`,
-        [
-          (entry as any).id,
-          entry.userId,
-          entry.userEmail ?? null,
-          entry.subject,
-          entry.mode ?? null,
-          entry.difficulty ?? null,
-          entry.language ?? "english",
-          entry.score,
-          entry.maxScore,
-          entry.percentage,
-          entry.totalQuestions,
-          entry.correctAnswers,
-          JSON.stringify(entry.insights ?? {}),
-        ]
-      );
+      let result;
+      try {
+        result = await pool.query(
+          `INSERT INTO student_score_history
+          (id, user_id, user_email, subject, mode, difficulty, language, class_level, score, max_score, percentage, total_questions, correct_answers, insights)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+          ON CONFLICT (id) DO UPDATE SET
+            user_id = EXCLUDED.user_id,
+            user_email = EXCLUDED.user_email,
+            subject = EXCLUDED.subject,
+            mode = EXCLUDED.mode,
+            difficulty = EXCLUDED.difficulty,
+            language = EXCLUDED.language,
+            class_level = EXCLUDED.class_level,
+            score = EXCLUDED.score,
+            max_score = EXCLUDED.max_score,
+            percentage = EXCLUDED.percentage,
+            total_questions = EXCLUDED.total_questions,
+            correct_answers = EXCLUDED.correct_answers,
+            insights = EXCLUDED.insights
+          RETURNING *`,
+          [
+            (entry as any).id,
+            entry.userId,
+            entry.userEmail ?? null,
+            entry.subject,
+            entry.mode ?? null,
+            entry.difficulty ?? null,
+            entry.language ?? "english",
+            classLevelVal,
+            entry.score,
+            entry.maxScore,
+            entry.percentage,
+            entry.totalQuestions,
+            entry.correctAnswers,
+            insightsJson,
+          ]
+        );
+      } catch {
+        result = await pool.query(
+          `INSERT INTO student_score_history
+          (id, user_id, user_email, subject, mode, difficulty, language, score, max_score, percentage, total_questions, correct_answers, insights)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+          ON CONFLICT (id) DO UPDATE SET
+            user_id = EXCLUDED.user_id,
+            user_email = EXCLUDED.user_email,
+            subject = EXCLUDED.subject,
+            mode = EXCLUDED.mode,
+            difficulty = EXCLUDED.difficulty,
+            language = EXCLUDED.language,
+            score = EXCLUDED.score,
+            max_score = EXCLUDED.max_score,
+            percentage = EXCLUDED.percentage,
+            total_questions = EXCLUDED.total_questions,
+            correct_answers = EXCLUDED.correct_answers,
+            insights = EXCLUDED.insights
+          RETURNING *`,
+          [
+            (entry as any).id,
+            entry.userId,
+            entry.userEmail ?? null,
+            entry.subject,
+            entry.mode ?? null,
+            entry.difficulty ?? null,
+            entry.language ?? "english",
+            entry.score,
+            entry.maxScore,
+            entry.percentage,
+            entry.totalQuestions,
+            entry.correctAnswers,
+            insightsJson,
+          ]
+        );
+      }
 
       return normalizeStudentScoreHistory(result.rows[0]) as StudentScoreHistory;
     } catch (error: any) {
@@ -882,7 +964,7 @@ async clearTeacherResetToken(
             entry.percentage,
             entry.totalQuestions,
             entry.correctAnswers,
-            JSON.stringify(entry.insights ?? {}),
+            insightsJson,
           ]
         );
 

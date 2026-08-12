@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useTranslation } from "react-i18next";
 import { getLocalizedText, getSubjectTestTitle } from "@/lib/quizText";
-import { saveScoreHistoryAttempt } from "@/lib/scoreHistory";
+import { saveScoreHistoryAttempt, extractClassLevel } from "@/lib/scoreHistory";
 
 const normalizeAnswer = (text?: string) =>
   text
@@ -231,10 +231,10 @@ export default function TestPage() {
         question: currentQuestion,
         options: [...questionOptions],
         userAnswer: submittedAnswer,
-        correctAnswer: data.correctAnswer || "",
+        correctAnswer: data.correctAnswer || data.correctOption || "",
         isCorrect: Boolean(data.isCorrect),
         explanation:
-          data.feedback || (data.isCorrect ? t("answer_correct_explanation_fallback") : t("answer_wrong_explanation_fallback")),
+          data.explanation || data.feedback || (data.isCorrect ? t("answer_correct_explanation_fallback") : t("answer_wrong_explanation_fallback")),
         questionType,
       };
       setQuestionReview((prev) => [...prev, questionSnapshot]);
@@ -361,13 +361,15 @@ export default function TestPage() {
         ? config.scienceCategory
         : (config.subjectLanguage ?? config.language);
 
+    const resolvedClassLevel = extractClassLevel(config) ?? (Number(config?.class ?? config?.classLevel ?? 0) || null);
+
     await saveScoreHistoryAttempt({
       subject: subject || "quiz",
       totalScore,
       totalQuestions,
       correctAnswers,
       language: i18n.language || "en",
-      classLevel: Number(config.class ?? config.classLevel ?? 0) || null,
+      classLevel: resolvedClassLevel,
       difficulty: config.difficulty,
       mode: config.mode,
       questionPaperTitle: getSubjectTestTitle(subject || "quiz", t),
@@ -388,6 +390,7 @@ export default function TestPage() {
       config.mode === "science"
         ? config.scienceCategory
         : (config.subjectLanguage ?? config.language);
+    const resolvedClassLevel = extractClassLevel(config) ?? (Number(config?.class ?? config?.classLevel ?? 0) || null);
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
@@ -396,7 +399,7 @@ export default function TestPage() {
             totalQuestions={totalQuestions}
             correctAnswers={correctAnswers}
             subject={subject || "quiz"}
-            classLevel={Number(config.class ?? config.classLevel ?? 0)}
+            classLevel={resolvedClassLevel}
             language={i18n.language || "en"}
             questionReview={questionReview}
             difficulty={config.difficulty}

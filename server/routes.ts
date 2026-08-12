@@ -4497,6 +4497,8 @@ const CHAPTERS: Record<
         res.json({
           ...evaluation,
           correctAnswer: currentQuestionData.correctAnswer,
+          correctOption: currentQuestionData.correctOption,
+          explanation: currentQuestionData.explanation || evaluation.feedback,
           currentQuestion: newCurrentQuestion,
           totalScore: newTotalScore,
           correctAnswers: newCorrectAnswers,
@@ -4641,12 +4643,23 @@ const CHAPTERS: Record<
           percentage,
           totalQuestions,
           correctAnswers,
+          classLevel,
           insights,
         } = req.body || {};
 
         if (!userId || !subject) {
           return res.status(400).json({ error: "userId and subject are required" });
         }
+
+        let parsedInsights = insights;
+        if (typeof parsedInsights === "string") {
+          try {
+            parsedInsights = JSON.parse(parsedInsights);
+          } catch {}
+        }
+
+        const rawClass = classLevel ?? req.body?.class_level ?? req.body?.class ?? parsedInsights?.classLevel ?? parsedInsights?.questionPaper?.classLevel ?? null;
+        const parsedClass = rawClass != null && !Number.isNaN(Number(rawClass)) && Number(rawClass) > 0 ? Number(rawClass) : null;
 
         const entry = await storage.upsertStudentScoreHistory({
           id,
@@ -4656,12 +4669,13 @@ const CHAPTERS: Record<
           mode,
           difficulty,
           language: language || "english",
+          classLevel: parsedClass,
           score: Number(score) || 0,
           maxScore: Number(maxScore) || 0,
           percentage: Number(percentage) || 0,
           totalQuestions: Number(totalQuestions) || 0,
           correctAnswers: Number(correctAnswers) || 0,
-          insights: insights ?? {},
+          insights: parsedInsights ?? {},
         } as any);
 
         res.json(entry);

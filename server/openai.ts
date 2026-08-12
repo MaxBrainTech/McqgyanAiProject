@@ -63,10 +63,10 @@ export function cosineSimilarity(vecA: number[], vecB: number[]): number {
 export const GPT_MODELS = {
 
   // 🔥 my Fine-Tuned Model
-  FT_PRICER: "ft:gpt-4.1-nano-2025-04-14:maxbrain-technologies:pricer:DD6LfCqA",
+  // FT_PRICER: "ft:gpt-4.1-nano-2025-04-14:maxbrain-technologies:pricer:DD6LfCqA",
 
   // 🤗 HuggingFace Model
-  HF_MCQGYAAN: "hf-mcqgyaan",
+  // HF_MCQGYAAN: "hf-mcqgyaan",
 
   // 🔥 GPT-5 Series (Latest – High intelligence & reasoning)
   GPT_5_2: "gpt-5.2",          // Latest & most capable (best quality)
@@ -78,7 +78,7 @@ export const GPT_MODELS = {
 
   // GPT-4 series - General purpose advanced models
   ADVANCED: "gpt-4o",           // GPT-4 Optimized - Most capable, balanced cost/performance
-  STANDARD: "ft:gpt-4.1-mini-2025-04-14:maxbrain-technologies:430-example:E4OP0nFv",      // GPT-4 Mini - Faster, cheaper, still very capable
+  // STANDARD: "ft:gpt-4.1-mini-2025-04-14:maxbrain-technologies:430-example:E4OP0nFv",      // GPT-4 Mini - Faster, cheaper, still very capable
 
   // Legacy models
   GPT_35_TURBO: "gpt-3.5-turbo", // Fastest, cheapest, good for simple tasks

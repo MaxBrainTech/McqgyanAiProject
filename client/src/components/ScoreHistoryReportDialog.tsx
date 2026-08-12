@@ -26,6 +26,7 @@ import {
   buildLearningInsights,
   buildScoreSummary,
   buildSubjectBreakdown,
+  extractClassLevel,
   normalizeScoreEntry,
   type ScoreHistoryEntry,
   type ScoreInsightSnapshot,
@@ -45,16 +46,26 @@ const normalizeQuestionPaperItem = (item: any, index: number) => {
   const question = String(item?.question ?? "").trim();
   if (!question) return null;
 
+  let parsedOptions: string[] = [];
+  if (Array.isArray(item?.options)) {
+    parsedOptions = item.options.map((option: unknown) => String(option ?? "").trim()).filter(Boolean);
+  } else if (typeof item?.options === "string" && item.options.trim().length > 0) {
+    try {
+      const jsonOpts = JSON.parse(item.options);
+      if (Array.isArray(jsonOpts)) {
+        parsedOptions = jsonOpts.map((option: unknown) => String(option ?? "").trim()).filter(Boolean);
+      }
+    } catch {}
+  }
+
   return {
     questionNumber: Math.max(1, Number(item?.questionNumber) || index + 1),
     question,
-    options: Array.isArray(item?.options)
-      ? item.options.map((option: unknown) => String(option ?? "").trim()).filter(Boolean)
-      : [],
+    options: parsedOptions,
     userAnswer: String(item?.userAnswer ?? "").trim(),
-    correctAnswer: String(item?.correctAnswer ?? "").trim(),
+    correctAnswer: String(item?.correctAnswer ?? item?.correctOption ?? "").trim(),
     isCorrect: Boolean(item?.isCorrect),
-    explanation: String(item?.explanation ?? "").trim() || undefined,
+    explanation: String(item?.explanation ?? item?.feedback ?? "").trim() || undefined,
     questionType: String(item?.questionType ?? "").trim() || undefined,
   };
 };
@@ -167,7 +178,12 @@ export default function ScoreHistoryReportDialog({
     normalizedEntries.find((item) => item.id === selectedId) || normalizedEntries[0] || null;
   const selectedQuestionPaper = selectedEntry?.insights?.questionPaper || null;
   const selectedClassLevel =
-    selectedEntry?.classLevel ?? selectedEntry?.insights?.classLevel ?? summary.latestClassLevel ?? null;
+    extractClassLevel(selectedEntry) ??
+    selectedEntry?.classLevel ??
+    selectedEntry?.insights?.classLevel ??
+    selectedEntry?.insights?.questionPaper?.classLevel ??
+    summary.latestClassLevel ??
+    null;
   const visibleQuestionPaper = useMemo(() => {
     if (!selectedEntry) return null;
 

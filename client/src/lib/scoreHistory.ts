@@ -95,41 +95,109 @@ const toNumber = (value: unknown, fallback = 0) => {
 
 const normalizeText = (value: unknown) => String(value ?? "").trim();
 
+export const extractClassLevel = (raw: any): number | null => {
+  if (!raw || (typeof raw !== "object" && typeof raw !== "string")) return null;
+
+  let obj = raw;
+  if (typeof obj === "string") {
+    try {
+      obj = JSON.parse(obj);
+    } catch {
+      return null;
+    }
+  }
+
+  if (!obj || typeof obj !== "object") return null;
+
+  const candidates = [
+    obj.classLevel,
+    obj.class_level,
+    obj.class,
+    obj.grade,
+    obj.classNumber,
+    obj.class_number,
+    obj.insights?.classLevel,
+    obj.insights?.class_level,
+    obj.insights?.class,
+    obj.insights?.questionPaper?.classLevel,
+    obj.insights?.questionPaper?.class_level,
+    obj.insights?.questionPaper?.class,
+    obj.questionPaper?.classLevel,
+    obj.questionPaper?.class_level,
+    obj.questionPaper?.class,
+  ];
+
+  for (const val of candidates) {
+    if (val !== undefined && val !== null && val !== "" && val !== "—") {
+      const num = Number(val);
+      if (Number.isFinite(num) && num > 0) {
+        return num;
+      }
+    }
+  }
+  return null;
+};
+
 const normalizeQuestionItem = (
   item: any,
   fallbackQuestionNumber: number
-): ScoreQuestionPaperItem => ({
-  questionNumber: Math.max(1, toNumber(item?.questionNumber, fallbackQuestionNumber)),
-  question: normalizeText(item?.question),
-  options: Array.isArray(item?.options)
-    ? item.options.map((option: unknown) => normalizeText(option)).filter(Boolean)
-    : [],
-  userAnswer: normalizeText(item?.userAnswer),
-  correctAnswer: normalizeText(item?.correctAnswer),
-  isCorrect: Boolean(item?.isCorrect),
-  explanation: normalizeText(item?.explanation) || undefined,
-  questionType: normalizeText(item?.questionType) || undefined,
-});
+): ScoreQuestionPaperItem => {
+  let parsedOptions: string[] = [];
+  if (Array.isArray(item?.options)) {
+    parsedOptions = item.options.map((option: unknown) => normalizeText(option)).filter(Boolean);
+  } else if (typeof item?.options === "string" && item.options.trim().length > 0) {
+    try {
+      const jsonOpts = JSON.parse(item.options);
+      if (Array.isArray(jsonOpts)) {
+        parsedOptions = jsonOpts.map((option: unknown) => normalizeText(option)).filter(Boolean);
+      }
+    } catch {}
+  }
+
+  return {
+    questionNumber: Math.max(1, toNumber(item?.questionNumber, fallbackQuestionNumber)),
+    question: normalizeText(item?.question),
+    options: parsedOptions,
+    userAnswer: normalizeText(item?.userAnswer),
+    correctAnswer: normalizeText(item?.correctAnswer || item?.correctOption),
+    isCorrect: Boolean(item?.isCorrect),
+    explanation: normalizeText(item?.explanation || item?.feedback) || undefined,
+    questionType: normalizeText(item?.questionType) || undefined,
+  };
+};
 
 const normalizeQuestionPaper = (raw: any): ScoreQuestionPaperSnapshot | undefined => {
-  if (!raw || typeof raw !== "object") return undefined;
+  if (!raw || (typeof raw !== "object" && typeof raw !== "string")) return undefined;
 
-  const questions = Array.isArray(raw.questions)
-    ? raw.questions
+  let paperObj = raw;
+  if (typeof paperObj === "string") {
+    try {
+      paperObj = JSON.parse(paperObj);
+    } catch {
+      return undefined;
+    }
+  }
+
+  if (!paperObj || typeof paperObj !== "object") return undefined;
+
+  const questions = Array.isArray(paperObj.questions)
+    ? paperObj.questions
         .map((item: any, index: number) => normalizeQuestionItem(item, index + 1))
         .filter((item: ScoreQuestionPaperItem) => item.question.length > 0)
-    : Array.isArray((raw as any).questionReview)
-      ? (raw as any).questionReview
+    : Array.isArray((paperObj as any).questionReview)
+      ? (paperObj as any).questionReview
           .map((item: any, index: number) => normalizeQuestionItem(item, index + 1))
           .filter((item: ScoreQuestionPaperItem) => item.question.length > 0)
     : [];
 
+  const paperClassLevel = extractClassLevel(paperObj);
+
   return {
-    title: normalizeText(raw.title) || "Question Paper",
-    subject: normalizeText(raw.subject) || "quiz",
-    classLevel: raw.classLevel == null ? null : toNumber(raw.classLevel, 0),
-    difficulty: normalizeText(raw.difficulty) || undefined,
-    language: normalizeText(raw.language) || undefined,
+    title: normalizeText(paperObj.title) || "Question Paper",
+    subject: normalizeText(paperObj.subject) || "quiz",
+    classLevel: paperClassLevel,
+    difficulty: normalizeText(paperObj.difficulty) || undefined,
+    language: normalizeText(paperObj.language) || undefined,
     questions,
   };
 };
@@ -158,6 +226,63 @@ export function normalizeScoreEntry(raw: any): ScoreHistoryEntry {
         ? safeTimestamp(raw.date)
         : new Date().toISOString();
 
+  let insightsObj = raw?.insights;
+  if (typeof insightsObj === "string") {
+    try {
+      insightsObj = JSON.parse(insightsObj);
+      if (typeof insightsObj === "string") {
+        insightsObj = JSON.parse(insightsObj);
+      }
+    } catch {
+      insightsObj = undefined;
+    }
+  }
+
+  const paperSource =
+    insightsObj?.questionPaper ||
+    raw?.questionPaper ||
+    raw?.question_paper ||
+    (Array.isArray(raw?.questionReview) ? { questions: raw.questionReview } : undefined);
+
+  const questionPaper = normalizeQuestionPaper(paperSource);
+  const extractedClass = extractClassLevel(raw) ?? extractClassLevel(insightsObj) ?? extractClassLevel(paperSource);
+
+  if (questionPaper && questionPaper.classLevel == null && extractedClass != null) {
+    questionPaper.classLevel = extractedClass;
+  }
+
+  const parsedInsights: ScoreInsightSnapshot | undefined =
+    insightsObj && typeof insightsObj === "object"
+      ? {
+          recommendations: Array.isArray(insightsObj.recommendations)
+            ? insightsObj.recommendations.filter((item: unknown) => typeof item === "string")
+            : [],
+          weaknesses: Array.isArray(insightsObj.weaknesses)
+            ? insightsObj.weaknesses.filter((item: unknown) => typeof item === "string")
+            : [],
+          subjectBreakdown: Array.isArray(insightsObj.subjectBreakdown)
+            ? insightsObj.subjectBreakdown
+                .map((item: any) => ({
+                  subject: String(item?.subject ?? "quiz"),
+                  attempts: toNumber(item?.attempts, 0),
+                  averagePercentage: toNumber(item?.averagePercentage, 0),
+                  bestPercentage: toNumber(item?.bestPercentage, 0),
+                  latestPercentage: toNumber(item?.latestPercentage, 0),
+                }))
+            : [],
+          classLevel: extractedClass,
+          questionPaper,
+        }
+      : questionPaper
+        ? {
+            recommendations: [],
+            weaknesses: [],
+            subjectBreakdown: [],
+            classLevel: extractedClass,
+            questionPaper,
+          }
+        : undefined;
+
   return {
     id: typeof raw?.id === "string" && raw.id.trim().length > 0 ? raw.id : makeId(),
     subject: typeof raw?.subject === "string" && raw.subject.trim().length > 0 ? raw.subject : "quiz",
@@ -167,12 +292,7 @@ export function normalizeScoreEntry(raw: any): ScoreHistoryEntry {
     totalQuestions: Math.max(1, toNumber(raw?.totalQuestions ?? raw?.maxScore / 10, 1)),
     correctAnswers: Math.max(0, toNumber(raw?.correctAnswers, Math.round(score / 10))),
     language: typeof raw?.language === "string" && raw.language.trim().length > 0 ? raw.language : "en",
-    classLevel:
-      raw?.classLevel == null
-        ? raw?.insights?.classLevel == null
-          ? undefined
-          : toNumber(raw.insights.classLevel, 0)
-        : toNumber(raw.classLevel, 0),
+    classLevel: extractedClass,
     timestamp,
     date:
       typeof raw?.date === "string" && raw.date.trim().length > 0
@@ -180,30 +300,7 @@ export function normalizeScoreEntry(raw: any): ScoreHistoryEntry {
         : new Date(timestamp).toLocaleString(),
     mode: typeof raw?.mode === "string" ? raw.mode : undefined,
     difficulty: typeof raw?.difficulty === "string" ? raw.difficulty : undefined,
-    insights:
-      raw?.insights && typeof raw.insights === "object"
-        ? {
-            recommendations: Array.isArray(raw.insights.recommendations)
-              ? raw.insights.recommendations.filter((item: unknown) => typeof item === "string")
-              : [],
-            weaknesses: Array.isArray(raw.insights.weaknesses)
-              ? raw.insights.weaknesses.filter((item: unknown) => typeof item === "string")
-              : [],
-            subjectBreakdown: Array.isArray(raw.insights.subjectBreakdown)
-              ? raw.insights.subjectBreakdown
-                  .map((item: any) => ({
-                    subject: String(item?.subject ?? "quiz"),
-                    attempts: toNumber(item?.attempts, 0),
-                    averagePercentage: toNumber(item?.averagePercentage, 0),
-                    bestPercentage: toNumber(item?.bestPercentage, 0),
-                    latestPercentage: toNumber(item?.latestPercentage, 0),
-                  }))
-              : [],
-            classLevel:
-              raw.insights.classLevel == null ? undefined : toNumber(raw.insights.classLevel, 0),
-            questionPaper: normalizeQuestionPaper(raw.insights.questionPaper),
-          }
-        : undefined,
+    insights: parsedInsights,
   };
 }
 
@@ -260,10 +357,12 @@ export async function saveScoreHistoryAttempt({
   const percentage = Math.round((totalScore / maxScore) * 100);
   const formattedDate = timestamp.toLocaleString();
   const normalizedSubject = normalizeText(subject) || "quiz";
+  const parsedClassLevel = extractClassLevel({ classLevel }) ?? (typeof classLevel === "number" ? classLevel : Number(classLevel) || null);
+
   const questionPaper: ScoreQuestionPaperSnapshot = {
     title: normalizeText(questionPaperTitle) || "Question Paper",
     subject: normalizedSubject,
-    classLevel,
+    classLevel: parsedClassLevel,
     difficulty: normalizeText(difficulty) || undefined,
     language: normalizeText(language) || undefined,
     questions: questionReview.map((item, index) => normalizeQuestionItem(item, index + 1)),
@@ -278,7 +377,7 @@ export async function saveScoreHistoryAttempt({
     totalQuestions,
     correctAnswers,
     language: normalizeText(language) || "en",
-    classLevel,
+    classLevel: parsedClassLevel,
     timestamp: timestamp.toISOString(),
     date: formattedDate,
     mode,
@@ -287,7 +386,7 @@ export async function saveScoreHistoryAttempt({
       recommendations: [],
       weaknesses: [],
       subjectBreakdown: [],
-      classLevel,
+      classLevel: parsedClassLevel,
       questionPaper,
     },
   });
@@ -300,7 +399,7 @@ export async function saveScoreHistoryAttempt({
     recommendations: insights.recommendations,
     weaknesses: insights.weaknesses,
     subjectBreakdown,
-    classLevel,
+    classLevel: parsedClassLevel,
     questionPaper,
   };
 
@@ -345,7 +444,7 @@ export function mergeScoreHistoryEntries(
   );
 }
 
-const formatDelta = (delta: number) => `${delta > 0 ? "+" : ""}${delta.toFixed(0)}%`;
+export const formatDelta = (delta: number) => `${delta > 0 ? "+" : ""}${delta.toFixed(0)}%`;
 
 export function buildScoreSummary(entries: ScoreHistoryEntry[]): ScoreHistorySummary {
   if (entries.length === 0) {
@@ -410,7 +509,7 @@ export function buildScoreSummary(entries: ScoreHistoryEntry[]): ScoreHistorySum
     averagePercentage,
     bestPercentage: best.percentage,
     latestPercentage: latest.percentage,
-    latestClassLevel: latest.classLevel ?? latest.insights?.classLevel ?? null,
+    latestClassLevel: extractClassLevel(latest) ?? latest.classLevel ?? latest.insights?.classLevel ?? null,
     improvement,
     latestSubject: latest.subject,
     weakestSubject,
@@ -536,6 +635,8 @@ export async function syncScoreHistoryEntry(
 ) {
   if (!user.userId) return null;
 
+  const resolvedInsights = insights ?? entry.insights ?? {};
+
   const response = await fetch(normalizeRemotePath(), {
     method: "POST",
     headers: {
@@ -545,7 +646,8 @@ export async function syncScoreHistoryEntry(
       ...entry,
       userId: user.userId,
       userEmail: user.userEmail ?? null,
-      insights: insights ?? {},
+      classLevel: entry.classLevel ?? resolvedInsights.classLevel ?? null,
+      insights: resolvedInsights,
     }),
   });
 
