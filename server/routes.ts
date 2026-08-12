@@ -4700,9 +4700,9 @@ const CHAPTERS: Record<
       }
     });
 
-    app.get("/api/student-profile", async (req, res) => {
+    const handleGetStudentProfile = async (req: Request, res: Response) => {
       try {
-        const userId = String(req.query.userId || "").trim();
+        const userId = String(req.query.userId || req.headers["x-user-id"] || "").trim();
         if (!userId) {
           return res.status(400).json({ error: "userId is required" });
         }
@@ -4715,12 +4715,12 @@ const CHAPTERS: Record<
 
         res.json(profile);
       } catch (error: any) {
-        console.error("[STUDENT PROFILE GET ERROR]", error.message);
-        res.status(500).json({ error: "Failed to fetch student profile" });
+        console.error("[STUDENT PROFILE GET ERROR]", error?.stack || error?.message || error);
+        res.status(500).json({ error: error?.message || "Failed to fetch student profile" });
       }
-    });
+    };
 
-    app.post("/api/student-profile", async (req, res) => {
+    const handlePostStudentProfile = async (req: Request, res: Response) => {
       try {
         const {
           userId,
@@ -4785,7 +4785,12 @@ const CHAPTERS: Record<
         console.error("[STUDENT PROFILE SAVE ERROR]", error?.stack || error?.message || error);
         res.status(500).json({ error: error?.message || "Failed to save student profile" });
       }
-    });
+    };
+
+    app.get("/api/student-profile", handleGetStudentProfile);
+    app.get("/api/student/profile", handleGetStudentProfile);
+    app.post("/api/student-profile", handlePostStudentProfile);
+    app.post("/api/student/profile", handlePostStudentProfile);
 
     const httpServer = createServer(app);
     return httpServer;

@@ -154,47 +154,101 @@ export class Storage {
   }
 
   async getStudentProfile(userId: string): Promise<StudentProfile | undefined> {
-    const result = await pool.query(
-      "SELECT * FROM student_profiles WHERE user_id=$1",
-      [userId]
-    );
-    return normalizeStudentProfile(result.rows[0]);
+    try {
+      await databaseReady;
+      const result = await pool.query(
+        "SELECT * FROM student_profiles WHERE user_id=$1",
+        [userId]
+      );
+      return normalizeStudentProfile(result.rows[0]);
+    } catch (error: any) {
+      if (error?.code === "42P01") {
+        await ensureBaseTables();
+        const result = await pool.query(
+          "SELECT * FROM student_profiles WHERE user_id=$1",
+          [userId]
+        );
+        return normalizeStudentProfile(result.rows[0]);
+      }
+      throw error;
+    }
   }
 
   async upsertStudentProfile(profile: InsertStudentProfile): Promise<StudentProfile> {
-    const fullName = (profile as any).fullName ?? profile.displayName ?? null;
-    const result = await pool.query(
-      `INSERT INTO student_profiles
-       (user_id, full_name, display_name, email_address, class_level, school, medium, board, country, state, city, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,now())
-       ON CONFLICT (user_id) DO UPDATE
-       SET full_name = EXCLUDED.full_name,
-           display_name = EXCLUDED.display_name,
-           email_address = EXCLUDED.email_address,
-           class_level = EXCLUDED.class_level,
-           school = EXCLUDED.school,
-           medium = EXCLUDED.medium,
-           board = EXCLUDED.board,
-           country = EXCLUDED.country,
-           state = EXCLUDED.state,
-           city = EXCLUDED.city,
-           updated_at = now()
-       RETURNING *`,
-      [
-        profile.userId,
-        fullName,
-        fullName,
-        profile.emailAddress ?? null,
-        profile.classLevel ?? null,
-        profile.school ?? null,
-        profile.medium ?? null,
-        profile.board ?? null,
-        profile.country ?? null,
-        profile.state ?? null,
-        profile.city ?? null,
-      ]
-    );
-    return normalizeStudentProfile(result.rows[0]) as StudentProfile;
+    try {
+      await databaseReady;
+      const fullName = (profile as any).fullName ?? profile.displayName ?? null;
+      const result = await pool.query(
+        `INSERT INTO student_profiles
+         (user_id, full_name, display_name, email_address, class_level, school, medium, board, country, state, city, updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,now())
+         ON CONFLICT (user_id) DO UPDATE
+         SET full_name = EXCLUDED.full_name,
+             display_name = EXCLUDED.display_name,
+             email_address = EXCLUDED.email_address,
+             class_level = EXCLUDED.class_level,
+             school = EXCLUDED.school,
+             medium = EXCLUDED.medium,
+             board = EXCLUDED.board,
+             country = EXCLUDED.country,
+             state = EXCLUDED.state,
+             city = EXCLUDED.city,
+             updated_at = now()
+         RETURNING *`,
+        [
+          profile.userId,
+          fullName,
+          fullName,
+          profile.emailAddress ?? null,
+          profile.classLevel ?? null,
+          profile.school ?? null,
+          profile.medium ?? null,
+          profile.board ?? null,
+          profile.country ?? null,
+          profile.state ?? null,
+          profile.city ?? null,
+        ]
+      );
+      return normalizeStudentProfile(result.rows[0]) as StudentProfile;
+    } catch (error: any) {
+      if (error?.code === "42P01") {
+        await ensureBaseTables();
+        const fullName = (profile as any).fullName ?? profile.displayName ?? null;
+        const result = await pool.query(
+          `INSERT INTO student_profiles
+           (user_id, full_name, display_name, email_address, class_level, school, medium, board, country, state, city, updated_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,now())
+           ON CONFLICT (user_id) DO UPDATE
+           SET full_name = EXCLUDED.full_name,
+               display_name = EXCLUDED.display_name,
+               email_address = EXCLUDED.email_address,
+               class_level = EXCLUDED.class_level,
+               school = EXCLUDED.school,
+               medium = EXCLUDED.medium,
+               board = EXCLUDED.board,
+               country = EXCLUDED.country,
+               state = EXCLUDED.state,
+               city = EXCLUDED.city,
+               updated_at = now()
+           RETURNING *`,
+          [
+            profile.userId,
+            fullName,
+            fullName,
+            profile.emailAddress ?? null,
+            profile.classLevel ?? null,
+            profile.school ?? null,
+            profile.medium ?? null,
+            profile.board ?? null,
+            profile.country ?? null,
+            profile.state ?? null,
+            profile.city ?? null,
+          ]
+        );
+        return normalizeStudentProfile(result.rows[0]) as StudentProfile;
+      }
+      throw error;
+    }
   }
 
   async createUser(user: InsertUser): Promise<User> {

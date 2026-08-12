@@ -285,7 +285,7 @@ export function normalizeScoreEntry(raw: any): ScoreHistoryEntry {
 
   return {
     id: typeof raw?.id === "string" && raw.id.trim().length > 0 ? raw.id : makeId(),
-    subject: typeof raw?.subject === "string" && raw.subject.trim().length > 0 ? raw.subject : "quiz",
+    subject: typeof raw?.subject === "string" && raw.subject.trim().length > 0 ? raw.subject.replace(/^school[_-]/i, "") : "quiz",
     score,
     maxScore,
     percentage,
@@ -356,7 +356,8 @@ export async function saveScoreHistoryAttempt({
   const maxScore = Math.max(1, totalQuestions * 10);
   const percentage = Math.round((totalScore / maxScore) * 100);
   const formattedDate = timestamp.toLocaleString();
-  const normalizedSubject = normalizeText(subject) || "quiz";
+  const rawSubject = normalizeText(subject) || "quiz";
+  const normalizedSubject = rawSubject.replace(/^school[_-]/i, "");
   const parsedClassLevel = extractClassLevel({ classLevel }) ?? (typeof classLevel === "number" ? classLevel : Number(classLevel) || null);
 
   const questionPaper: ScoreQuestionPaperSnapshot = {

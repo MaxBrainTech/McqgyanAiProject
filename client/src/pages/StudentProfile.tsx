@@ -349,6 +349,9 @@ export default function StudentProfile() {
       try {
         const res = await fetch(`/api/student-profile?userId=${encodeURIComponent(user.uid)}`, {
           credentials: "include",
+          headers: {
+            "Accept": "application/json",
+          },
         });
 
         if (res.status === 404) {
@@ -359,7 +362,18 @@ export default function StudentProfile() {
         }
 
         if (!res.ok) {
-          throw new Error(await res.text());
+          let errText = res.statusText;
+          try {
+            const contentType = res.headers.get("content-type") || "";
+            if (contentType.includes("application/json")) {
+              const errJson = await res.json();
+              errText = errJson.error || errJson.message || res.statusText;
+            } else {
+              const rawText = await res.text();
+              errText = rawText ? rawText.slice(0, 300) : res.statusText;
+            }
+          } catch {}
+          throw new Error(errText);
         }
 
         const data = await res.json();

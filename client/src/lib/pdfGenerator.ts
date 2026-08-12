@@ -79,10 +79,15 @@ function arrayBufferToBase64(buffer: ArrayBuffer) {
 async function loadHindiFont() {
   if (cachedHindiFont) return cachedHindiFont;
 
-  const response = await fetch(HINDI_FONT_URL);
-  const buffer = await response.arrayBuffer();
-  cachedHindiFont = arrayBufferToBase64(buffer);
-  return cachedHindiFont;
+  try {
+    const response = await fetch(HINDI_FONT_URL);
+    if (!response.ok) return null;
+    const buffer = await response.arrayBuffer();
+    cachedHindiFont = arrayBufferToBase64(buffer);
+    return cachedHindiFont;
+  } catch {
+    return null;
+  }
 }
 
 async function loadLogoDataUrl() {
@@ -140,10 +145,10 @@ export async function generateQuizPdf({
   const pageHeight = pdf.internal.pageSize.getHeight();
   const margin = 14;
   const contentWidth = pageWidth - margin * 2;
-  const headerHeight = 30;
+  const headerHeight = 28;
   const footerHeight = 14;
-  const topStart = headerHeight + 14;
-  const bottomLimit = pageHeight - footerHeight - 8;
+  const topStart = headerHeight + 10;
+  const bottomLimit = pageHeight - footerHeight - 6;
   const languageCode = language?.toLowerCase().startsWith("hi") ? "hi" : "en";
 
   const needsHindiFont =
@@ -159,98 +164,85 @@ export async function generateQuizPdf({
 
   if (needsHindiFont) {
     const fontData = await loadHindiFont();
-    pdf.addFileToVFS("NotoSansDevanagari-Regular.ttf", fontData);
-    pdf.addFont("NotoSansDevanagari-Regular.ttf", "NotoSansDevanagari", "normal");
-    pdf.addFont("NotoSansDevanagari-Regular.ttf", "NotoSansDevanagari", "bold");
-    bodyFont = "NotoSansDevanagari";
+    if (fontData) {
+      pdf.addFileToVFS("NotoSansDevanagari-Regular.ttf", fontData);
+      pdf.addFont("NotoSansDevanagari-Regular.ttf", "NotoSansDevanagari", "normal");
+      pdf.addFont("NotoSansDevanagari-Regular.ttf", "NotoSansDevanagari", "bold");
+      bodyFont = "NotoSansDevanagari";
+    }
   }
 
   const logoDataUrl = await loadLogoDataUrl();
-  const waterMarkText = labels.appName;
+  const waterMarkText = labels.appName || "MCQGyaan AI";
 
   const setBodyFont = (style: "normal" | "bold" = "normal", size = 11) => {
     pdf.setFont(bodyFont, style);
     pdf.setFontSize(size);
   };
 
-  const drawRoundedBox = (
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    fill: [number, number, number],
-    stroke: [number, number, number],
-  ) => {
-    pdf.setFillColor(...fill);
-    pdf.setDrawColor(...stroke);
-    pdf.roundedRect(x, y, width, height, 3, 3, "FD");
-  };
-
   const drawHeader = () => {
-    pdf.setFillColor(15, 23, 42);
+    pdf.setFillColor(15, 23, 42); // slate-900
     pdf.rect(0, 0, pageWidth, headerHeight, "F");
+
+    pdf.setFillColor(37, 99, 235); // blue-600 accent bar
+    pdf.rect(0, headerHeight, pageWidth, 1.5, "F");
 
     if (logoDataUrl) {
       try {
-        pdf.addImage(logoDataUrl, "PNG", margin, 7, 12, 12, undefined, "FAST");
-      } catch {
-        // Ignore image failures and continue with text-only header.
-      }
+        pdf.addImage(logoDataUrl, "PNG", margin, 7, 14, 14, undefined, "FAST");
+      } catch {}
     }
 
+    const textLeft = logoDataUrl ? margin + 18 : margin;
     pdf.setTextColor(255, 255, 255);
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(14);
-    pdf.text(labels.appName, logoDataUrl ? margin + 16 : margin, 13);
+    pdf.setFontSize(15);
+    pdf.text(labels.appName || "MCQGyaan AI", textLeft, 13);
 
-    setBodyFont("bold", 16);
-    pdf.text(mode === "answers" ? labels.answerSheet : labels.questionPaper, margin, 22);
+    setBodyFont("bold", 12);
+    pdf.setTextColor(203, 213, 225);
+    pdf.text(mode === "answers" ? (labels.answerSheet || "Answer Sheet Review") : (labels.questionPaper || "Question Paper"), textLeft, 22);
 
-    setBodyFont("normal", 10);
-    pdf.text(
-      `${subject}  |  ${labels.class} ${classLevel}  |  ${difficulty}`,
-      pageWidth - margin,
-      13,
-      { align: "right" },
-    );
-
-    pdf.setDrawColor(148, 163, 184);
-    pdf.line(margin, headerHeight, pageWidth - margin, headerHeight);
-    pdf.setTextColor(33, 37, 41);
+    const formatSubjectName = (sub: string) => sub.replace(/^school[_-]/i, "").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    const infoText = `${formatSubjectName(subject)} | Class ${classLevel || "—"} | ${difficulty || "General"}`;
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(9.5);
+    pdf.setTextColor(147, 197, 253); // blue-300
+    pdf.text(infoText, pageWidth - margin, 18, { align: "right" });
   };
 
   const drawFooter = (pageNumber: number, totalPages: number) => {
-    const footerY = pageHeight - 8;
-    pdf.setDrawColor(203, 213, 225);
+    const footerY = pageHeight - 7;
+    pdf.setDrawColor(226, 232, 240);
+    pdf.setLineWidth(0.3);
     pdf.line(margin, pageHeight - footerHeight, pageWidth - margin, pageHeight - footerHeight);
 
     pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(9);
-    pdf.setTextColor(71, 85, 105);
-    pdf.text(labels.company, margin, footerY);
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(100, 116, 139);
+    pdf.text(labels.company || "MCQGyaan AI - Self Learning & Quiz Platform", margin, footerY);
     pdf.text(
-      `${labels.page} ${pageNumber} ${labels.of} ${totalPages}`,
+      `${labels.page || "Page"} ${pageNumber} ${labels.of || "of"} ${totalPages}`,
       pageWidth / 2,
       footerY,
       { align: "center" },
     );
-    pdf.text(labels.website, pageWidth - margin, footerY, { align: "right" });
-    pdf.setTextColor(33, 37, 41);
+    pdf.text(labels.website || "www.mcqgyaan.com", pageWidth - margin, footerY, { align: "right" });
   };
 
   const addWatermark = () => {
     pdf.saveGraphicsState();
-    pdf.setTextColor(226, 232, 240);
+    pdf.setTextColor(241, 245, 249); // slate-100
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(34);
+    pdf.setFontSize(36);
     pdf.text(waterMarkText, pageWidth / 2, pageHeight / 2, {
       align: "center",
-      angle: 28,
+      angle: 25,
     });
     pdf.restoreGraphicsState();
   };
 
-  const ensureSpace = (requiredHeight: number, y: number) => {
+  const ensureSpace = (requiredHeight: number, y: number): number => {
     if (y + requiredHeight <= bottomLimit) return y;
 
     pdf.addPage();
@@ -264,52 +256,61 @@ export async function generateQuizPdf({
     return pdf.splitTextToSize(text, width);
   };
 
-  const lineBlockHeight = (lines: string[], fontSize: number, spacing = 1.75) =>
-    lines.length * (fontSize * 0.34 + spacing);
+  const lineBlockHeight = (lines: string[], fontSize: number, spacing = 1.6) =>
+    lines.length * (fontSize * 0.35 + spacing);
 
   drawHeader();
   addWatermark();
 
   let y = topStart;
 
-  drawRoundedBox(margin, y, contentWidth, 24, [248, 250, 252], [226, 232, 240]);
+  // --- TEST INFO HEADER CARD ---
+  pdf.setFillColor(248, 250, 252);
+  pdf.setDrawColor(226, 232, 240);
+  pdf.setLineWidth(0.3);
+  pdf.roundedRect(margin, y, contentWidth, 22, 2.5, 2.5, "FD");
+
   setBodyFont("bold", 12);
+  pdf.setTextColor(15, 23, 42);
   pdf.text(title, margin + 4, y + 7);
-  setBodyFont("normal", 10);
-  pdf.text(`${labels.subject}: ${subject}`, margin + 4, y + 13);
-  pdf.text(`${labels.class}: ${classLevel}`, margin + 62, y + 13);
-  pdf.text(`${labels.difficulty}: ${difficulty}`, margin + 108, y + 13);
-  pdf.text(`${labels.totalQuestions}: ${questions.length}`, margin + 4, y + 19);
+
+  setBodyFont("normal", 9.5);
+  pdf.setTextColor(71, 85, 105);
+  pdf.text(`${labels.subject || "Subject"}: ${subject}`, margin + 4, y + 14);
+  pdf.text(`${labels.class || "Class"}: ${classLevel}`, margin + 65, y + 14);
+  pdf.text(`${labels.difficulty || "Difficulty"}: ${difficulty}`, margin + 112, y + 14);
+
   if (shareCode) {
-    pdf.text(`${labels.shareCode}: ${shareCode}`, pageWidth - margin - 4, y + 19, {
-      align: "right",
-    });
+    pdf.text(`${labels.shareCode || "Code"}: ${shareCode}`, pageWidth - margin - 4, y + 14, { align: "right" });
   }
-  y += 31;
 
+  y += 28;
+
+  // --- SCORE SUMMARY CARD (FOR ANSWERS / REVIEW MODE) ---
   if (scoreSummary && mode === "answers") {
-    y = ensureSpace(20, y);
-    drawRoundedBox(margin, y, contentWidth, 18, [239, 246, 255], [147, 197, 253]);
-    setBodyFont("bold", 11);
-    pdf.text(
-      `${labels.score}: ${scoreSummary.score}/${scoreSummary.maxScore}`,
-      margin + 4,
-      y + 7,
-    );
-    pdf.text(
-      `${labels.correct}: ${scoreSummary.correctAnswers}/${questions.length}`,
-      margin + 4,
-      y + 13,
-    );
-    pdf.text(
-      `${labels.percentage}: ${scoreSummary.percentage}%`,
-      pageWidth - margin - 4,
-      y + 10,
-      { align: "right" },
-    );
-    y += 24;
+    y = ensureSpace(18, y);
+    pdf.setFillColor(239, 246, 255); // blue-50
+    pdf.setDrawColor(191, 219, 254); // blue-200
+    pdf.setLineWidth(0.3);
+    pdf.roundedRect(margin, y, contentWidth, 16, 2.5, 2.5, "FD");
+
+    setBodyFont("bold", 10.5);
+    pdf.setTextColor(30, 58, 138); // blue-900
+    pdf.text(`${labels.score || "Score"}: ${scoreSummary.score}/${scoreSummary.maxScore}`, margin + 5, y + 6.5);
+    pdf.text(`${labels.correct || "Correct"}: ${scoreSummary.correctAnswers}/${questions.length}`, margin + 65, y + 6.5);
+    pdf.text(`${labels.percentage || "Percentage"}: ${scoreSummary.percentage}%`, pageWidth - margin - 5, y + 6.5, { align: "right" });
+
+    // Progress bar representation
+    pdf.setFillColor(219, 234, 254);
+    pdf.roundedRect(margin + 5, y + 10.5, contentWidth - 10, 2.5, 1, 1, "F");
+    const barWidth = Math.max(2, Math.min(contentWidth - 10, ((contentWidth - 10) * Math.min(100, scoreSummary.percentage)) / 100));
+    pdf.setFillColor(37, 99, 235);
+    pdf.roundedRect(margin + 5, y + 10.5, barWidth, 2.5, 1, 1, "F");
+
+    y += 22;
   }
 
+  // --- QUESTIONS LOOP ---
   for (let index = 0; index < questions.length; index += 1) {
     const item = questions[index];
     const questionText = getLocalizedText(item.question, languageCode);
@@ -318,144 +319,160 @@ export async function generateQuizPdf({
     const explanation = getLocalizedText(item.explanation, languageCode);
     const userAnswer = getLocalizedText(item.userAnswer, languageCode);
 
-    const questionLines = getWrappedLines(
-      `${labels.question} ${index + 1}. ${questionText}`,
-      11.5,
-      contentWidth - 10,
-      "bold",
-    );
+    const questionHeaderStr = `Q${index + 1}. ${questionText}`;
+    const questionLines = getWrappedLines(questionHeaderStr, 11, contentWidth - 28, "bold");
+    const questionHeaderHeight = lineBlockHeight(questionLines, 11);
 
-    let estimatedHeight = 10 + lineBlockHeight(questionLines, 11.5);
-
+    // Estimate heights of options
+    const optionHeights: number[] = [];
+    const optionLineArray: string[][] = [];
     options.forEach((option, optionIndex) => {
-      const optionLines = getWrappedLines(
-        `${String.fromCharCode(65 + optionIndex)}. ${option}`,
-        10.5,
-        contentWidth - 18,
-      );
-      estimatedHeight += lineBlockHeight(optionLines, 10.5) + 1.5;
+      const optionStr = `${String.fromCharCode(65 + optionIndex)}. ${option}`;
+      const lines = getWrappedLines(optionStr, 10, contentWidth - 16);
+      const h = lineBlockHeight(lines, 10) + 3;
+      optionLineArray.push(lines);
+      optionHeights.push(h);
     });
 
-    if (correctAnswer) {
-      estimatedHeight += lineBlockHeight(
-        getWrappedLines(`${labels.correctAnswer}: ${correctAnswer}`, 10.5, contentWidth - 18, "bold"),
-        10.5,
-      ) + 5;
-    }
+    const totalOptionsHeight = optionHeights.reduce((a, b) => a + b, 0);
+
+    // Calculate answer & explanation height
+    let extraHeight = 0;
+    let answerLines: string[] = [];
+    let correctLines: string[] = [];
+    let expLines: string[] = [];
 
     if (mode === "answers") {
-      estimatedHeight += lineBlockHeight(
-        getWrappedLines(
-          `${labels.yourAnswer}: ${userAnswer || labels.notAnswered}`,
-          10.2,
-          contentWidth - 18,
-        ),
-        10.2,
-      ) + 4;
+      answerLines = getWrappedLines(`Your Answer: ${userAnswer || labels.notAnswered || "Not Answered"}`, 9.5, contentWidth - 16);
+      extraHeight += lineBlockHeight(answerLines, 9.5) + 4;
+    }
+
+    if (correctAnswer) {
+      correctLines = getWrappedLines(`Correct Answer: ${correctAnswer}`, 9.5, contentWidth - 16, "bold");
+      extraHeight += lineBlockHeight(correctLines, 9.5) + 4;
     }
 
     if (explanation) {
-      estimatedHeight += lineBlockHeight(
-        getWrappedLines(`${labels.explanation}: ${explanation}`, 10.1, contentWidth - 18),
-        10.1,
-      ) + 6;
+      expLines = getWrappedLines(`Explanation: ${explanation}`, 9.5, contentWidth - 16);
+      extraHeight += lineBlockHeight(expLines, 9.5) + 5;
     }
 
-    y = ensureSpace(estimatedHeight + 8, y);
+    const cardPadding = 12;
+    const cardContentHeight = questionHeaderHeight + totalOptionsHeight + extraHeight + cardPadding;
 
-    drawRoundedBox(margin, y, contentWidth, estimatedHeight + 4, [255, 255, 255], [226, 232, 240]);
+    // Check if entire question block fits, if not wrap cleanly to next page
+    y = ensureSpace(cardContentHeight + 6, y);
 
-    setBodyFont("bold", 11.5);
-    pdf.text(questionLines, margin + 5, y + 8);
-    let innerY = y + 8 + lineBlockHeight(questionLines, 11.5);
+    // Draw main question card container
+    pdf.setFillColor(255, 255, 255);
+    pdf.setDrawColor(226, 232, 240);
+    pdf.setLineWidth(0.3);
+    pdf.roundedRect(margin, y, contentWidth, cardContentHeight, 3, 3, "FD");
 
+    // Result badge pill (Top right)
+    if (mode === "answers" && typeof item.isCorrect === "boolean") {
+      const badgeText = item.isCorrect ? "✓ CORRECT" : "✗ INCORRECT";
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(8.5);
+      if (item.isCorrect) {
+        pdf.setFillColor(220, 252, 231); // emerald-100
+        pdf.setDrawColor(187, 247, 208); // emerald-200
+        pdf.setTextColor(22, 101, 52); // emerald-800
+      } else {
+        pdf.setFillColor(254, 226, 226); // red-100
+        pdf.setDrawColor(254, 202, 202); // red-200
+        pdf.setTextColor(153, 27, 27); // red-800
+      }
+      pdf.roundedRect(pageWidth - margin - 26, y + 4, 22, 5.5, 1.5, 1.5, "FD");
+      pdf.text(badgeText, pageWidth - margin - 15, y + 7.8, { align: "center" });
+    }
+
+    // Question Text
+    setBodyFont("bold", 11);
+    pdf.setTextColor(15, 23, 42);
+    pdf.text(questionLines, margin + 5, y + 7);
+
+    let innerY = y + 7 + questionHeaderHeight + 2;
+
+    // Render Options
     if (options.length > 0) {
-      setBodyFont("normal", 10.5);
       options.forEach((option, optionIndex) => {
-        const optionText = `${String.fromCharCode(65 + optionIndex)}. ${option}`;
-        const optionLines = getWrappedLines(optionText, 10.5, contentWidth - 18);
-        const isCorrectOption = correctAnswer
-          ? option.trim().toLowerCase() === correctAnswer.trim().toLowerCase() ||
-            optionText.trim().toLowerCase() === correctAnswer.trim().toLowerCase()
-          : false;
+        const optionLines = optionLineArray[optionIndex];
+        const h = optionHeights[optionIndex];
+        const optionRawText = option.trim().toLowerCase();
+        const correctRawText = correctAnswer ? correctAnswer.trim().toLowerCase() : "";
+        const userRawText = userAnswer ? userAnswer.trim().toLowerCase() : "";
 
-        if (isCorrectOption) {
-          pdf.setFillColor(240, 253, 244);
-          pdf.roundedRect(margin + 4, innerY - 4.5, contentWidth - 8, lineBlockHeight(optionLines, 10.5) + 5, 2, 2, "F");
+        const isCorrectOption = correctRawText && (optionRawText === correctRawText || optionRawText.startsWith(correctRawText));
+        const isUserOption = userRawText && (optionRawText === userRawText || optionRawText.startsWith(userRawText));
+
+        if (mode === "answers" && isCorrectOption) {
+          pdf.setFillColor(240, 253, 244); // green-50
+          pdf.setDrawColor(187, 247, 208); // green-200
+          pdf.roundedRect(margin + 4, innerY - 3.5, contentWidth - 8, h, 2, 2, "FD");
           pdf.setTextColor(22, 101, 52);
-          setBodyFont("bold", 10.5);
+          setBodyFont("bold", 10);
+        } else if (mode === "answers" && isUserOption && !item.isCorrect) {
+          pdf.setFillColor(254, 242, 242); // red-50
+          pdf.setDrawColor(254, 202, 202); // red-200
+          pdf.roundedRect(margin + 4, innerY - 3.5, contentWidth - 8, h, 2, 2, "FD");
+          pdf.setTextColor(153, 27, 27);
+          setBodyFont("bold", 10);
         } else {
           pdf.setTextColor(51, 65, 85);
-          setBodyFont("normal", 10.5);
+          setBodyFont("normal", 10);
         }
 
-        pdf.text(optionLines, margin + 8, innerY);
-        innerY += lineBlockHeight(optionLines, 10.5) + 2;
-        pdf.setTextColor(33, 37, 41);
+        pdf.text(optionLines, margin + 7, innerY.valueOf());
+        innerY += h;
       });
     }
 
-    if (mode === "answers") {
-      const yourAnswerLines = getWrappedLines(
-        `${labels.yourAnswer}: ${userAnswer || labels.notAnswered}`,
-        10.2,
-        contentWidth - 18,
-      );
+    innerY += 1;
+
+    // Render Selected Answer (if mode === answers)
+    if (mode === "answers" && answerLines.length > 0) {
+      const lineH = lineBlockHeight(answerLines, 9.5) + 3;
       pdf.setFillColor(239, 246, 255);
-      pdf.roundedRect(margin + 4, innerY - 4, contentWidth - 8, lineBlockHeight(yourAnswerLines, 10.2) + 4, 2, 2, "F");
-      setBodyFont("normal", 10.2);
-      pdf.setTextColor(30, 64, 175);
-      pdf.text(yourAnswerLines, margin + 8, innerY);
-      innerY += lineBlockHeight(yourAnswerLines, 10.2) + 5;
-      pdf.setTextColor(33, 37, 41);
+      pdf.setDrawColor(191, 219, 254);
+      pdf.roundedRect(margin + 4, innerY - 3, contentWidth - 8, lineH, 1.5, 1.5, "FD");
+
+      setBodyFont("normal", 9.5);
+      pdf.setTextColor(30, 64, 175); // blue-800
+      pdf.text(answerLines, margin + 7, innerY.valueOf());
+      innerY += lineH + 2;
     }
 
-    if (correctAnswer) {
-      const correctLines = getWrappedLines(
-        `${labels.correctAnswer}: ${correctAnswer}`,
-        10.5,
-        contentWidth - 18,
-        "bold",
-      );
+    // Render Correct Answer
+    if (correctAnswer && correctLines.length > 0) {
+      const lineH = lineBlockHeight(correctLines, 9.5) + 3;
       pdf.setFillColor(240, 253, 244);
-      pdf.roundedRect(margin + 4, innerY - 4.5, contentWidth - 8, lineBlockHeight(correctLines, 10.5) + 5, 2, 2, "F");
-      setBodyFont("bold", 10.5);
-      pdf.setTextColor(22, 101, 52);
-      pdf.text(correctLines, margin + 8, innerY);
-      innerY += lineBlockHeight(correctLines, 10.5) + 5;
-      pdf.setTextColor(33, 37, 41);
+      pdf.setDrawColor(187, 247, 208);
+      pdf.roundedRect(margin + 4, innerY - 3, contentWidth - 8, lineH, 1.5, 1.5, "FD");
+
+      setBodyFont("bold", 9.5);
+      pdf.setTextColor(22, 101, 52); // green-800
+      pdf.text(correctLines, margin + 7, innerY.valueOf());
+      innerY += lineH + 2;
     }
 
-    if (explanation) {
-      const explanationLines = getWrappedLines(
-        `${labels.explanation}: ${explanation}`,
-        10.1,
-        contentWidth - 18,
-      );
-      pdf.setFillColor(255, 251, 235);
-      pdf.roundedRect(margin + 4, innerY - 4.5, contentWidth - 8, lineBlockHeight(explanationLines, 10.1) + 5, 2, 2, "F");
-      setBodyFont("normal", 10.1);
-      pdf.setTextColor(146, 64, 14);
-      pdf.text(explanationLines, margin + 8, innerY);
-      innerY += lineBlockHeight(explanationLines, 10.1) + 3;
-      pdf.setTextColor(33, 37, 41);
+    // Render Explanation
+    if (explanation && expLines.length > 0) {
+      const lineH = lineBlockHeight(expLines, 9.5) + 3.5;
+      pdf.setFillColor(254, 252, 232); // amber-50
+      pdf.setDrawColor(253, 230, 138); // amber-200
+      pdf.roundedRect(margin + 4, innerY - 3, contentWidth - 8, lineH, 1.5, 1.5, "FD");
+
+      setBodyFont("normal", 9.5);
+      pdf.setTextColor(146, 64, 14); // amber-800
+      pdf.text(expLines, margin + 7, innerY.valueOf());
+      innerY += lineH + 2;
     }
 
-    if (mode === "answers" && typeof item.isCorrect === "boolean") {
-      setBodyFont("bold", 9.8);
-      pdf.setTextColor(item.isCorrect ? 22 : 185, item.isCorrect ? 101 : 28, item.isCorrect ? 52 : 28);
-      pdf.text(
-        item.isCorrect ? labels.correct : labels.incorrect,
-        pageWidth - margin - 5,
-        y + 8,
-        { align: "right" },
-      );
-      pdf.setTextColor(33, 37, 41);
-    }
-
-    y += estimatedHeight + 10;
+    y += cardContentHeight + 6;
   }
 
+  // Draw Page Footers on all pages
   const totalPages = pdf.getNumberOfPages();
   for (let page = 1; page <= totalPages; page += 1) {
     pdf.setPage(page);

@@ -27,9 +27,10 @@ export function getSubjectLabel(
 ): string {
   if (!subject) return t("quiz");
 
-  const normalized = subject
-    .toString()
-    .trim()
+  const rawStr = subject.toString().trim();
+  const cleanedStr = rawStr.replace(/^school[_-]/i, "");
+
+  const normalized = cleanedStr
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "_");
@@ -46,7 +47,11 @@ export function getSubjectLabel(
     return directTranslation;
   }
 
-  return subject;
+  const prettyFallback = cleanedStr
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
+  return prettyFallback || rawStr;
 }
 
 export function getSubjectTestTitle(
