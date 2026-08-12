@@ -282,7 +282,10 @@ export async function ensureBaseTables() {
 
     await safeAddColumn("test_sessions", '"subject_language" text');
     await safeAddColumn("student_profiles", '"full_name" text');
+    await safeAddColumn("student_profiles", '"display_name" text');
     await safeAddColumn("student_profiles", '"email_address" text');
+    await safeAddColumn("student_profiles", '"class_level" integer');
+    await safeAddColumn("student_profiles", '"school" text');
     await safeAddColumn("student_profiles", '"medium" text');
     await safeAddColumn("student_profiles", '"board" text');
     await safeAddColumn("student_profiles", '"country" text');

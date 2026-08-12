@@ -418,40 +418,33 @@ export default function StudentProfile() {
     setError("");
 
     try {
-      const requiredFields: Array<[string, string]> = [
-        ["Full name", profile.fullName],
-        ["Class", profile.classLevel],
-        ["School", profile.school],
-        ["Medium", profile.medium],
-        ["Board", profile.board],
-        ["Country", profile.country],
-        ["State", profile.state],
-        ["City", profile.city],
-      ];
-
-      const missingField = requiredFields.find(([, value]) => !value.trim());
-      if (missingField) {
-        setError(`${missingField[0]} is required.`);
+      if (!profile.fullName.trim()) {
+        setError("Full name is required.");
         return;
       }
 
-      const parsedClassLevel = Number(profile.classLevel);
-      if (!Number.isInteger(parsedClassLevel) || parsedClassLevel <= 0) {
-        setError("Class must be a valid number.");
-        return;
+      let parsedClassLevel: number | null = null;
+      if (profile.classLevel.trim()) {
+        const digits = profile.classLevel.replace(/\D+/g, "");
+        if (digits) {
+          const num = parseInt(digits, 10);
+          if (Number.isFinite(num) && num > 0) {
+            parsedClassLevel = num;
+          }
+        }
       }
 
       const res = await apiRequest("POST", "/api/student-profile", {
         userId: user.uid,
-        fullName: profile.fullName,
-        displayName: profile.fullName,
+        fullName: profile.fullName.trim(),
+        displayName: profile.fullName.trim(),
         classLevel: parsedClassLevel,
-        school: profile.school,
-        medium: profile.medium,
-        board: profile.board,
-        country: profile.country,
-        state: profile.state,
-        city: profile.city,
+        school: profile.school.trim() || null,
+        medium: profile.medium.trim() || null,
+        board: profile.board.trim() || null,
+        country: profile.country.trim() || null,
+        state: profile.state.trim() || null,
+        city: profile.city.trim() || null,
       });
 
       const savedProfile = await res.json();
@@ -483,7 +476,8 @@ export default function StudentProfile() {
       });
     } catch (err: any) {
       console.error("Save profile failed:", err);
-      setError(t("profile_save_error"));
+      const displayMsg = err?.message || err?.error || t("profile_save_error");
+      setError(displayMsg);
     } finally {
       setSaving(false);
     }

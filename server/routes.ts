@@ -4740,37 +4740,30 @@ const CHAPTERS: Record<
         }
 
         const resolvedFullName = String(fullName ?? displayName ?? "").trim();
-        const resolvedSchool = String(school ?? "").trim();
-        const resolvedMedium = String(medium ?? "").trim();
-        const resolvedBoard = String(board ?? "").trim();
-        const resolvedCountry = String(country ?? "").trim();
-        const resolvedState = String(state ?? "").trim();
-        const resolvedCity = String(city ?? "").trim();
-        const resolvedClassLevel = Number(classLevel);
+        const resolvedSchool = String(school ?? "").trim() || null;
+        const resolvedMedium = String(medium ?? "").trim() || null;
+        const resolvedBoard = String(board ?? "").trim() || null;
+        const resolvedCountry = String(country ?? "").trim() || null;
+        const resolvedState = String(state ?? "").trim() || null;
+        const resolvedCity = String(city ?? "").trim() || null;
+
+        let resolvedClassLevel: number | null = null;
+        if (classLevel !== undefined && classLevel !== null && classLevel !== "") {
+          if (typeof classLevel === "number" && Number.isFinite(classLevel) && classLevel > 0) {
+            resolvedClassLevel = Math.floor(classLevel);
+          } else {
+            const digits = String(classLevel).replace(/\D+/g, "");
+            if (digits) {
+              const parsed = parseInt(digits, 10);
+              if (Number.isFinite(parsed) && parsed > 0) {
+                resolvedClassLevel = parsed;
+              }
+            }
+          }
+        }
 
         if (!resolvedFullName) {
           return res.status(400).json({ error: "Full name is required" });
-        }
-        if (!Number.isInteger(resolvedClassLevel) || resolvedClassLevel <= 0) {
-          return res.status(400).json({ error: "Class is required" });
-        }
-        if (!resolvedSchool) {
-          return res.status(400).json({ error: "School is required" });
-        }
-        if (!resolvedMedium) {
-          return res.status(400).json({ error: "Medium is required" });
-        }
-        if (!resolvedBoard) {
-          return res.status(400).json({ error: "Board is required" });
-        }
-        if (!resolvedCountry) {
-          return res.status(400).json({ error: "Country is required" });
-        }
-        if (!resolvedState) {
-          return res.status(400).json({ error: "State is required" });
-        }
-        if (!resolvedCity) {
-          return res.status(400).json({ error: "City is required" });
         }
 
         const profile = await storage.upsertStudentProfile({
@@ -4789,8 +4782,8 @@ const CHAPTERS: Record<
 
         res.json(profile);
       } catch (error: any) {
-        console.error("[STUDENT PROFILE SAVE ERROR]", error.message);
-        res.status(500).json({ error: "Failed to save student profile" });
+        console.error("[STUDENT PROFILE SAVE ERROR]", error?.stack || error?.message || error);
+        res.status(500).json({ error: error?.message || "Failed to save student profile" });
       }
     });
 
