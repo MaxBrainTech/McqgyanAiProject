@@ -117,24 +117,6 @@ Return your evaluation in this EXACT JSON format (replace ALL placeholders with 
   ]
 }
 
-EXAMPLE:
-{
-  "totalAnswers": 3,
-  "averageScore": 7.5,
-  "overallFeedback": "Good effort overall with clear understanding of basic concepts.",
-  "answerEvaluations": [
-    {
-      "questionNumber": 1,
-      "extractedAnswer": "Photosynthesis is the process by which plants make food using sunlight.",
-      "qualityScore": 8,
-      "strengths": ["Clear definition", "Mentioned key components"],
-      "improvements": ["Could include the chemical equation", "Mention chlorophyll's role"],
-      "correctAnswer": "Photosynthesis is the process by which plants convert light energy (usually from the sun) into chemical energy stored in glucose, using carbon dioxide and water, with chlorophyll as the catalyst. The equation is: 6CO2 + 6H2O + light energy -> C6H12O6 + 6O2",
-      "detailedFeedback": "Excellent start! You've correctly identified the basic concept of photosynthesis. To make your answer more complete, try including the raw materials (CO2 and water), the products (glucose and oxygen), and the role of chlorophyll."
-    }
-  ]
-}
-
 IMPORTANT GUIDELINES:
 - Be encouraging and constructive - this is for learning
 - If an answer is partially correct, acknowledge what's right before suggesting improvements
@@ -149,34 +131,23 @@ IMPORTANT GUIDELINES:
       messages: [
         {
           role: "user",
-          content: [{ type: "text", text: prompt }, ...imageMessages],
+          content: [
+            { type: "text", text: prompt },
+            ...imageMessages,
+          ],
         },
       ],
+      response_format: { type: "json_object" },
       max_tokens: 4000,
-      temperature: 0.3,
     });
 
-    const content = response.choices[0]?.message?.content?.trim();
-
+    const content = response.choices[0].message.content;
     if (!content) {
-      throw new Error("No response from AI");
+      throw new Error("Empty response from OpenAI");
     }
 
-    let jsonContent = content;
-    if (content.includes("```json")) {
-      const match = content.match(/```json\s*([\s\S]*?)\s*```/);
-      if (match) jsonContent = match[1];
-    } else if (content.includes("```")) {
-      const match = content.match(/```\s*([\s\S]*?)\s*```/);
-      if (match) jsonContent = match[1];
-    }
-
-    const result = JSON.parse(jsonContent);
-
-    console.log(
-      `[EVAL] ✓ Evaluated ${result.totalAnswers} answers. Average score: ${result.averageScore}/10`,
-    );
-
+    const result = JSON.parse(content) as EvaluationResult;
+    console.log(`[EVAL] Successfully evaluated ${result.totalAnswers} answers`);
     return result;
   } catch (error: any) {
     console.error("[EVAL ERROR]", error.message);
@@ -197,7 +168,7 @@ export function generateEvaluationPDF(req: Request, res: Response) {
 
   const doc = new PDFDocument({
     size: "A4",
-    margins: { top: 58, bottom: 56, left: 54, right: 54 },
+    margins: { top: 56, bottom: 54, left: 48, right: 48 },
     bufferPages: true,
   });
 
@@ -208,14 +179,14 @@ export function generateEvaluationPDF(req: Request, res: Response) {
 
   const pageWidth = doc.page.width;
   const pageHeight = doc.page.height;
-  const left = 54;
-  const right = pageWidth - 54;
+  const left = 48;
+  const right = pageWidth - 48;
   const contentWidth = pageWidth - left * 2;
-  const contentBottom = pageHeight - 76;
-  const footerY = pageHeight - 28;
-  const footerRuleY = pageHeight - 38;
+  const contentBottom = pageHeight - 64;
+  const footerY = pageHeight - 24;
+  const footerRuleY = pageHeight - 34;
 
-  const setBodyText = (fontSize = 11, color = "#263238", bold = false) => {
+  const setBodyText = (fontSize = 10, color = "#263238", bold = false) => {
     doc.fillColor(color);
     doc.fontSize(fontSize);
     doc.font(bold ? "Helvetica-Bold" : "Helvetica");
@@ -223,216 +194,210 @@ export function generateEvaluationPDF(req: Request, res: Response) {
 
   const drawPageHeader = () => {
     doc.save();
-    doc.strokeColor("#d1d5db").moveTo(left, 36).lineTo(right, 36).stroke();
-    doc.fillColor("#0f172a");
-    doc.font("Helvetica-Bold").fontSize(12).text("MCQGyaan AI", left, 16);
-    doc.font("Helvetica").fontSize(8.5).fillColor("#64748b").text("Answer Sheet Evaluation Report", right, 18, {
-      width: 140,
+    // Header Banner Background
+    doc.rect(0, 0, pageWidth, 42).fill("#0f172a");
+    doc.rect(0, 42, pageWidth, 2.5).fill("#2563eb");
+
+    doc.fillColor("#ffffff");
+    doc.font("Helvetica-Bold").fontSize(14).text("MCQGyaan AI", left, 12);
+    doc.font("Helvetica").fontSize(9).fillColor("#94a3b8").text("Answer Sheet Evaluation Report", left, 27);
+
+    const formattedDate = new Date().toLocaleDateString();
+    doc.font("Helvetica-Bold").fontSize(9).fillColor("#93c5fd").text(formattedDate, right - 120, 18, {
+      width: 120,
       align: "right",
-      lineBreak: false,
     });
     doc.restore();
   };
 
   const drawPageFooter = (pageNumber: number, totalPages: number) => {
     doc.save();
-    doc.strokeColor("#e5e7eb").moveTo(left, footerRuleY).lineTo(right, footerRuleY).stroke();
-    doc.fillColor("#64748b").font("Helvetica").fontSize(8.25);
+    doc.strokeColor("#e2e8f0").lineWidth(0.5).moveTo(left, footerRuleY).lineTo(right, footerRuleY).stroke();
+    doc.fillColor("#64748b").font("Helvetica").fontSize(8);
 
-    const leftText = "Max Brain Technologies";
+    const leftText = "MCQGyaan AI Evaluation Report";
     const centerText = `Page ${pageNumber} of ${totalPages}`;
-    const rightText = getServerAppUrl();
+    const rightText = "www.mcqgyaan.com";
 
-    const leftWidth = doc.widthOfString(leftText);
-    const centerWidth = doc.widthOfString(centerText);
-    const rightWidth = doc.widthOfString(rightText);
-
-    doc.text(leftText, left, footerY, {
-      width: Math.max(leftWidth + 4, 140),
-      lineBreak: false,
-    });
-    doc.text(centerText, pageWidth / 2 - centerWidth / 2, footerY, {
-      width: Math.max(centerWidth + 4, 90),
-      align: "center",
-      lineBreak: false,
-    });
-    doc.text(rightText, pageWidth - rightWidth - left, footerY, {
-      width: Math.max(rightWidth + 4, 140),
-      align: "right",
-      lineBreak: false,
-    });
+    doc.text(leftText, left, footerY, { width: 160, lineBreak: false });
+    doc.text(centerText, pageWidth / 2 - 40, footerY, { width: 80, align: "center", lineBreak: false });
+    doc.text(rightText, right - 140, footerY, { width: 140, align: "right", lineBreak: false });
     doc.restore();
   };
 
   const ensureSpace = (requiredHeight: number) => {
     if (doc.y + requiredHeight <= contentBottom) return;
     doc.addPage();
-    doc.y = 52;
+    doc.y = 54;
   };
 
   const blockHeight = (text: string | undefined, width: number, fontSize: number) => {
-    if (!text) return fontSize * 1.5;
+    if (!text) return fontSize * 1.4;
     doc.font("Helvetica").fontSize(fontSize);
-    return Math.max(doc.heightOfString(text, { width }), fontSize * 1.5);
+    return Math.max(doc.heightOfString(text, { width }), fontSize * 1.4);
   };
 
   const bulletHeight = (items: string[] | undefined, width: number, fontSize: number) => {
     if (!items?.length) return 0;
-    return items.reduce((total, item) => total + blockHeight(item, width - 10, fontSize) + 2, 0);
+    return items.reduce((total, item) => total + blockHeight(item, width - 12, fontSize) + 2, 0);
   };
 
   const drawSectionTitle = (title: string, accent = "#1d4ed8") => {
-    setBodyText(14, accent, true);
+    setBodyText(12.5, accent, true);
     doc.text(title, left, doc.y, { width: contentWidth });
     doc.moveDown(0.12);
-    doc.strokeColor("#d7dce2").moveTo(left, doc.y).lineTo(right, doc.y).stroke();
-    doc.moveDown(0.35);
+    doc.strokeColor("#e2e8f0").lineWidth(0.5).moveTo(left, doc.y).lineTo(right, doc.y).stroke();
+    doc.moveDown(0.3);
   };
 
-  const drawBulletList = (items: string[]) => {
+  const drawBulletList = (items: string[], bulletColor = "#334155") => {
     items.forEach((item) => {
-      setBodyText(10.5, "#374151", false);
-      doc.text(`- ${item}`, left + 2, doc.y, {
-        width: contentWidth - 12,
+      setBodyText(9.5, bulletColor, false);
+      doc.text(`•  ${item}`, left + 4, doc.y, {
+        width: contentWidth - 8,
         align: "left",
+        lineGap: 1.1,
       });
-      doc.moveDown(0.05);
+      doc.moveDown(0.15);
     });
   };
 
   drawPageHeader();
-  doc.y = 52;
+  doc.y = 54;
 
-  doc.fillColor("#111827");
-  doc.font("Helvetica-Bold").fontSize(16).text(studentName || "Student", left, doc.y, {
-    width: contentWidth,
-  });
-  doc.moveDown(0.08);
-
-  setBodyText(10.5, "#475569", false);
-  doc.text(
-    `Class: ${classLevel ?? "N/A"}   |   Subject: ${subject || "N/A"}   |   Total Answers: ${totalAnswers ?? 0}`,
-    { width: contentWidth, lineGap: 1.1 },
+  // Student Info Card
+  doc.save();
+  doc.roundedRect(left, doc.y, contentWidth, 24, 4).fillAndStroke("#f8fafc", "#e2e8f0");
+  doc.fillColor("#0f172a").font("Helvetica-Bold").fontSize(13).text(studentName || "Student", left + 10, doc.y + 5);
+  doc.fillColor("#475569").font("Helvetica").fontSize(9.5).text(
+    `Class: ${classLevel ?? "N/A"}   |   Subject: ${subject || "General"}   |   Evaluated Answers: ${totalAnswers ?? 0}`,
+    left + 10,
+    doc.y + 14,
   );
+  doc.restore();
 
-  doc.moveDown(0.45);
+  doc.y += 30;
+
+  // Evaluation Summary Section
   drawSectionTitle("Evaluation Summary");
 
   const summaryFeedback = overallFeedback || "No overall feedback was provided.";
-  const summaryFeedbackHeight = blockHeight(summaryFeedback, contentWidth - 24, 10.5);
-  const summaryCardHeight = 34 + summaryFeedbackHeight;
+  const summaryFeedbackHeight = blockHeight(summaryFeedback, contentWidth - 20, 9.5);
+  const summaryCardHeight = 32 + summaryFeedbackHeight;
 
   ensureSpace(summaryCardHeight);
   const summaryY = doc.y;
-  doc.fillColor("#0f172a");
-  doc.font("Helvetica-Bold").fontSize(12).text("Average Score", left, summaryY, {
-    width: contentWidth - 110,
-  });
-  doc.font("Helvetica-Bold").fontSize(22).fillColor("#1d4ed8").text(
-    `${Number(averageScore ?? 0).toFixed(1)}/10`,
-    right - 100,
-    summaryY - 2,
+
+  doc.save();
+  doc.roundedRect(left, summaryY, contentWidth, summaryCardHeight, 4).fillAndStroke("#eff6ff", "#bfdbfe");
+
+  doc.fillColor("#1e3a8a").font("Helvetica-Bold").fontSize(11).text("Overall Performance Rating", left + 10, summaryY + 6);
+  doc.font("Helvetica-Bold").fontSize(18).fillColor("#1d4ed8").text(
+    `${Number(averageScore ?? 0).toFixed(1)} / 10`,
+    right - 110,
+    summaryY + 5,
     { width: 100, align: "right" },
   );
-  setBodyText(10.5, "#475569", false);
-  doc.text(summaryFeedback, left, summaryY + 18, {
-    width: contentWidth,
+
+  doc.fillColor("#334155").font("Helvetica").fontSize(9.5).text(summaryFeedback, left + 10, summaryY + 22, {
+    width: contentWidth - 20,
     align: "justify",
     lineGap: 1.15,
   });
-  doc.y = summaryY + summaryCardHeight + 4;
+  doc.restore();
 
-  doc.moveDown(0.25);
-  drawSectionTitle("Answer Breakdown", "#0f766e");
+  doc.y = summaryY + summaryCardHeight + 12;
+
+  // Answer Breakdown Section
+  drawSectionTitle("Detailed Answer Breakdown", "#0f766e");
 
   const items = (answerEvaluations || []) as AnswerEvaluationItem[];
   items.forEach((ans, index) => {
     const answerHeight =
-      36 +
-      blockHeight(`Question ${ans.questionNumber}`, contentWidth - 130, 12.5) +
-      blockHeight(ans.extractedAnswer || "", contentWidth, 10.2) +
-      bulletHeight(ans.strengths, contentWidth, 10.2) +
-      bulletHeight(ans.improvements, contentWidth, 10.2) +
-      blockHeight(ans.correctAnswer || "", contentWidth, 10.2) +
-      blockHeight(ans.detailedFeedback || "", contentWidth, 10.2);
+      32 +
+      blockHeight(`Question ${ans.questionNumber}`, contentWidth - 110, 11) +
+      blockHeight(ans.extractedAnswer || "", contentWidth - 16, 9.5) +
+      bulletHeight(ans.strengths, contentWidth - 16, 9.5) +
+      bulletHeight(ans.improvements, contentWidth - 16, 9.5) +
+      blockHeight(ans.correctAnswer || "", contentWidth - 16, 9.5) +
+      blockHeight(ans.detailedFeedback || "", contentWidth - 16, 9.5);
 
-    ensureSpace(answerHeight + 18);
+    ensureSpace(answerHeight + 10);
 
     const startY = doc.y;
-    const cardHeight = Math.max(answerHeight, 98);
 
-    let innerY = startY;
+    doc.save();
+    doc.roundedRect(left, startY, contentWidth, answerHeight, 4).fillAndStroke("#ffffff", "#e2e8f0");
 
-    doc.fillColor("#0f172a");
-    doc.font("Helvetica-Bold").fontSize(12.5).text(`Question ${ans.questionNumber}`, left, innerY, {
-      width: contentWidth - 110,
-    });
-    setBodyText(10.25, "#1d4ed8", true);
-    doc.text(`Marks: ${typeof ans.qualityScore === "number" ? ans.qualityScore : "N/A"}/10`, right - 96, innerY, {
-      width: 96,
-      align: "right",
-    });
-    innerY += 16;
-    doc.strokeColor("#e5e7eb").moveTo(left, innerY).lineTo(right, innerY).stroke();
-    innerY += 8;
+    let innerY = startY + 6;
 
-    setBodyText(10.5, "#0f172a", true);
-    doc.text("Student Answer", left, innerY, { width: contentWidth });
-    innerY += 12;
-    setBodyText(10, "#334155", false);
-    doc.text(ans.extractedAnswer || "No answer extracted.", left, innerY, {
-      width: contentWidth,
+    // Header of Card
+    doc.fillColor("#0f172a").font("Helvetica-Bold").fontSize(11).text(`Question ${ans.questionNumber}`, left + 8, innerY);
+    doc.fillColor("#1d4ed8").font("Helvetica-Bold").fontSize(10).text(
+      `Score: ${typeof ans.qualityScore === "number" ? ans.qualityScore : "N/A"} / 10`,
+      right - 100,
+      innerY,
+      { width: 92, align: "right" },
+    );
+    innerY += 14;
+
+    doc.strokeColor("#f1f5f9").lineWidth(0.5).moveTo(left + 6, innerY).lineTo(right - 6, innerY).stroke();
+    innerY += 6;
+
+    // Student Answer
+    doc.fillColor("#0f172a").font("Helvetica-Bold").fontSize(9.5).text("Student Extracted Answer", left + 8, innerY);
+    innerY += 11;
+    doc.fillColor("#334155").font("Helvetica").fontSize(9).text(ans.extractedAnswer || "No answer extracted.", left + 8, innerY, {
+      width: contentWidth - 16,
       align: "justify",
       lineGap: 1.1,
     });
-    innerY = doc.y + 4;
+    innerY = doc.y + 6;
 
+    // Strengths
     if (ans.strengths?.length) {
-      setBodyText(10.5, "#15803d", true);
-      doc.text("Strengths", left, innerY, { width: contentWidth });
-      innerY += 12;
+      doc.fillColor("#15803d").font("Helvetica-Bold").fontSize(9.5).text("Strengths", left + 8, innerY);
+      innerY += 11;
       doc.y = innerY;
-      drawBulletList(ans.strengths);
-      innerY = doc.y + 4;
+      drawBulletList(ans.strengths, "#166534");
+      innerY = doc.y + 6;
     }
 
+    // Improvements
     if (ans.improvements?.length) {
-      setBodyText(10.5, "#c2410c", true);
-      doc.text("Areas for Improvement", left, innerY, { width: contentWidth });
-      innerY += 12;
+      doc.fillColor("#c2410c").font("Helvetica-Bold").fontSize(9.5).text("Areas for Improvement", left + 8, innerY);
+      innerY += 11;
       doc.y = innerY;
-      drawBulletList(ans.improvements);
-      innerY = doc.y + 4;
+      drawBulletList(ans.improvements, "#9a3412");
+      innerY = doc.y + 6;
     }
 
+    // Correct Answer
     if (ans.correctAnswer) {
-      setBodyText(10.5, "#1d4ed8", true);
-      doc.text("Correct Answer", left, innerY, { width: contentWidth });
-      innerY += 12;
-      setBodyText(10, "#334155", false);
-      doc.text(ans.correctAnswer, left, innerY, {
-        width: contentWidth,
+      doc.fillColor("#1d4ed8").font("Helvetica-Bold").fontSize(9.5).text("Correct / Model Answer", left + 8, innerY);
+      innerY += 11;
+      doc.fillColor("#1e40af").font("Helvetica").fontSize(9).text(ans.correctAnswer, left + 8, innerY, {
+        width: contentWidth - 16,
         align: "justify",
         lineGap: 1.1,
       });
-      innerY = doc.y + 4;
+      innerY = doc.y + 6;
     }
 
-    setBodyText(10.5, "#0f172a", true);
-    doc.text("Detailed Feedback", left, innerY, { width: contentWidth });
-    innerY += 12;
-    setBodyText(10, "#334155", false);
-    doc.text(ans.detailedFeedback || "No detailed feedback provided.", left, innerY, {
-      width: contentWidth,
-      align: "justify",
-      lineGap: 1.1,
-    });
-
-    doc.y = Math.max(doc.y + 8, startY + cardHeight + 4);
-
-    if (index < items.length - 1) {
-      doc.moveDown(0.3);
+    // Detailed Feedback
+    if (ans.detailedFeedback) {
+      doc.fillColor("#0f172a").font("Helvetica-Bold").fontSize(9.5).text("Teacher Feedback", left + 8, innerY);
+      innerY += 11;
+      doc.fillColor("#475569").font("Helvetica").fontSize(9).text(ans.detailedFeedback, left + 8, innerY, {
+        width: contentWidth - 16,
+        align: "justify",
+        lineGap: 1.1,
+      });
+      innerY = doc.y + 6;
     }
+
+    doc.restore();
+    doc.y = Math.max(doc.y + 10, startY + answerHeight + 8);
   });
 
   const pages = doc.bufferedPageRange();
