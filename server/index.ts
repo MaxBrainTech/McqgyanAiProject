@@ -63,16 +63,20 @@ app.use((req, res, next) => {
   const server = await registerRoutes(app);
   log("✔ Registered admin email routes: POST /api/admin/send-email, GET /api/admin/email-health");
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    res.status(err.status || 500).json({
-      message: err.message || "Internal Server Error",
-    });
+  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+    if (req.path.startsWith("/api")) {
+      console.error(`[API ERROR] ${req.method} ${req.path}:`, err);
+      return res.status(status).json({ error: message, message });
+    }
+    res.status(status).json({ message });
   });
 
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
+  if (process.env.NODE_ENV === "production" || app.get("env") === "production") {
     serveStatic(app);
+  } else {
+    await setupVite(app, server);
   }
 
   const port = Number(process.env.PORT) || 5001;
