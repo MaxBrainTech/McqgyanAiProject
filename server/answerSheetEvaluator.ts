@@ -156,10 +156,10 @@ export function generateEvaluationPDF(req: Request, res: Response) {
     answerEvaluations,
   } = req.body;
 
-  // A4 Document with precise margins and page buffering
+  // A4 Document with bottom margin = 0 to prevent PDFKit text calls in footers from triggering auto page breaks
   const doc = new PDFDocument({
     size: "A4",
-    margins: { top: 56, bottom: 50, left: 48, right: 48 },
+    margins: { top: 50, bottom: 0, left: 48, right: 48 },
     bufferPages: true,
     autoFirstPage: true,
   });
@@ -174,10 +174,10 @@ export function generateEvaluationPDF(req: Request, res: Response) {
   const left = 48;
   const right = pageWidth - 48;
   const contentWidth = pageWidth - left * 2; // 499.28 pt
-  const topStart = 58;
-  const contentBottom = pageHeight - 52; // 789.89 pt
-  const footerRuleY = pageHeight - 38;
-  const footerY = pageHeight - 26;
+  const topStart = 56;
+  const contentBottom = pageHeight - 50; // 791.89 pt
+  const footerRuleY = pageHeight - 36;
+  const footerY = pageHeight - 24;
 
   // Page Header Drawing Function
   const drawPageHeader = () => {
@@ -214,9 +214,9 @@ export function generateEvaluationPDF(req: Request, res: Response) {
     doc.restore();
   };
 
-  // Space check helper that adds a page ONLY if content will cross contentBottom
+  // Space check helper that adds a page ONLY if content crosses contentBottom
   const ensureSpace = (requiredHeight: number) => {
-    if (doc.y + requiredHeight > contentBottom) {
+    if (doc.y > topStart && doc.y + requiredHeight > contentBottom) {
       doc.addPage();
       doc.y = topStart;
     }
