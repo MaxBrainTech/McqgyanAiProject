@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next";
 import { getLocalizedText, getSubjectLabel, getSubjectTestTitle } from "@/lib/quizText";
 import { generateQuizPdf } from "@/lib/pdfGenerator";
 import TestTimerBar from "@/components/TestTimerBar";
-import { saveScoreHistoryAttempt } from "@/lib/scoreHistory";
+import { extractClassLevel, saveScoreHistoryAttempt } from "@/lib/scoreHistory";
 import { getClientAppUrl } from "@/lib/appUrl";
 
 type ResultMap = Record<string, any>;
