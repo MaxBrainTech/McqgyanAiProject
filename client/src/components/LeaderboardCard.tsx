@@ -12,10 +12,9 @@ import {
 
 interface LeaderboardCardProps {
   entries: ScoreHistoryEntry[];
-  onResetScores: () => void;
 }
 
-export default function LeaderboardCard({ entries, onResetScores }: LeaderboardCardProps) {
+export default function LeaderboardCard({ entries }: LeaderboardCardProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
@@ -58,13 +57,6 @@ export default function LeaderboardCard({ entries, onResetScores }: LeaderboardC
               >
               {t("view_full_report")}
               <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-              <Button
-                variant="secondary"
-                className="w-full rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 px-5 text-slate-950 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:w-auto"
-                onClick={onResetScores}
-              >
-              {t("reset_scores")}
             </Button>
             </div>
           </div>
@@ -146,7 +138,6 @@ export default function LeaderboardCard({ entries, onResetScores }: LeaderboardC
         open={open}
         onOpenChange={setOpen}
         entries={normalizedEntries}
-        onReset={onResetScores}
       />
     </>
   );

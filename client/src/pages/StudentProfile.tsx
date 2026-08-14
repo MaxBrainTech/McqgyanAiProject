@@ -42,12 +42,11 @@ import SignInWithGoogle from "@/pages/signInWithGoogle";
 import ScoreHistoryReportDialog from "@/components/ScoreHistoryReportDialog";
 import {
   buildScoreSummary,
+  doesAttemptMatchClass,
   loadRemoteScoreHistory,
   loadScoreHistory,
   mergeScoreHistoryEntries,
   normalizeScoreEntry,
-  resetRemoteScoreHistory,
-  resetScoreHistory,
   type ScoreHistoryEntry,
 } from "@/lib/scoreHistory";
 import { getNames } from "country-list";
@@ -282,29 +281,23 @@ export default function StudentProfile() {
 
   const profileComplete = completionStats.percentage === 100;
 
-  const handleResetScoreHistory = async () => {
-    resetScoreHistory();
-    if (user) {
-      try {
-        await resetRemoteScoreHistory(user.uid);
-      } catch (err) {
-        console.warn("Failed to reset remote score history from profile", err);
-      }
-    }
-    setScoreHistory([]);
-  };
+  const activeClassLevel = useMemo(() => {
+    const num = Number(profile.classLevel);
+    return Number.isFinite(num) && num > 0 ? num : null;
+  }, [profile.classLevel]);
 
-  const normalizedScoreHistory = useMemo(
+  const filteredScoreHistory = useMemo(
     () =>
       [...scoreHistory]
         .map(normalizeScoreEntry)
+        .filter((entry) => doesAttemptMatchClass(entry, activeClassLevel))
         .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
-    [scoreHistory]
+    [scoreHistory, activeClassLevel]
   );
 
   const scoreSummary = useMemo(
-    () => buildScoreSummary(normalizedScoreHistory),
-    [normalizedScoreHistory]
+    () => buildScoreSummary(filteredScoreHistory),
+    [filteredScoreHistory]
   );
 
   useEffect(() => {
@@ -699,8 +692,8 @@ export default function StudentProfile() {
                           <p className="text-[10px] font-bold uppercase tracking-wider">{t("latest_score")}</p>
                         </div>
                         <p className="text-2xl font-black text-violet-600">
-                          {normalizedScoreHistory[0]
-                            ? `${normalizedScoreHistory[0].score}/${normalizedScoreHistory[0].maxScore}`
+                          {filteredScoreHistory[0]
+                            ? `${filteredScoreHistory[0].score}/${filteredScoreHistory[0].maxScore}`
                             : "0/0"}
                         </p>
                       </div>
@@ -1091,8 +1084,8 @@ export default function StudentProfile() {
       <ScoreHistoryReportDialog
         open={scoreHistoryOpen}
         onOpenChange={setScoreHistoryOpen}
-        entries={normalizedScoreHistory}
-        onReset={handleResetScoreHistory}
+        entries={filteredScoreHistory}
+        activeClassLevel={activeClassLevel}
       />
     </div>
   );

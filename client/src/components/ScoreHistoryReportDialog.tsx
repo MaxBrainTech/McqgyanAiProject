@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Download,
-  RefreshCcw,
   ArrowLeft,
   TrendingUp,
   Target,
@@ -13,6 +12,8 @@ import {
   Volume2,
   VolumeX,
   X,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
@@ -26,7 +27,9 @@ import {
   buildLearningInsights,
   buildScoreSummary,
   buildSubjectBreakdown,
+  doesAttemptMatchClass,
   extractClassLevel,
+  limitAttemptsPerSubject,
   normalizeScoreEntry,
   type ScoreHistoryEntry,
   type ScoreInsightSnapshot,
@@ -39,7 +42,7 @@ type ScoreHistoryReportDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   entries: ScoreHistoryEntry[];
-  onReset: () => void;
+  activeClassLevel?: number | null;
 };
 
 const normalizeQuestionPaperItem = (item: any, index: number) => {
@@ -129,11 +132,12 @@ export default function ScoreHistoryReportDialog({
   open,
   onOpenChange,
   entries,
-  onReset,
+  activeClassLevel,
 }: ScoreHistoryReportDialogProps) {
   const { t, i18n } = useTranslation();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showQuestionPaper, setShowQuestionPaper] = useState(true);
+  const [expandedSubjects, setExpandedSubjects] = useState<Record<string, boolean>>({});
 
   const trendChartConfig = useMemo(
     () => ({
@@ -168,8 +172,9 @@ export default function ScoreHistoryReportDialog({
     () =>
       [...entries]
         .map(normalizeScoreEntry)
+        .filter((entry) => doesAttemptMatchClass(entry, activeClassLevel))
         .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
-    [entries]
+    [entries, activeClassLevel]
   );
 
   const summary = useMemo(() => buildScoreSummary(normalizedEntries), [normalizedEntries]);
@@ -553,6 +558,11 @@ export default function ScoreHistoryReportDialog({
                 </DialogHeader>
               </div>
               <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                {activeClassLevel ? (
+                  <Badge variant="default" className="w-fit rounded-full px-3 py-1 bg-blue-600 text-white font-bold">
+                    {t("class")} {activeClassLevel}
+                  </Badge>
+                ) : null}
                 <Badge variant="secondary" className="w-fit rounded-full px-3 py-1 dark:bg-slate-800 dark:text-slate-100">
                   {translateTrendLabel(summary.trendLabel)}
                 </Badge>
@@ -562,10 +572,6 @@ export default function ScoreHistoryReportDialog({
                 <Button variant="outline" className="w-full rounded-full px-4 sm:w-auto" onClick={exportPdf}>
                   <Download className="mr-2 h-4 w-4" />
                   {t("download_pdf")}
-                </Button>
-                <Button variant="secondary" className="w-full rounded-full px-4 sm:w-auto" onClick={onReset}>
-                  <RefreshCcw className="mr-2 h-4 w-4" />
-                  {t("reset_scores")}
                 </Button>
               </div>
             </div>
@@ -814,44 +820,168 @@ export default function ScoreHistoryReportDialog({
                           const advice =
                             subjectAdvice[normalizedSubject]?.[i18n.language.startsWith("hi") ? "hi" : "en"] ||
                             currentAdvice;
-                          const isActive =
+
+                          const subjectAttempts = normalizedEntries.filter((entry) => {
+                            const entrySubject = (entry.subject || "").toLowerCase().replace(/\s+/g, "_");
+                            const paperSubject = entry.insights?.questionPaper?.subject
+                              ? entry.insights.questionPaper.subject.toLowerCase().replace(/\s+/g, "_")
+                              : "";
+                            return entrySubject === normalizedSubject || paperSubject === normalizedSubject;
+                          });
+
+                          const chronologicalSubjectAttempts = [...subjectAttempts]
+                            .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+                            .map((attempt, index) => ({
+                              attemptNumber: index + 1,
+                              attempt,
+                            }));
+
+                          // Take the latest 10 attempts chronologically for UI display
+                          const latest10SubjectAttempts = chronologicalSubjectAttempts.slice(-10);
+
+                          // Sort newest first
+                          const displayAttempts = [...latest10SubjectAttempts].reverse();
+
+                          const isExpanded = Boolean(expandedSubjects[normalizedSubject]);
+                          const visibleAttempts = isExpanded
+                            ? displayAttempts
+                            : displayAttempts.slice(0, 4);
+                          const hasMoreAttempts = displayAttempts.length > 4;
+                          const hiddenCount = displayAttempts.length - 4;
+
+                          const isActiveSubject =
                             selectedSubjectKey.toLowerCase().replace(/\s+/g, "_") === normalizedSubject;
 
                           return (
-                            <button
+                            <div
                               key={item.subject}
-                              type="button"
-                              onClick={() => selectAttemptForSubject(item.subject)}
-                              className={`cursor-pointer rounded-3xl border bg-slate-50/80 p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 dark:border-slate-800 dark:bg-slate-950/50 dark:focus-visible:ring-offset-slate-950 ${
-                                isActive
+                              className={`rounded-3xl border bg-slate-50/80 p-4 text-left transition-all dark:border-slate-800 dark:bg-slate-950/50 ${
+                                isActiveSubject
                                   ? "border-primary/40 bg-primary/5 shadow-md dark:border-sky-500/40 dark:bg-sky-950/35"
-                                  : "hover:border-primary/20 hover:bg-slate-50 dark:hover:border-slate-700 dark:hover:bg-slate-900"
+                                  : "hover:border-primary/20 dark:hover:border-slate-700"
                               }`}
                             >
-                              <div className="flex items-center justify-between gap-2">
-                                <p className="font-semibold capitalize text-slate-950 dark:text-slate-50">
-                                  {subjectLabel(item.subject, t)}
-                                </p>
-                                <Badge variant="secondary" className="rounded-full dark:bg-slate-800 dark:text-slate-100">
-                                  {item.averagePercentage}%
-                                </Badge>
+                              <div
+                                className="cursor-pointer"
+                                onClick={() => selectAttemptForSubject(item.subject)}
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className="font-semibold capitalize text-slate-950 dark:text-slate-50">
+                                    {subjectLabel(item.subject, t)}
+                                  </p>
+                                  <Badge variant="secondary" className="rounded-full dark:bg-slate-800 dark:text-slate-100">
+                                    {item.averagePercentage}%
+                                  </Badge>
+                                </div>
+                                <p className="mt-2 text-sm leading-6 text-muted-foreground dark:text-slate-300">{advice}</p>
+                                <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200">
+                                  <div
+                                    className="h-full rounded-full bg-primary transition-all duration-500"
+                                    style={{ width: `${Math.min(100, item.averagePercentage)}%` }}
+                                  />
+                                </div>
+                                <div className="mt-3 flex flex-col gap-1 text-xs text-muted-foreground dark:text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+                                  <span>
+                                    {t("attempts")}: {item.attempts}
+                                  </span>
+                                  <span>
+                                    {t("best_score")}: {item.bestPercentage}%
+                                  </span>
+                                </div>
                               </div>
-                              <p className="mt-2 text-sm leading-6 text-muted-foreground dark:text-slate-300">{advice}</p>
-                              <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200">
-                                <div
-                                  className="h-full rounded-full bg-primary transition-all duration-500"
-                                  style={{ width: `${Math.min(100, item.averagePercentage)}%` }}
-                                />
-                              </div>
-                              <div className="mt-3 flex flex-col gap-1 text-xs text-muted-foreground dark:text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-                                <span>
-                                  {t("attempts")}: {item.attempts}
-                                </span>
-                                <span>
-                                  {t("best_score")}: {item.bestPercentage}%
-                                </span>
-                              </div>
-                            </button>
+
+                              {/* Clickable Attempts List */}
+                              {displayAttempts.length > 0 ? (
+                                <div className="mt-4 pt-3.5 border-t border-slate-200/80 dark:border-slate-800">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                      Select Attempt:
+                                    </p>
+                                    {hasMoreAttempts ? (
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setExpandedSubjects((prev) => ({
+                                            ...prev,
+                                            [normalizedSubject]: !prev[normalizedSubject],
+                                          }));
+                                        }}
+                                        className="h-6 px-2 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-lg"
+                                      >
+                                        {isExpanded ? (
+                                          <>
+                                            Show Less
+                                            <ChevronUp className="ml-1 h-3.5 w-3.5" />
+                                          </>
+                                        ) : (
+                                          <>
+                                            Show More Attempts (+{hiddenCount})
+                                            <ChevronDown className="ml-1 h-3.5 w-3.5" />
+                                          </>
+                                        )}
+                                      </Button>
+                                    ) : null}
+                                  </div>
+
+                                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                                    {visibleAttempts.map(({ attemptNumber, attempt }, index) => {
+                                      const isSelected = selectedId === attempt.id;
+                                      const isLatestAttempt = attempt.id === displayAttempts[0]?.attempt.id;
+                                      return (
+                                        <Button
+                                          key={attempt.id}
+                                          type="button"
+                                          size="sm"
+                                          variant={isSelected ? "default" : "outline"}
+                                          onClick={() => {
+                                            setSelectedId(attempt.id);
+                                            setShowQuestionPaper(true);
+                                            requestAnimationFrame(() => {
+                                              scrollReportToTop();
+                                            });
+                                          }}
+                                          className={`h-8 rounded-xl px-2.5 text-xs font-bold transition-all ${
+                                            isSelected
+                                              ? "bg-blue-600 text-white shadow-md ring-2 ring-blue-500/40 hover:bg-blue-700 dark:bg-blue-600 dark:text-white"
+                                              : "bg-white text-slate-700 border-slate-200 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-800 dark:hover:bg-slate-800 dark:hover:text-blue-400"
+                                          }`}
+                                          title={`${attempt.date || new Date(attempt.timestamp).toLocaleDateString()} - Score: ${attempt.score}/${attempt.maxScore} (${attempt.percentage}%)`}
+                                        >
+                                          {isLatestAttempt ? (
+                                            <span
+                                              className={`mr-1.5 inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider ${
+                                                isSelected
+                                                  ? "bg-white/25 text-white"
+                                                  : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
+                                              }`}
+                                            >
+                                              Latest
+                                            </span>
+                                          ) : null}
+                                          Attempt {attemptNumber}
+                                          <span
+                                            className={`ml-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-extrabold ${
+                                              isSelected
+                                                ? "bg-white/20 text-white"
+                                                : attempt.percentage >= 80
+                                                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                                                : attempt.percentage >= 60
+                                                ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                                                : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
+                                            }`}
+                                          >
+                                            {attempt.percentage}%
+                                          </span>
+                                        </Button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              ) : null}
+                            </div>
                           );
                         })}
                       </div>

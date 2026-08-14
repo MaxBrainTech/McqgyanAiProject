@@ -1280,18 +1280,8 @@ useEffect(() => {
                       {t("score_history")}
                     </h2>
                   </div>
-                  <Button
-                    variant="outline"
-                    onClick={handleResetScores}
-                    data-testid="button-reset-scores"
-                    className="gap-2 h-11 text-base"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                    <span>{t("reset_scores")}</span>
-
-                  </Button>
                 </div>
-                <LeaderboardCard entries={leaderboard} onResetScores={handleResetScores} />
+                <LeaderboardCard entries={leaderboard} />
               </div>
             )}
           </div>

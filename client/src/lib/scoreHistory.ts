@@ -138,6 +138,30 @@ export const extractClassLevel = (raw: any): number | null => {
   return null;
 };
 
+export function doesAttemptMatchClass(
+  entry: ScoreHistoryEntry,
+  activeClassLevel: number | null | undefined
+): boolean {
+  if (activeClassLevel == null || Number.isNaN(Number(activeClassLevel)) || Number(activeClassLevel) <= 0) {
+    return true;
+  }
+
+  const targetClass = Number(activeClassLevel);
+  const attemptClass = extractClassLevel(entry);
+
+  if (attemptClass != null && attemptClass > 0) {
+    return attemptClass === targetClass;
+  }
+
+  const title = entry.insights?.questionPaper?.title || "";
+  const titleMatch = title.match(/class\s*(\d+)/i);
+  if (titleMatch && titleMatch[1]) {
+    return Number(titleMatch[1]) === targetClass;
+  }
+
+  return true;
+}
+
 const normalizeQuestionItem = (
   item: any,
   fallbackQuestionNumber: number
@@ -304,6 +328,27 @@ export function normalizeScoreEntry(raw: any): ScoreHistoryEntry {
   };
 }
 
+export function limitAttemptsPerSubject(
+  entries: ScoreHistoryEntry[],
+  maxPerSubject = 10
+): ScoreHistoryEntry[] {
+  const subjectCounts = new Map<string, number>();
+  const sorted = [...entries].sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  );
+
+  const result: ScoreHistoryEntry[] = [];
+  for (const entry of sorted) {
+    const normSubject = (entry.subject || "quiz").toLowerCase().trim().replace(/\s+/g, "_");
+    const count = subjectCounts.get(normSubject) ?? 0;
+    if (count < maxPerSubject) {
+      subjectCounts.set(normSubject, count + 1);
+      result.push(entry);
+    }
+  }
+  return result;
+}
+
 export function loadScoreHistory(): ScoreHistoryEntry[] {
   if (!isBrowser()) return [];
 
@@ -314,9 +359,9 @@ export function loadScoreHistory(): ScoreHistoryEntry[] {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
 
-    return parsed.map(normalizeScoreEntry).sort(
-      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    );
+    return parsed
+      .map(normalizeScoreEntry)
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   } catch (error) {
     console.warn("Failed to load score history", error);
     return [];
@@ -574,14 +619,16 @@ export function buildLearningInsights(entry: ScoreHistoryEntry, history: ScoreHi
 export function buildSubjectBreakdown(entries: ScoreHistoryEntry[]): ScoreSubjectBreakdown[] {
   const subjectMap = new Map<
     string,
-    { total: number; count: number; best: number; latest: number; latestAt: number }
+    { displaySubject: string; total: number; count: number; best: number; latest: number; latestAt: number }
   >();
 
   [...entries]
     .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
     .forEach((entry) => {
-      const key = entry.subject || "quiz";
-      const current = subjectMap.get(key) ?? {
+      const rawSubject = (entry.subject || "quiz").trim();
+      const normKey = rawSubject.toLowerCase().replace(/\s+/g, "_");
+      const current = subjectMap.get(normKey) ?? {
+        displaySubject: rawSubject,
         total: 0,
         count: 0,
         best: 0,
@@ -596,12 +643,12 @@ export function buildSubjectBreakdown(entries: ScoreHistoryEntry[]): ScoreSubjec
         current.latest = entry.percentage;
         current.latestAt = entryTime;
       }
-      subjectMap.set(key, current);
+      subjectMap.set(normKey, current);
     });
 
-  return [...subjectMap.entries()]
-    .map(([subject, value]) => ({
-      subject,
+  return [...subjectMap.values()]
+    .map((value) => ({
+      subject: value.displaySubject,
       attempts: value.count,
       averagePercentage: Math.round(value.total / value.count),
       bestPercentage: value.best,
