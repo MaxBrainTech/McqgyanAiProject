@@ -7,8 +7,11 @@ import {
   type CustomTestSubmission, type InsertCustomTestSubmission,
   type CustomQuestion, type InsertCustomQuestion,
   type AnswerSheetEvaluation, type InsertAnswerSheetEvaluation,
-  type StudentScoreHistory, type InsertStudentScoreHistory
+  type StudentScoreHistory, type InsertStudentScoreHistory,
+  type GeneratedTest, type InsertGeneratedTest,
+  type GeneratedTestQuestion, type InsertGeneratedTestQuestion
 } from "@shared/schema";
+
 import pool, { databaseReady, ensureStudentScoreHistoryTable } from "./db";
 
 // Normalize DB snake_case -> app camelCase for test_sessions
@@ -1071,6 +1074,312 @@ async clearTeacherResetToken(
       throw error;
     }
   }
+
+  // --- Generated Tests & Questions Methods ---
+
+  async createGeneratedTest(
+    testData: Partial<InsertGeneratedTest>,
+    questions: Array<Partial<InsertGeneratedTestQuestion>>
+  ): Promise<{ test: GeneratedTest; questions: GeneratedTestQuestion[] }> {
+    await databaseReady;
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      const testId = (testData as any).id || undefined;
+      const testCols = testId
+        ? `id, student_id, student_name, student_email, class_level, subject, chapter_topic, medium, board, difficulty, test_type, test_mode, question_count`
+        : `student_id, student_name, student_email, class_level, subject, chapter_topic, medium, board, difficulty, test_type, test_mode, question_count`;
+      const testVals = testId
+        ? `$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13`
+        : `$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12`;
+
+      const params = testId
+        ? [
+            testId,
+            testData.studentId || "student-1",
+            testData.studentName || "Student",
+            testData.studentEmail || null,
+            testData.classLevel || null,
+            testData.subject || "General",
+            testData.chapterTopic || null,
+            testData.medium || "English",
+            testData.board || "CBSE",
+            testData.difficulty || "Medium",
+            testData.testType || "MCQ",
+            testData.testMode || "Practice",
+            questions.length,
+          ]
+        : [
+            testData.studentId || "student-1",
+            testData.studentName || "Student",
+            testData.studentEmail || null,
+            testData.classLevel || null,
+            testData.subject || "General",
+            testData.chapterTopic || null,
+            testData.medium || "English",
+            testData.board || "CBSE",
+            testData.difficulty || "Medium",
+            testData.testType || "MCQ",
+            testData.testMode || "Practice",
+            questions.length,
+          ];
+
+      const testResult = await client.query(
+        `INSERT INTO generated_tests (${testCols}) VALUES (${testVals}) RETURNING *`,
+        params
+      );
+
+      const savedTest = normalizeGeneratedTest(testResult.rows[0]);
+      const savedQuestions: GeneratedTestQuestion[] = [];
+
+      for (let i = 0; i < questions.length; i++) {
+        const q = questions[i];
+        const qResult = await client.query(
+          `INSERT INTO generated_test_questions (
+            generated_test_id, question_number, question, option_a, option_b, option_c, option_d, correct_option, correct_answer, explanation
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+          [
+            savedTest.id,
+            q.questionNumber || i + 1,
+            q.question || "",
+            q.optionA || null,
+            q.optionB || null,
+            q.optionC || null,
+            q.optionD || null,
+            q.correctOption || null,
+            q.correctAnswer || "",
+            q.explanation || null,
+          ]
+        );
+        savedQuestions.push(normalizeGeneratedTestQuestion(qResult.rows[0]));
+      }
+
+      await client.query("COMMIT");
+      return { test: savedTest, questions: savedQuestions };
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async getGeneratedTests(params: {
+    classLevel?: number | null;
+    subject?: string | null;
+    chapterTopic?: string | null;
+    difficulty?: string | null;
+    medium?: string | null;
+    board?: string | null;
+    testType?: string | null;
+    testMode?: string | null;
+    studentId?: string | null;
+    search?: string | null;
+    dateFrom?: string | null;
+    dateTo?: string | null;
+    page?: number;
+    limit?: number;
+    ids?: string[];
+  }): Promise<{
+    tests: GeneratedTest[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    await databaseReady;
+    const page = Math.max(1, params.page || 1);
+    const limit = Math.max(1, Math.min(500, params.limit || 20));
+    const offset = (page - 1) * limit;
+
+    const conditions: string[] = [];
+    const queryParams: any[] = [];
+    let paramIdx = 1;
+
+    if (params.ids && Array.isArray(params.ids) && params.ids.length > 0) {
+      conditions.push(`id = ANY($${paramIdx++})`);
+      queryParams.push(params.ids);
+    }
+
+    if (params.classLevel != null && !isNaN(Number(params.classLevel))) {
+      conditions.push(`class_level = $${paramIdx++}`);
+      queryParams.push(Number(params.classLevel));
+    }
+
+    if (params.subject && params.subject.trim() && params.subject.toLowerCase() !== "all") {
+      conditions.push(`LOWER(subject) = LOWER($${paramIdx++})`);
+      queryParams.push(params.subject.trim());
+    }
+
+    if (params.difficulty && params.difficulty.trim() && params.difficulty.toLowerCase() !== "all") {
+      conditions.push(`LOWER(difficulty) = LOWER($${paramIdx++})`);
+      queryParams.push(params.difficulty.trim());
+    }
+
+    if (params.medium && params.medium.trim() && params.medium.toLowerCase() !== "all") {
+      conditions.push(`LOWER(medium) = LOWER($${paramIdx++})`);
+      queryParams.push(params.medium.trim());
+    }
+
+    if (params.board && params.board.trim() && params.board.toLowerCase() !== "all") {
+      conditions.push(`LOWER(board) = LOWER($${paramIdx++})`);
+      queryParams.push(params.board.trim());
+    }
+
+    if (params.testType && params.testType.trim() && params.testType.toLowerCase() !== "all") {
+      conditions.push(`LOWER(test_type) = LOWER($${paramIdx++})`);
+      queryParams.push(params.testType.trim());
+    }
+
+    if (params.testMode && params.testMode.trim() && params.testMode.toLowerCase() !== "all") {
+      conditions.push(`LOWER(test_mode) = LOWER($${paramIdx++})`);
+      queryParams.push(params.testMode.trim());
+    }
+
+    if (params.studentId && params.studentId.trim()) {
+      conditions.push(`student_id = $${paramIdx++}`);
+      queryParams.push(params.studentId.trim());
+    }
+
+    if (params.dateFrom && params.dateFrom.trim()) {
+      conditions.push(`created_at >= $${paramIdx++}`);
+      queryParams.push(new Date(params.dateFrom));
+    }
+
+    if (params.dateTo && params.dateTo.trim()) {
+      conditions.push(`created_at <= $${paramIdx++}`);
+      queryParams.push(new Date(params.dateTo));
+    }
+
+    if (params.search && params.search.trim()) {
+      const s = `%${params.search.trim().toLowerCase()}%`;
+      conditions.push(`(
+        LOWER(student_name) LIKE $${paramIdx} OR
+        LOWER(student_email) LIKE $${paramIdx} OR
+        LOWER(id) LIKE $${paramIdx} OR
+        LOWER(subject) LIKE $${paramIdx} OR
+        LOWER(chapter_topic) LIKE $${paramIdx}
+      )`);
+      queryParams.push(s);
+      paramIdx++;
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+    const countResult = await pool.query(
+      `SELECT COUNT(*) as count FROM generated_tests ${whereClause}`,
+      queryParams
+    );
+    const total = Number(countResult.rows[0]?.count || 0);
+
+    const dataQueryParams = [...queryParams, limit, offset];
+    const testsResult = await pool.query(
+      `SELECT * FROM generated_tests ${whereClause} ORDER BY created_at DESC LIMIT $${paramIdx++} OFFSET $${paramIdx++}`,
+      dataQueryParams
+    );
+
+    const tests = testsResult.rows.map(normalizeGeneratedTest);
+    const totalPages = Math.ceil(total / limit) || 1;
+
+    return { tests, total, page, limit, totalPages };
+  }
+
+  async getGeneratedTestWithQuestions(id: string): Promise<{
+    test: GeneratedTest;
+    questions: GeneratedTestQuestion[];
+  } | null> {
+    await databaseReady;
+    const testRes = await pool.query(`SELECT * FROM generated_tests WHERE id = $1`, [id]);
+    if (testRes.rows.length === 0) return null;
+
+    const test = normalizeGeneratedTest(testRes.rows[0]);
+    const qRes = await pool.query(
+      `SELECT * FROM generated_test_questions WHERE generated_test_id = $1 ORDER BY question_number ASC`,
+      [id]
+    );
+    const questions = qRes.rows.map(normalizeGeneratedTestQuestion);
+
+    return { test, questions };
+  }
+
+  async getGeneratedTestStats(): Promise<{
+    totalGeneratedTests: number;
+    testsGeneratedToday: number;
+    testsGeneratedThisWeek: number;
+    totalQuestionsGenerated: number;
+    mostUsedClass: number | null;
+    mostUsedSubject: string | null;
+    distinctClasses: number[];
+    distinctSubjects: string[];
+  }> {
+    await databaseReady;
+    const totalRes = await pool.query(`SELECT COUNT(*) as count, COALESCE(SUM(question_count), 0) as total_questions FROM generated_tests`);
+    const todayRes = await pool.query(`SELECT COUNT(*) as count FROM generated_tests WHERE created_at >= CURRENT_DATE`);
+    const weekRes = await pool.query(`SELECT COUNT(*) as count FROM generated_tests WHERE created_at >= NOW() - INTERVAL '7 days'`);
+
+    const classRes = await pool.query(`SELECT class_level, COUNT(*) as count FROM generated_tests WHERE class_level IS NOT NULL GROUP BY class_level ORDER BY count DESC LIMIT 1`);
+    const subjectRes = await pool.query(`SELECT subject, COUNT(*) as count FROM generated_tests WHERE subject IS NOT NULL GROUP BY subject ORDER BY count DESC LIMIT 1`);
+
+    const distinctClassRes = await pool.query(`SELECT DISTINCT class_level FROM generated_tests WHERE class_level IS NOT NULL ORDER BY class_level ASC`);
+    const distinctSubjRes = await pool.query(`SELECT DISTINCT subject FROM generated_tests WHERE subject IS NOT NULL GROUP BY subject ASC`);
+
+    return {
+      totalGeneratedTests: Number(totalRes.rows[0]?.count || 0),
+      testsGeneratedToday: Number(todayRes.rows[0]?.count || 0),
+      testsGeneratedThisWeek: Number(weekRes.rows[0]?.count || 0),
+      totalQuestionsGenerated: Number(totalRes.rows[0]?.total_questions || 0),
+      mostUsedClass: classRes.rows[0] ? Number(classRes.rows[0].class_level) : null,
+      mostUsedSubject: subjectRes.rows[0] ? String(subjectRes.rows[0].subject) : null,
+      distinctClasses: distinctClassRes.rows.map((r) => Number(r.class_level)),
+      distinctSubjects: distinctSubjRes.rows.map((r) => String(r.subject)),
+    };
+  }
+
+  async deleteGeneratedTest(id: string): Promise<boolean> {
+    await databaseReady;
+    const res = await pool.query(`DELETE FROM generated_tests WHERE id = $1`, [id]);
+    return (res.rowCount ?? 0) > 0;
+  }
 }
 
+const normalizeGeneratedTest = (row: any): GeneratedTest => {
+  if (!row) return row;
+  return {
+    id: row.id,
+    studentId: row.student_id ?? row.studentId,
+    studentName: row.student_name ?? row.studentName ?? "Anonymous Student",
+    studentEmail: row.student_email ?? row.studentEmail ?? null,
+    classLevel: row.class_level ?? row.classLevel ?? null,
+    subject: row.subject,
+    chapterTopic: row.chapter_topic ?? row.chapterTopic ?? null,
+    medium: row.medium ?? null,
+    board: row.board ?? null,
+    difficulty: row.difficulty ?? null,
+    testType: row.test_type ?? row.testType ?? null,
+    testMode: row.test_mode ?? row.testMode ?? null,
+    questionCount: Number(row.question_count ?? row.questionCount ?? 0),
+    createdAt: row.created_at ?? row.createdAt,
+  };
+};
+
+const normalizeGeneratedTestQuestion = (row: any): GeneratedTestQuestion => {
+  if (!row) return row;
+  return {
+    id: row.id,
+    generatedTestId: row.generated_test_id ?? row.generatedTestId,
+    questionNumber: Number(row.question_number ?? row.questionNumber),
+    question: row.question,
+    optionA: row.option_a ?? row.optionA ?? null,
+    optionB: row.option_b ?? row.optionB ?? null,
+    optionC: row.option_c ?? row.optionC ?? null,
+    optionD: row.option_d ?? row.optionD ?? null,
+    correctOption: row.correct_option ?? row.correctOption ?? null,
+    correctAnswer: row.correct_answer ?? row.correctAnswer,
+    explanation: row.explanation ?? null,
+    createdAt: row.created_at ?? row.createdAt,
+  };
+};
+
 export const storage = new Storage();
+

@@ -293,6 +293,55 @@ export async function ensureBaseTables() {
     await safeAddColumn("student_profiles", '"city" text');
     await safeAddColumn("teachers", '"is_approved" text DEFAULT \'false\' NOT NULL');
     await safeAddColumn("student_score_history", '"class_level" integer');
+
+    // 12. generated_tests
+    await safeCreateTable(
+      "generated_tests",
+      `CREATE TABLE IF NOT EXISTS "generated_tests" (
+        "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+        "student_id" text NOT NULL,
+        "student_name" text,
+        "student_email" text,
+        "class_level" integer,
+        "subject" text NOT NULL,
+        "chapter_topic" text,
+        "medium" text,
+        "board" text,
+        "difficulty" text,
+        "test_type" text,
+        "test_mode" text,
+        "question_count" integer DEFAULT 0 NOT NULL,
+        "created_at" timestamp DEFAULT now() NOT NULL
+      );`
+    );
+    try {
+      await pool.query(`CREATE INDEX IF NOT EXISTS "idx_generated_tests_student_id" ON "generated_tests" ("student_id");`);
+      await pool.query(`CREATE INDEX IF NOT EXISTS "idx_generated_tests_class_level" ON "generated_tests" ("class_level");`);
+      await pool.query(`CREATE INDEX IF NOT EXISTS "idx_generated_tests_subject" ON "generated_tests" ("subject");`);
+      await pool.query(`CREATE INDEX IF NOT EXISTS "idx_generated_tests_created_at" ON "generated_tests" ("created_at");`);
+    } catch {}
+
+    // 13. generated_test_questions
+    await safeCreateTable(
+      "generated_test_questions",
+      `CREATE TABLE IF NOT EXISTS "generated_test_questions" (
+        "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+        "generated_test_id" varchar NOT NULL REFERENCES "generated_tests"("id") ON DELETE CASCADE,
+        "question_number" integer NOT NULL,
+        "question" text NOT NULL,
+        "option_a" text,
+        "option_b" text,
+        "option_c" text,
+        "option_d" text,
+        "correct_option" text,
+        "correct_answer" text NOT NULL,
+        "explanation" text,
+        "created_at" timestamp DEFAULT now() NOT NULL
+      );`
+    );
+    try {
+      await pool.query(`CREATE INDEX IF NOT EXISTS "idx_generated_test_questions_test_id" ON "generated_test_questions" ("generated_test_id");`);
+    } catch {}
   })();
 
   return baseTablesPromise;

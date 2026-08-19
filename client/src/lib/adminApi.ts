@@ -423,3 +423,92 @@ export const checkAdminEmailHealth = () =>
     smtp: { ok: boolean; message: string };
   }>("/api/admin/email-health");
 
+// Admin Generated Tests Types & API Helpers
+export type AdminGeneratedTestItem = {
+  id: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string | null;
+  classLevel: number | null;
+  subject: string;
+  chapterTopic: string | null;
+  medium: string | null;
+  board: string | null;
+  difficulty: string | null;
+  testType: string | null;
+  testMode: string | null;
+  questionCount: number;
+  createdAt: string;
+};
+
+export type AdminGeneratedQuestionItem = {
+  id: string;
+  generatedTestId: string;
+  questionNumber: number;
+  question: string;
+  optionA: string | null;
+  optionB: string | null;
+  optionC: string | null;
+  optionD: string | null;
+  correctOption: string | null;
+  correctAnswer: string;
+  explanation: string | null;
+  createdAt: string;
+};
+
+export type AdminGeneratedTestStats = {
+  totalGeneratedTests: number;
+  testsGeneratedToday: number;
+  testsGeneratedThisWeek: number;
+  totalQuestionsGenerated: number;
+  mostUsedClass: number | null;
+  mostUsedSubject: string | null;
+  distinctClasses: number[];
+  distinctSubjects: string[];
+};
+
+export type AdminGeneratedTestsResponse = {
+  tests: AdminGeneratedTestItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  stats: AdminGeneratedTestStats;
+};
+
+export type AdminGeneratedTestDetailsResponse = {
+  test: AdminGeneratedTestItem;
+  questions: AdminGeneratedQuestionItem[];
+};
+
+export const getAdminGeneratedTests = (params?: {
+  classLevel?: number | string | null;
+  subject?: string | null;
+  difficulty?: string | null;
+  medium?: string | null;
+  search?: string | null;
+  page?: number;
+  limit?: number;
+}) => {
+  const query = new URLSearchParams();
+  if (params?.classLevel && params.classLevel !== "all") query.set("classLevel", String(params.classLevel));
+  if (params?.subject && params.subject !== "all") query.set("subject", params.subject);
+  if (params?.difficulty && params.difficulty !== "all") query.set("difficulty", params.difficulty);
+  if (params?.medium && params.medium !== "all") query.set("medium", params.medium);
+  if (params?.search && params.search.trim()) query.set("search", params.search.trim());
+  if (params?.page) query.set("page", String(params.page));
+  if (params?.limit) query.set("limit", String(params.limit));
+
+  const qs = query.toString();
+  return fetchJson<AdminGeneratedTestsResponse>(`/api/admin/generated-tests${qs ? `?${qs}` : ""}`);
+};
+
+export const getAdminGeneratedTestDetails = (id: string) =>
+  fetchJson<AdminGeneratedTestDetailsResponse>(`/api/admin/generated-tests/${id}`);
+
+export const deleteAdminGeneratedTest = (id: string) =>
+  fetchJson<{ success: boolean; message: string }>(`/api/admin/generated-tests/${id}`, {
+    method: "DELETE",
+  });
+
+

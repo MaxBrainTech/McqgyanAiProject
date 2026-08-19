@@ -45,6 +45,7 @@ import {
   type AdminTeacher,
 } from "@/lib/adminApi";
 import AdminAnalytics from "@/pages/AdminAnalytics";
+import AdminGeneratedTests from "@/components/AdminGeneratedTests";
 
 const DASHBOARD_QUERY_KEY = ["admin", "dashboard"];
 const TEACHERS_QUERY_KEY = ["admin", "teachers", "all"];
@@ -880,7 +881,7 @@ export default function AdminDashboard() {
 
           <CardContent className="p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-4 rounded-xl border border-slate-200 bg-slate-100 p-1">
+              <TabsList className="grid w-full grid-cols-5 rounded-xl border border-slate-200 bg-slate-100 p-1">
                 <TabsTrigger
                   value="overview"
                   className="rounded-lg py-2 text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs"
@@ -898,6 +899,12 @@ export default function AdminDashboard() {
                   className="rounded-lg py-2 text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs"
                 >
                   Students ({students.length})
+                </TabsTrigger>
+                <TabsTrigger
+                  value="generated-tests"
+                  className="rounded-lg py-2 text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs"
+                >
+                  Generated Tests
                 </TabsTrigger>
                 <TabsTrigger
                   value="analytics"
@@ -997,7 +1004,12 @@ export default function AdminDashboard() {
                 />
               </TabsContent>
 
-              {/* Tab 4: Analytics */}
+              {/* Tab 4: Generated Tests */}
+              <TabsContent value="generated-tests" className="mt-6">
+                <AdminGeneratedTests />
+              </TabsContent>
+
+              {/* Tab 5: Analytics */}
               <TabsContent value="analytics" className="mt-6">
                 <AdminAnalytics />
               </TabsContent>

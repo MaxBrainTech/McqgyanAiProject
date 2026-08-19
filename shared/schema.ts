@@ -263,3 +263,70 @@ export const mcqs = pgTable(
 
 export type InsertAnswerSheetEvaluation = z.infer<typeof insertAnswerSheetEvaluationSchema>;
 export type AnswerSheetEvaluation = typeof answerSheetEvaluations.$inferSelect;
+
+// Centralized Admin Generated Tests schema
+export const generatedTests = pgTable(
+  "generated_tests",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    studentId: text("student_id").notNull(),
+    studentName: text("student_name"),
+    studentEmail: text("student_email"),
+    classLevel: integer("class_level"),
+    subject: text("subject").notNull(),
+    chapterTopic: text("chapter_topic"),
+    medium: text("medium"),
+    board: text("board"),
+    difficulty: text("difficulty"),
+    testType: text("test_type"),
+    testMode: text("test_mode"),
+    questionCount: integer("question_count").notNull().default(0),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    studentIdx: index("idx_generated_tests_student_id").on(table.studentId),
+    classIdx: index("idx_generated_tests_class_level").on(table.classLevel),
+    subjectIdx: index("idx_generated_tests_subject").on(table.subject),
+    createdAtIdx: index("idx_generated_tests_created_at").on(table.createdAt),
+  })
+);
+
+export const insertGeneratedTestSchema = createInsertSchema(generatedTests).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertGeneratedTest = z.infer<typeof insertGeneratedTestSchema>;
+export type GeneratedTest = typeof generatedTests.$inferSelect;
+
+export const generatedTestQuestions = pgTable(
+  "generated_test_questions",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    generatedTestId: varchar("generated_test_id")
+      .notNull()
+      .references(() => generatedTests.id, { onDelete: "cascade" }),
+    questionNumber: integer("question_number").notNull(),
+    question: text("question").notNull(),
+    optionA: text("option_a"),
+    optionB: text("option_b"),
+    optionC: text("option_c"),
+    optionD: text("option_d"),
+    correctOption: text("correct_option"),
+    correctAnswer: text("correct_answer").notNull(),
+    explanation: text("explanation"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    testIdx: index("idx_generated_test_questions_test_id").on(table.generatedTestId),
+  })
+);
+
+export const insertGeneratedTestQuestionSchema = createInsertSchema(generatedTestQuestions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertGeneratedTestQuestion = z.infer<typeof insertGeneratedTestQuestionSchema>;
+export type GeneratedTestQuestion = typeof generatedTestQuestions.$inferSelect;
+

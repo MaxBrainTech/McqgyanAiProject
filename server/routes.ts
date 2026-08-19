@@ -39,6 +39,7 @@ import { randomUUID } from "crypto";
 import { openai } from "./openai";
 import { registerAdminAuthRoutes } from "./adminAuth";
 import { registerAdminTeacherRoutes } from "./adminTeachers";
+import { registerAdminGeneratedTestRoutes } from "./adminGeneratedTests";
 
 console.log("ROUTES FILE LOADED");
 
@@ -2313,6 +2314,7 @@ const CHAPTERS: Record<
   export async function registerRoutes(app: Express): Promise<Server> {
     registerAdminAuthRoutes(app);
     registerAdminTeacherRoutes(app);
+    registerAdminGeneratedTestRoutes(app);
 
     app.get("/api/test-email", async (req, res) => {
       try {
@@ -4678,12 +4680,140 @@ const CHAPTERS: Record<
           insights: parsedInsights ?? {},
         } as any);
 
+        // Auto save to generated_tests & generated_test_questions centrally
+        autoSaveScoreHistoryToGeneratedTests({
+          userId,
+          userEmail,
+          subject,
+          mode,
+          difficulty,
+          language,
+          classLevel: parsedClass,
+          insights: parsedInsights,
+        });
+
         res.json(entry);
       } catch (error: any) {
         console.error("[SCORE HISTORY SAVE ERROR]", error.message);
         res.status(500).json({ error: "Failed to save score history" });
       }
     });
+
+function cleanOptionText(text: string): string {
+  return String(text || "").replace(/^[A-D][.)]?\s*/i, "").trim();
+}
+
+function parseQuestionOptionsAndAnswers(q: any) {
+  let optionA = "";
+  let optionB = "";
+  let optionC = "";
+  let optionD = "";
+
+  const opts = Array.isArray(q.options)
+    ? q.options
+    : typeof q.options === "string"
+    ? (function() { try { return JSON.parse(q.options); } catch { return []; } })()
+    : [];
+
+  if (Array.isArray(opts)) {
+    optionA = opts[0] ? cleanOptionText(opts[0]) : "";
+    optionB = opts[1] ? cleanOptionText(opts[1]) : "";
+    optionC = opts[2] ? cleanOptionText(opts[2]) : "";
+    optionD = opts[3] ? cleanOptionText(opts[3]) : "";
+  } else if (opts && typeof opts === "object") {
+    optionA = cleanOptionText(opts.optionA || opts.A || "");
+    optionB = cleanOptionText(opts.optionB || opts.B || "");
+    optionC = cleanOptionText(opts.optionC || opts.C || "");
+    optionD = cleanOptionText(opts.optionD || opts.D || "");
+  }
+
+  let correctOption = (q.correctOption || q.correct_option || "").toString().trim().toUpperCase();
+  if (correctOption.startsWith("OPTION ")) {
+    correctOption = correctOption.replace("OPTION ", "").trim();
+  }
+  if (!["A", "B", "C", "D"].includes(correctOption)) {
+    const rawAnswer = cleanOptionText(q.correctAnswer || q.correct_answer || "");
+    if (rawAnswer && optionA && rawAnswer.toLowerCase() === optionA.toLowerCase()) correctOption = "A";
+    else if (rawAnswer && optionB && rawAnswer.toLowerCase() === optionB.toLowerCase()) correctOption = "B";
+    else if (rawAnswer && optionC && rawAnswer.toLowerCase() === optionC.toLowerCase()) correctOption = "C";
+    else if (rawAnswer && optionD && rawAnswer.toLowerCase() === optionD.toLowerCase()) correctOption = "D";
+  }
+
+  let correctAnswer = cleanOptionText(q.correctAnswer || q.correct_answer || "");
+  if (!correctAnswer && correctOption) {
+    if (correctOption === "A") correctAnswer = optionA;
+    else if (correctOption === "B") correctAnswer = optionB;
+    else if (correctOption === "C") correctAnswer = optionC;
+    else if (correctOption === "D") correctAnswer = optionD;
+  }
+
+  return {
+    optionA,
+    optionB,
+    optionC,
+    optionD,
+    correctOption: correctOption || null,
+    correctAnswer: correctAnswer || "",
+  };
+}
+
+async function autoSaveScoreHistoryToGeneratedTests(payload: any) {
+  try {
+    const { userId, userEmail, subject, mode, difficulty, language, classLevel, insights } = payload;
+    const qPaper = insights?.questionPaper || insights;
+    const questions = qPaper?.questions || insights?.questions || [];
+
+    if (!Array.isArray(questions) || questions.length === 0) {
+      return;
+    }
+
+    let studentName = "Student";
+    let studentEmail = userEmail || null;
+    let board = "CBSE";
+    let medium = language || "English";
+
+    if (userId) {
+      const profile = await storage.getStudentProfile(userId);
+      if (profile) {
+        if (profile.fullName) studentName = profile.fullName;
+        if (profile.emailAddress) studentEmail = profile.emailAddress;
+        if (profile.board) board = profile.board;
+        if (profile.medium) medium = profile.medium;
+      }
+    }
+
+    const formattedQuestions = questions.map((q: any, idx: number) => {
+      const parsed = parseQuestionOptionsAndAnswers(q);
+      return {
+        questionNumber: q.questionNumber || idx + 1,
+        question: q.question || "",
+        optionA: parsed.optionA,
+        optionB: parsed.optionB,
+        optionC: parsed.optionC,
+        optionD: parsed.optionD,
+        correctOption: parsed.correctOption,
+        correctAnswer: parsed.correctAnswer,
+        explanation: q.explanation || "",
+      };
+    });
+
+    await storage.createGeneratedTest({
+      studentId: userId || "student-anonymous",
+      studentName,
+      studentEmail,
+      classLevel: classLevel ? Number(classLevel) : null,
+      subject: subject || "General",
+      chapterTopic: qPaper?.topic || qPaper?.chapterTitle || insights?.chapterTitle || null,
+      medium,
+      board,
+      difficulty: difficulty || "Medium",
+      testType: "MCQ",
+      testMode: mode || "Practice",
+    }, formattedQuestions);
+  } catch (err) {
+    console.error("[AUTO SAVE GENERATED TEST FROM SCORE HISTORY ERROR]", err);
+  }
+}
 
     app.delete("/api/student-score-history", async (req, res) => {
       try {
