@@ -18,9 +18,29 @@ export const openai = new OpenAI({
 // Priority: Use your own OPENAI_API_KEY if provided, otherwise fall back to Replit's AI Integrations
 
 export const AI_CONFIG = {
-  temperature: 0.4,
+  temperature: 0.85,
   max_tokens: 2500,
+  verificationTemperature: 0.1,
+  evaluationTemperature: 0.2,
 };
+
+export const VARIETY_ANGLES = [
+  "Focus on a practical real-world scenario or everyday life application.",
+  "Focus on an experimental/laboratory observation, cause-and-effect, or scientific principle.",
+  "Focus on a conceptual comparison, differentiation, or classification between related concepts.",
+  "Focus on a problem-solving, numerical, formula, or quantitative calculation aspect.",
+  "Focus on identifying a common misconception, exception, or edge case.",
+  "Focus on a scenario-based 'what happens if' or reasoning/analytical question.",
+  "Focus on a structural, diagrammatic, or component identification context.",
+  "Focus on a practical application, unit measurement, or fundamental rule/law."
+];
+
+export function getRandomVarietyAngle(seed?: number): string {
+  const index = typeof seed === "number" && !isNaN(seed)
+    ? Math.abs(seed) % VARIETY_ANGLES.length
+    : Math.floor(Math.random() * VARIETY_ANGLES.length);
+  return VARIETY_ANGLES[index];
+}
 
 
 // Embedding model for semantic similarity detection
@@ -236,7 +256,7 @@ Return JSON format:
       const requestConfig: any = {
       model: SAFE_MODEL,
       messages: [{ role: "user", content: prompt }],
-      temperature: AI_CONFIG.temperature,
+      temperature: AI_CONFIG.verificationTemperature ?? 0.1,
       max_tokens: AI_CONFIG.max_tokens,
     };
 
@@ -354,7 +374,7 @@ Return JSON:
     const requestConfig: any = {
       model: SAFE_MODEL,
       messages: [{ role: "user", content: prompt }],
-      temperature: AI_CONFIG.temperature,
+      temperature: AI_CONFIG.evaluationTemperature ?? 0.2,
       max_tokens: AI_CONFIG.max_tokens,
     };
 
@@ -409,7 +429,7 @@ export async function generateMCQs(
 
   const BATCH_SIZE = 10;
   const MAX_TOKENS = 2000;
-  const TEMPERATURE = 0.4;
+  const TEMPERATURE = 0.85;
 
   let allQuestions: MCQ[] = [];
   let attempts = 0;
@@ -894,6 +914,9 @@ Explanation: "${mcqScriptInfo.exampleExplanation2}"
 
   const guidelines = CBSE_CLASS_GUIDELINES[classLevel as keyof typeof CBSE_CLASS_GUIDELINES];
 
+  const randomSeed = `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+  const varietyAngle = getRandomVarietyAngle(params.questionNumber);
+
   const prompt = `You are a strict CBSE ${language} teacher for Class ${classLevel} following the official CBSE curriculum.
 
 🎯 CBSE CLASS ${classLevel} BLUEPRINT REQUIREMENTS:
@@ -904,6 +927,11 @@ Explanation: "${mcqScriptInfo.exampleExplanation2}"
 - Typical Mark Allocation: ${guidelines.marks}
 
 Generate a multiple choice question (MCQ) about "${chapterTitle}" at ${difficulty} difficulty level.${adaptiveContext}${previousQuestionsContext}
+
+🎯 DYNAMIC VARIETY & FRESHNESS DIRECTIVE:
+- Framing perspective for this question: ${varietyAngle}
+- Unique generation run token: ${randomSeed}
+- Ensure fresh question stems and varied concept application; do NOT repeat common default textbook examples.
 
 CBSE MCQ Guidelines:
 - Follow NCERT textbook patterns EXACTLY for Class ${classLevel}
@@ -1170,6 +1198,9 @@ export async function generateScienceQuestion(params: {
 
   const guidelines = CBSE_CLASS_GUIDELINES[classLevel as keyof typeof CBSE_CLASS_GUIDELINES];
 
+  const randomSeed = `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+  const varietyAngle = getRandomVarietyAngle(params.questionNumber);
+
   const adaptiveContext = previousPerformance 
     ? `\nStudent's previous performance: ${previousPerformance}. Adjust the difficulty accordingly.`
     : '';
@@ -1223,7 +1254,10 @@ export async function generateScienceQuestion(params: {
   - Prefer fresh sub-topics, real-life applications, comparisons, reasoning, or cause-effect framing.
   - Avoid producing paraphrased duplicates of earlier questions.
 
-  Return ONLY valid JSON in this format:
+  🎯 DYNAMIC VARIETY & FRESHNESS DIRECTIVE:
+  - Framing perspective for this question: ${varietyAngle}
+  - Unique generation run token: ${randomSeed}
+  - Ensure questions cover diverse sub-concepts, applications, or reasoning; do NOT repeat common default textbook examples.
 
   Return ONLY valid JSON in this format:
 
@@ -1596,7 +1630,7 @@ Return in this exact JSON format:
     const requestConfig: any = {
       model: SAFE_MODEL,
       messages: [{ role: "user", content: prompt }],
-      temperature: AI_CONFIG.temperature,
+      temperature: AI_CONFIG.evaluationTemperature ?? 0.2,
       max_tokens: AI_CONFIG.max_tokens,
     };
 
@@ -1695,7 +1729,7 @@ ${isMCQ ? `{
     const requestConfig: any = {
       model: SAFE_MODEL,
       messages: [{ role: "user", content: prompt }],
-      temperature: AI_CONFIG.temperature,
+      temperature: AI_CONFIG.evaluationTemperature ?? 0.2,
       max_tokens: AI_CONFIG.max_tokens,
     };
 

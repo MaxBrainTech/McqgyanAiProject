@@ -2148,6 +2148,144 @@ const CHAPTERS: Record<
       .trim();
   }
 
+  async function getPastQuestionsForChapter(
+    chapterId: number | string | null | undefined,
+    subjectKey?: string | null,
+    classLevel?: number | null,
+    excludeSessionId?: string | null,
+    limit: number = 30
+  ): Promise<string[]> {
+    const pastQuestions: string[] = [];
+    if (!chapterId && !subjectKey) return pastQuestions;
+
+    try {
+      const sessionRes = await pool.query(
+        `SELECT conversation_history FROM test_sessions 
+         WHERE ($1::int IS NULL OR chapter = $1)
+           AND ($2::text IS NULL OR science_category = $2 OR language = $2 OR subject_language = $2)
+           AND ($3::int IS NULL OR class_level = $3)
+           AND ($4::text IS NULL OR id != $4)
+         ORDER BY created_at DESC LIMIT 15`,
+        [
+          Number(chapterId) || null,
+          subjectKey ? String(subjectKey).toLowerCase() : null,
+          Number(classLevel) || null,
+          excludeSessionId || null,
+        ]
+      );
+
+      for (const row of sessionRes.rows) {
+        try {
+          const hist = JSON.parse(row.conversation_history || "[]");
+          if (Array.isArray(hist)) {
+            for (const item of hist) {
+              if (item?.question && typeof item.question === "string") {
+                const q = item.question.trim();
+                if (q && !pastQuestions.includes(q)) {
+                  pastQuestions.push(q);
+                }
+              }
+            }
+          }
+        } catch (err) {
+          // ignore parse error
+        }
+      }
+
+      const mcqRes = await pool.query(
+        `SELECT m.question FROM mcqs m
+         JOIN mcq_tests mt ON m.test_id = mt.id
+         WHERE ($1::int IS NULL OR mt.class_level = $1)
+           AND ($2::text IS NULL OR mt.subject ILIKE '%' || $2 || '%')
+         ORDER BY m.id DESC LIMIT 25`,
+        [
+          Number(classLevel) || null,
+          subjectKey ? String(subjectKey).toLowerCase() : null,
+        ]
+      );
+
+      for (const row of mcqRes.rows) {
+        if (row.question && typeof row.question === "string") {
+          const q = row.question.trim();
+          if (q && !pastQuestions.includes(q)) {
+            pastQuestions.push(q);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("[PAST QUESTIONS] Error fetching past questions for chapter:", err);
+    }
+
+    return pastQuestions.slice(0, limit);
+  }
+
+  async function getPastQuestionsForTopics(
+    topics: string[],
+    subject?: string | null,
+    classLevel?: number | null,
+    excludeTestId?: string | null,
+    limit: number = 40
+  ): Promise<string[]> {
+    const pastQuestions: string[] = [];
+
+    try {
+      const customRes = await pool.query(
+        `SELECT cq.question FROM custom_questions cq
+         JOIN custom_tests ct ON cq.test_id = ct.id
+         WHERE ($1::text IS NULL OR ct.subject ILIKE '%' || $1 || '%')
+           AND ($2::int IS NULL OR ct.class_level = $2)
+           AND ($3::text IS NULL OR ct.id != $3)
+         ORDER BY cq.id DESC LIMIT 50`,
+        [
+          subject ? String(subject).trim() : null,
+          Number(classLevel) || null,
+          excludeTestId || null,
+        ]
+      );
+
+      for (const row of customRes.rows) {
+        if (row.question && typeof row.question === "string") {
+          const q = row.question.trim();
+          if (q && !pastQuestions.includes(q)) {
+            pastQuestions.push(q);
+          }
+        }
+      }
+
+      if (topics && topics.length > 0) {
+        const conditions: string[] = [];
+        const params: any[] = [];
+        let paramIdx = 1;
+
+        for (const topic of topics.slice(0, 4)) {
+          const cleanTopic = topic.trim();
+          if (cleanTopic.length > 2) {
+            conditions.push(`m.question ILIKE '%' || $${paramIdx} || '%'`);
+            params.push(cleanTopic);
+            paramIdx++;
+          }
+        }
+
+        if (conditions.length > 0) {
+          const queryStr = `SELECT m.question FROM mcqs m WHERE ${conditions.join(" OR ")} ORDER BY m.id DESC LIMIT 30`;
+          const topicRes = await pool.query(queryStr, params);
+          for (const row of topicRes.rows) {
+            if (row.question && typeof row.question === "string") {
+              const q = row.question.trim();
+              if (q && !pastQuestions.includes(q)) {
+                pastQuestions.push(q);
+              }
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("[PAST QUESTIONS] Error fetching past questions for topics:", err);
+    }
+
+    return pastQuestions.slice(0, limit);
+  }
+
   function normalizeSubmissionAnswers(answers: any): Record<string, string> {
     if (!answers) return {};
     if (typeof answers === "string") {
@@ -2895,13 +3033,28 @@ const CHAPTERS: Record<
           `[CUSTOM TEST] Created test ${test.id} with share code: ${test.shareCode}`,
         );
 
+        // Load past questions from previous tests for these topics to prevent repeats
+        const pastTopicQuestions = await getPastQuestionsForTopics(
+          topics,
+          subject,
+          classLevel,
+          test.id,
+          30
+        );
+
         // Generate questions using AI
         const questions = [];
         const generatedQuestionTexts = new Set<string>(); // Track exact question texts for deduplication
         const generatedQuestionSkeletons = new Set<string>();
         const questionEmbeddings: number[][] = []; // Track embeddings for semantic similarity
-        const previousQuestionsList: string[] = []; // Track last 5 questions for AI context
+        const previousQuestionsList: string[] = [...pastTopicQuestions]; // Seed with past questions
         const SIMILARITY_THRESHOLD = 0.82; // Cosine similarity threshold for duplicate detection
+
+        for (const pastQ of pastTopicQuestions) {
+          generatedQuestionTexts.add(pastQ.trim().toLowerCase());
+          const skel = normalizeQuestionForComparison(pastQ);
+          if (skel) generatedQuestionSkeletons.add(skel);
+        }
 
         // Determine if this is a science subject or language subject
         const scienceSubjects = [
@@ -2923,8 +3076,7 @@ const CHAPTERS: Record<
         const totalQuestions = Number(numQuestions) || 10;
 
         // Generate exact number of questions using queue-based round-robin retry with deduplication
-        // const maxAttemptsPerTopic = 5; // Increased for dedup retries
-        const maxAttemptsPerTopic = 2;
+        const maxAttemptsPerTopic = 5; // Increased for dedup retries
         const maxTotalAttempts =
           totalQuestions * topics.length * maxAttemptsPerTopic;
         const perTopicFailures = new Map<string, number>(); // Track failures per topic
@@ -2975,7 +3127,7 @@ const CHAPTERS: Record<
               // chapterTitle: currentTopic,
               chapterTitle: currentTopic ?? "General",
               questionNumber: currentQuestionNumber,
-              previousQuestions: previousQuestionsList.slice(-5),
+              previousQuestions: previousQuestionsList.slice(-15),
               isMcq: testType === "mcq",
               gptModel: gptModel || "gpt-4o-mini",
             });
@@ -3208,10 +3360,19 @@ const CHAPTERS: Record<
         const isScience = scienceSubjects.includes(subject.toLowerCase());
         const aiSubjectLabel = normalizeSchoolScienceSubjectKey(subject);
 
+        // Load past questions from previous tests for these topics to prevent repeats
+        const pastStudentTopicQuestions = await getPastQuestionsForTopics(
+          topics,
+          subject,
+          resolvedClassLevel,
+          null,
+          30
+        );
+
         const generatedQuestionTexts = new Set<string>();
         const generatedQuestionSkeletons = new Set<string>();
         const questionEmbeddings: number[][] = [];
-        const previousQuestionsList: string[] = [];
+        const previousQuestionsList: string[] = [...pastStudentTopicQuestions];
         const SIMILARITY_THRESHOLD = 0.82;
 
         const maxAttemptsPerTopic = 8;
@@ -3241,6 +3402,13 @@ const CHAPTERS: Record<
         const existingQuestionSkeletons = new Set<string>();
         const existingEmbeddings: number[][] = [];
 
+        // Pre-populate sets with historical questions from DB so new test won't duplicate them
+        for (const pastQ of pastStudentTopicQuestions) {
+          existingTexts.add(pastQ.trim().toLowerCase());
+          const skel = normalizeQuestionForComparison(pastQ);
+          if (skel) existingQuestionSkeletons.add(skel);
+        }
+
         let totalGenerated = 0;
         let safetyCounter = 0;
         const MAX_TOTAL_ATTEMPTS = numQuestions * 5;
@@ -3259,6 +3427,8 @@ const CHAPTERS: Record<
           //     {
           let raw: string | undefined;
 
+          const randomSeedToken = `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+
           if (testSession.gptModel?.startsWith("hf-")) {
             // 🤗 HuggingFace
             raw = await generateFromHF(`
@@ -3268,10 +3438,12 @@ const CHAPTERS: Record<
 
           Topics to cover: ${topics.join(", ")}
 
-          Previously generated questions:
-          ${previousQuestionsList.length > 0 ? previousQuestionsList.join("\n") : "None"}
+          Previously generated questions (DO NOT REPEAT):
+          ${previousQuestionsList.length > 0 ? previousQuestionsList.slice(-20).join("\n") : "None"}
 
           ${mediumInstruction}
+
+          Generation Seed: ${randomSeedToken}
 
           Rules:
           - Every question must be unique
@@ -3285,15 +3457,11 @@ const CHAPTERS: Record<
             // 🤖 OpenAI
           const response = await openai.chat.completions.create({
             model: testSession.gptModel,
-            temperature: 0.8,
+            temperature: 0.85,
             messages: [
               {
                   role: "user",
                   content: `
-          // Generate ${requestedCount} unique ${difficulty} ${aiSubjectLabel} MCQ questions for Class ${classLevel}.
-          // Generate ${chunkSize} ${difficulty} questions for ${subjectLanguage || scienceCategory}.
-          // Generate ${numQuestions} ${difficulty} questions for ${aiSubjectLabel}.
-
           Generate ${requestedCount} unique MCQ questions.
 
           Subject language: ${resolvedSubjectLanguage || aiSubjectLabel}
@@ -3302,10 +3470,13 @@ const CHAPTERS: Record<
 
           ${mediumInstruction}
 
-          Previously generated questions:
-          ${previousQuestionsList.length > 0 ? previousQuestionsList.join("\n") : "None"}
+          Previously generated questions (DO NOT REPEAT OR REWORD ANY OF THESE):
+          ${previousQuestionsList.length > 0 ? previousQuestionsList.slice(-25).join("\n") : "None"}
+
+          Unique Random Seed: ${randomSeedToken}
 
           IMPORTANT:
+          - Cover diverse cognitive angles: practical real-world application, reasoning/cause-effect, comparisons, numerical calculation, and common exceptions.
           - If language is "hindi", generate all questions, options and correctAnswer strictly in Hindi.
           - If medium is Hindi, DO NOT generate English text. All questions, options and answers MUST be Hindi.
           - If language is "english", generate all questions everything strictly in English.
@@ -4234,7 +4405,22 @@ const CHAPTERS: Record<
         }
 
         const history = JSON.parse(session.conversationHistory || "[]");
-        const previousQuestions = history.map((h: any) => h.question).filter(Boolean);
+        const currentSessionQuestions = history.map((h: any) => h.question).filter(Boolean);
+
+        // Fetch past questions from previous test sessions and mcqs database for this chapter
+        const pastChapterQuestions = await getPastQuestionsForChapter(
+          session.chapter,
+          session.scienceCategory || session.subjectLanguage || session.language,
+          session.classLevel,
+          sessionId,
+          25
+        );
+
+        // Combined previous questions: current session questions first, then historical questions
+        const combinedPreviousQuestions = [
+          ...currentSessionQuestions,
+          ...pastChapterQuestions,
+        ];
 
         const isMcq =
           session.testType === "mcq-only"
@@ -4249,31 +4435,63 @@ const CHAPTERS: Record<
         const buildFallbackQuestion = () => {
           const isHindi = (session.language || "").toLowerCase().startsWith("hi");
           const safeTitle = chapterTitle || (isHindi ? "इस अध्याय" : "this chapter");
+          const qNum = (session.currentQuestion ?? 0) + 1;
 
           if (isMcq) {
-            const question = isHindi
-              ? `निम्न में से कौन सा "${safeTitle}" से सीधे संबंधित है?`
-              : `Which of the following is most directly related to "${safeTitle}"?`;
+            const hindiTemplates = [
+              {
+                q: `निम्न में से कौन सी अवधारणा "${safeTitle}" के अध्ययन का मुख्य आधार है?`,
+                opts: [`A. ${safeTitle} के मूल सिद्धांत`, "B. असंबंधित अवधारणा", "C. अन्य विषय", "D. इनमें से कोई नहीं"],
+                ans: `${safeTitle} के मूल सिद्धांत`,
+              },
+              {
+                q: `दैनिक जीवन में "${safeTitle}" का प्रमुख अनुप्रयोग क्या है?`,
+                opts: [`A. ${safeTitle} से जुड़े व्यावहारिक कार्य`, "B. प्रकाश संश्लेषण", "C. ध्वनि संचरण", "D. इनमें से कोई नहीं"],
+                ans: `${safeTitle} से जुड़े व्यावहारिक कार्य`,
+              },
+              {
+                q: `"${safeTitle}" के संबंध में कौन सा कथन सबसे उपयुक्त है?`,
+                opts: [`A. यह NCERT पाठ्यक्रम का एक महत्वपूर्ण भाग है`, "B. इसका कोई व्यावहारिक महत्व नहीं है", "C. यह केवल सिद्धांत है", "D. उपरोक्त सभी गलत हैं"],
+                ans: "यह NCERT पाठ्यक्रम का एक महत्वपूर्ण भाग है",
+              },
+              {
+                q: `निम्न में से कौन सा "${safeTitle}" से सीधे संबंधित है?`,
+                opts: [`A. ${safeTitle}`, "B. असंबंधित अवधारणा", "C. अलग विषय", "D. उपरोक्त में से कोई नहीं"],
+                ans: safeTitle,
+              },
+            ];
 
-            const options = isHindi
-              ? [
-                  `A. ${safeTitle}`,
-                  "B. असंबंधित अवधारणा",
-                  "C. अलग विषय",
-                  "D. उपरोक्त में से कोई नहीं",
-                ]
-              : [
-                  `A. ${safeTitle}`,
-                  "B. An unrelated concept",
-                  "C. A different topic",
-                  "D. None of the above",
-                ];
+            const englishTemplates = [
+              {
+                q: `Which of the following is most directly related to the core concepts of "${safeTitle}"?`,
+                opts: [`A. Fundamental principles of ${safeTitle}`, "B. An unrelated concept", "C. A different topic", "D. None of the above"],
+                ans: `Fundamental principles of ${safeTitle}`,
+              },
+              {
+                q: `What is a primary practical application related to "${safeTitle}"?`,
+                opts: [`A. Practical scenarios involving ${safeTitle}`, "B. Unrelated industrial process", "C. Random physical phenomenon", "D. None of the above"],
+                ans: `Practical scenarios involving ${safeTitle}`,
+              },
+              {
+                q: `Which statement best describes an important aspect of "${safeTitle}"?`,
+                opts: [`A. It forms a key part of the NCERT curriculum`, "B. It has no physical significance", "C. It applies only in vacuum", "D. All options are incorrect"],
+                ans: "It forms a key part of the NCERT curriculum",
+              },
+              {
+                q: `Which of the following is most directly related to "${safeTitle}"?`,
+                opts: [`A. ${safeTitle}`, "B. An unrelated concept", "C. A different topic", "D. None of the above"],
+                ans: safeTitle,
+              },
+            ];
+
+            const templates = isHindi ? hindiTemplates : englishTemplates;
+            const chosen = templates[(qNum - 1) % templates.length];
 
             return {
-              question,
-              options,
+              question: chosen.q,
+              options: chosen.opts,
               correctOption: "A",
-              correctAnswer: safeTitle,
+              correctAnswer: chosen.ans,
               explanation: isHindi
                 ? "यह एक बेसिक fallback प्रश्न है ताकि टेस्ट आगे बढ़ सके।"
                 : "This is a basic fallback question to keep the test flowing.",
@@ -4283,8 +4501,8 @@ const CHAPTERS: Record<
 
           return {
             question: isHindi
-              ? `"${safeTitle}" को संक्षेप में समझाइए।`
-              : `Briefly explain "${safeTitle}".`,
+              ? `"${safeTitle}" के मुख्य सिद्धांतों को संक्षेप में समझाइए।`
+              : `Briefly explain the key concepts of "${safeTitle}".`,
             correctAnswer: isHindi
               ? `"${safeTitle}" इस अध्याय का मुख्य विषय है।`
               : `"${safeTitle}" is the main topic of this chapter.`,
@@ -4295,31 +4513,69 @@ const CHAPTERS: Record<
           };
         };
 
-        let questionData;
-        try {
-          questionData = await generateQuestion({
-            mode: session.mode,
-            // ✅ ALWAYS SAFE LANGUAGE
-            language: session.language ?? "english",
-            // ✅ SAFE SUBJECT HANDLING
-            scienceCategory:
-              session.mode === "science"
-                ? normalizeSchoolScienceSubjectKey(session.scienceCategory ?? "physics")
-                : undefined,
-            // ✅ SAFE CLASS + DIFFICULTY
-            classLevel: session.classLevel ?? 6,
-            difficulty: session.difficulty ?? "easy",
-            chapter: session.chapter,
-            // ✅ UNIVERSAL TITLE FIX
-            chapterTitle,
-            // ✅ NaN FIX
-            questionNumber: (session.currentQuestion ?? 0) + 1,
-            previousQuestions: previousQuestions ?? [],
-            // ✅ BOOLEAN SAFETY
-            isMcq: !!isMcq,
-          });
-        } catch (error) {
-          console.error("AI question generation failed. Using fallback.", error);
+        let questionData: any = null;
+        let attempts = 0;
+        const maxGenerationAttempts = 3;
+
+        while (attempts < maxGenerationAttempts) {
+          attempts++;
+          try {
+            const candidate = await generateQuestion({
+              mode: session.mode,
+              // ✅ ALWAYS SAFE LANGUAGE
+              language: session.language ?? "english",
+              // ✅ SAFE SUBJECT HANDLING
+              scienceCategory:
+                session.mode === "science"
+                  ? normalizeSchoolScienceSubjectKey(session.scienceCategory ?? "physics")
+                  : undefined,
+              // ✅ SAFE CLASS + DIFFICULTY
+              classLevel: session.classLevel ?? 6,
+              difficulty: session.difficulty ?? "easy",
+              chapter: session.chapter,
+              // ✅ UNIVERSAL TITLE FIX
+              chapterTitle,
+              // ✅ NaN FIX
+              questionNumber: (session.currentQuestion ?? 0) + 1,
+              previousQuestions: combinedPreviousQuestions,
+              // ✅ BOOLEAN SAFETY
+              isMcq: !!isMcq,
+            });
+
+            if (!candidate || !candidate.question) {
+              continue;
+            }
+
+            const candidateText = candidate.question.trim().toLowerCase();
+            const candidateSkeleton = normalizeQuestionForComparison(candidate.question);
+
+            const isExactMatch = combinedPreviousQuestions.some(
+              (prev) => prev.trim().toLowerCase() === candidateText
+            );
+            const isSkeletonMatch =
+              candidateSkeleton.length > 10 &&
+              combinedPreviousQuestions.some((prev) => {
+                const prevSkel = normalizeQuestionForComparison(prev);
+                return prevSkel.length > 10 && prevSkel === candidateSkeleton;
+              });
+
+            if (isExactMatch || isSkeletonMatch) {
+              console.warn(
+                `[TEST SESSION] Duplicate detected on attempt ${attempts} ("${candidate.question.substring(0, 50)}..."), regenerating...`
+              );
+              combinedPreviousQuestions.push(candidate.question);
+              continue;
+            }
+
+            questionData = candidate;
+            break;
+          } catch (error) {
+            console.error(`[TEST SESSION] AI generation attempt ${attempts} failed:`, error);
+          }
+        }
+
+        if (!questionData) {
+          console.warn("[TEST SESSION] AI question generation attempts exhausted or failed. Using fallback.");
           questionData = buildFallbackQuestion();
         }
         let mcqTestId: number | null = null;

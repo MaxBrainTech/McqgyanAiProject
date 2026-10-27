@@ -12,7 +12,7 @@ import {
   type GeneratedTestQuestion, type InsertGeneratedTestQuestion
 } from "@shared/schema";
 
-import pool, { databaseReady, ensureStudentScoreHistoryTable } from "./db";
+import pool, { databaseReady, ensureBaseTables, ensureStudentScoreHistoryTable } from "./db";
 
 // Normalize DB snake_case -> app camelCase for test_sessions
 const normalizeTestSession = (row: any) => {
