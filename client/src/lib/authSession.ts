@@ -24,6 +24,7 @@ export const setTeacherSession = (teacherId: string) => {
 };
 
 export const setStudentSession = () => {
+  localStorage.removeItem(TEACHER_ID_KEY);
   setStoredAuthRole("student");
 };
 

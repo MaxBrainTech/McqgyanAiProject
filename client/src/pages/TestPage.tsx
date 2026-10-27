@@ -399,7 +399,7 @@ export default function TestPage() {
             totalQuestions={totalQuestions}
             correctAnswers={correctAnswers}
             subject={subject || "quiz"}
-            classLevel={resolvedClassLevel}
+            classLevel={resolvedClassLevel ?? undefined}
             language={i18n.language || "en"}
             questionReview={questionReview}
             difficulty={config.difficulty}

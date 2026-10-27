@@ -694,7 +694,7 @@ export async function syncScoreHistoryEntry(
       ...entry,
       userId: user.userId,
       userEmail: user.userEmail ?? null,
-      classLevel: entry.classLevel ?? resolvedInsights.classLevel ?? null,
+      classLevel: entry.classLevel ?? (resolvedInsights as any).classLevel ?? null,
       insights: resolvedInsights,
     }),
   });

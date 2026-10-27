@@ -43,14 +43,17 @@ import { registerAdminGeneratedTestRoutes } from "./adminGeneratedTests";
 
 console.log("ROUTES FILE LOADED");
 
+const toBoolean = (val: any): boolean =>
+  val === true || val === "true" || val === 1 || val === "1";
+
 const normalizeTeacherProfile = (teacher: any = {}) => ({
   id: teacher.id,
   username: teacher.username,
   email: teacher.email,
   fullName: teacher.fullName ?? teacher.full_name ?? teacher.name ?? "",
   school: teacher.school ?? "",
-  verified: teacher.isVerified === "true" || teacher.is_verified === true,
-  approved: teacher.isApproved === "true" || teacher.is_approved === true,
+  verified: toBoolean(teacher.isVerified ?? teacher.is_verified ?? teacher.verified),
+  approved: toBoolean(teacher.isApproved ?? teacher.is_approved ?? teacher.approved),
 });
 
 const buildGoogleTeacherUsername = (email: string) => {
@@ -2532,36 +2535,25 @@ const CHAPTERS: Record<
         }
 
         const existingTeacher = await storage.getTeacherByEmail(email);
-       if (existingTeacher) {
-
-        if (existingTeacher.isVerified !== "true") {
-
-          console.log("Existing Teacher:", existingTeacher.email);
-
-            const token = crypto.randomBytes(32).toString("hex");
-            console.log("Generated Token:", token);
-
-            await storage.updateTeacherVerificationToken(existingTeacher.id, token);
-            console.log("Token Saved");
-
-            const appUrl = getServerAppUrl(req);
-
-            await sendTeacherVerificationEmail(
-              existingTeacher.email,
-              existingTeacher.fullName,
-              token,
-              appUrl
+        if (existingTeacher) {
+          const isVerified = toBoolean(existingTeacher.isVerified ?? (existingTeacher as any).is_verified);
+          if (!isVerified) {
+            console.log("Auto-verifying existing teacher upon Google sign-in:", existingTeacher.email);
+            await pool.query(
+              "UPDATE teachers SET is_verified = 'true', verified_at = NOW(), verification_token = NULL WHERE id = $1",
+              [existingTeacher.id]
             );
+            existingTeacher.isVerified = "true";
+          }
 
-            console.log("Verification Email Sent");
+          const isApproved = toBoolean(existingTeacher.isApproved ?? (existingTeacher as any).is_approved);
+
+          return res.json({
+            ...normalizeTeacherProfile(existingTeacher),
+            verified: true,
+            approved: isApproved,
+          });
         }
-
-       return res.json({
-          ...normalizeTeacherProfile(existingTeacher),
-          verified: existingTeacher.isVerified === "true",
-          approved: existingTeacher.isApproved === "true",
-        });
-      }
 
         const username = await getAvailableTeacherUsername(email);
         const password = await bcrypt.hash(randomUUID(), 10);
@@ -2574,35 +2566,26 @@ const CHAPTERS: Record<
           email,
           school: school ?? undefined,
         });
-        
-        // Generate verification token
-        console.log("New Teacher Created:", createdTeacher.email);
 
-          const token = crypto.randomBytes(32).toString("hex");
-          console.log("Generated Token:", token);
+        console.log("New Teacher Created via Google:", createdTeacher.email);
 
-          await storage.updateTeacherVerificationToken(createdTeacher.id, token);
-          console.log("Token Saved");
-
-          const appUrl = getServerAppUrl(req);
-
-          await sendTeacherVerificationEmail(
-            createdTeacher.email,
-            createdTeacher.fullName,
-            token,
-            appUrl
-          );
-
-          console.log("Verification Email Sent");
+        // Google accounts are pre-verified by Google OAuth.
+        // Auto-verify and auto-approve Google-authenticated teachers so they can access the dashboard immediately:
+        await pool.query(
+          "UPDATE teachers SET is_verified = 'true', is_approved = 'true', verified_at = NOW(), verification_token = NULL WHERE id = $1",
+          [createdTeacher.id]
+        );
+        createdTeacher.isVerified = "true";
+        createdTeacher.isApproved = "true";
 
         return res.status(201).json({
           ...normalizeTeacherProfile(createdTeacher),
-          verified: false,
-          approved: false,
-          message: "Verification email sent successfully.",
+          verified: true,
+          approved: true,
+          message: "Teacher authenticated successfully with Google.",
         });
       } catch (error) {
-        console.error(error);
+        console.error("Google teacher login error:", error);
         res.status(500).json({ error: "Failed to authenticate teacher with Google" });
       }
     });
@@ -2651,8 +2634,8 @@ const CHAPTERS: Record<
         email: teacher.email,
         fullName: teacher.full_name,
         school: teacher.school ?? "",
-        verified: teacher.is_verified === "true",
-        approved: teacher.is_approved === "true",
+        verified: toBoolean(teacher.is_verified),
+        approved: toBoolean(teacher.is_approved),
         message: "Verification email sent successfully.",
       });
     });
@@ -2782,7 +2765,7 @@ const CHAPTERS: Record<
         }
 
         // 2. Agar already verified hai
-        if (teacher.isVerified === "true") {
+        if (toBoolean(teacher.isVerified)) {
           return res.status(400).json({
             error: "Teacher is already verified",
           });
@@ -2913,8 +2896,8 @@ const CHAPTERS: Record<
           email: teacher.email,
           fullName: teacher.fullName ?? "",
           school: teacher.school ?? "",
-          verified: teacher.isVerified === "true",
-          approved: teacher.isApproved === "true",
+          verified: toBoolean(teacher.isVerified ?? (teacher as any).is_verified),
+          approved: toBoolean(teacher.isApproved ?? (teacher as any).is_approved),
         });
       } catch (error) {
         console.error("Error fetching teacher profile:", error);
@@ -2940,8 +2923,8 @@ const CHAPTERS: Record<
 
         return res.json({
           ...normalizeTeacherProfile(teacher),
-          verified: teacher.isVerified === "true",
-          approved: teacher.isApproved === "true",
+          verified: toBoolean(teacher.isVerified ?? (teacher as any).is_verified),
+          approved: toBoolean(teacher.isApproved ?? (teacher as any).is_approved),
         });
       } catch (error) {
         console.error("Error updating teacher approval:", error);

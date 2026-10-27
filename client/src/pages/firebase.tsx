@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getAnalytics, isSupported } from "firebase/analytics";
@@ -14,15 +14,17 @@ const firebaseConfig = {
 };
 
 // ✅ Initialize Firebase only once
-export const app = initializeApp(firebaseConfig);
+export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
 // ✅ Services you ACTUALLY need
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
 // ✅ Analytics (safe for Vite / browser only)
-isSupported().then((supported) => {
-  if (supported) {
-    getAnalytics(app);
-  }
-});
+if (typeof window !== "undefined") {
+  isSupported().then((supported) => {
+    if (supported) {
+      getAnalytics(app);
+    }
+  });
+}

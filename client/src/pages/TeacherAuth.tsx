@@ -52,6 +52,9 @@ const registerSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>;
 type RegisterForm = z.infer<typeof registerSchema>;
 
+const toBoolean = (val: any): boolean =>
+  val === true || val === "true" || val === 1 || val === "1";
+
 const normalizeTeacherProfile = (teacher: any = {}) => ({
   ...teacher,
   fullName:
@@ -59,11 +62,16 @@ const normalizeTeacherProfile = (teacher: any = {}) => ({
     teacher.full_name ||
     teacher.name ||
     "",
-  approved:
+  verified: toBoolean(
+    teacher.verified ??
+    teacher.isVerified ??
+    teacher.is_verified
+  ),
+  approved: toBoolean(
     teacher.approved ??
     teacher.isApproved ??
-    teacher.is_approved ??
-    false,
+    teacher.is_approved
+  ),
 });
 
 export default function TeacherAuth() {

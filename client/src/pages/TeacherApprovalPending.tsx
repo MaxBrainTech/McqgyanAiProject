@@ -5,11 +5,14 @@ import { useTranslation } from "react-i18next";
 
 import { getStoredTeacherId } from "@/lib/authSession";
 
+const toBoolean = (val: any): boolean =>
+  val === true || val === "true" || val === 1 || val === "1";
+
 const normalizeTeacherProfile = (teacher: any = {}) => ({
   ...teacher,
   fullName: teacher.fullName || teacher.full_name || teacher.name || "",
-  approved: teacher.approved ?? teacher.isApproved ?? teacher.is_approved ?? false,
-  verified: teacher.verified ?? teacher.isVerified ?? teacher.is_verified ?? false,
+  approved: toBoolean(teacher.approved ?? teacher.isApproved ?? teacher.is_approved),
+  verified: toBoolean(teacher.verified ?? teacher.isVerified ?? teacher.is_verified),
 });
 
 export default function TeacherApprovalPending() {

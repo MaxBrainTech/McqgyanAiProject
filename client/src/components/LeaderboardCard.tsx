@@ -12,6 +12,7 @@ import {
 
 interface LeaderboardCardProps {
   entries: ScoreHistoryEntry[];
+  onResetScores?: () => void;
 }
 
 export default function LeaderboardCard({ entries }: LeaderboardCardProps) {

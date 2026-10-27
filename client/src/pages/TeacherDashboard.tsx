@@ -146,6 +146,9 @@ const getQuestionCount = (test: any = {}, questions?: any[]) => {
   return Number(count) || 0;
 };
 
+const toBoolean = (val: any): boolean =>
+  val === true || val === "true" || val === 1 || val === "1";
+
 const normalizeTeacherProfile = (teacher: any = {}) => ({
   ...teacher,
   fullName:
@@ -154,16 +157,16 @@ const normalizeTeacherProfile = (teacher: any = {}) => ({
     teacher.name ||
     "",
   school: teacher.school || teacher.school_name || "",
-  approved:
+  approved: toBoolean(
     teacher.approved ??
     teacher.isApproved ??
-    teacher.is_approved ??
-    false,
-  verified:
+    teacher.is_approved
+  ),
+  verified: toBoolean(
     teacher.verified ??
     teacher.isVerified ??
-    teacher.is_verified ??
-    false,
+    teacher.is_verified
+  ),
 });
 
 export default function TeacherDashboard() {
@@ -1517,7 +1520,7 @@ export default function TeacherDashboard() {
 
                             <CardDescription className="text-xs text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-2 gap-y-1">
                               <span className="font-semibold text-slate-700 dark:text-slate-300">
-                                {t(`subjects.${(testItem.subject || "").toLowerCase()}`, testItem.subject)}
+                                {String(t(`subjects.${(testItem.subject || "").toLowerCase()}`, testItem.subject))}
                               </span>
                               <span>•</span>
                               <span>{t("teacherDashboard.class")} {testItem.classLevel || "—"}</span>
